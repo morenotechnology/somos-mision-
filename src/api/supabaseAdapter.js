@@ -75,6 +75,23 @@ function cleanOptional(value) {
   return cleaned || null;
 }
 
+function normalizeSiteUrl(url) {
+  const cleaned = String(url || '').trim().replace(/\/+$/, '');
+  if (!cleaned) return '';
+  return cleaned.startsWith('http') ? cleaned : `https://${cleaned}`;
+}
+
+function getAuthRedirectUrl(path = '/login') {
+  const configuredUrl =
+    import.meta.env.VITE_AUTH_REDIRECT_URL ||
+    import.meta.env.VITE_PUBLIC_SITE_URL ||
+    import.meta.env.VITE_SITE_URL;
+  const runtimeUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const baseUrl = normalizeSiteUrl(configuredUrl || runtimeUrl);
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return baseUrl ? `${baseUrl}${normalizedPath}` : undefined;
+}
+
 function profilePayloadFromAuthUser(authUser = {}) {
   const meta = authUser.user_metadata || authUser.raw_user_meta_data || {};
   const email = authUser.email || meta.email || '';
@@ -541,6 +558,7 @@ export function createSupabaseApi() {
             email: payload.email,
             password: payload.password,
             options: {
+              emailRedirectTo: getAuthRedirectUrl('/login'),
               data: {
                 nombre_completo: payload.name,
                 nombre: payload.name?.split(' ')?.[0] || payload.name,
@@ -596,7 +614,7 @@ export function createSupabaseApi() {
       async resetPassword(email) {
         unwrap(
           await client.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/login`,
+            redirectTo: getAuthRedirectUrl('/login'),
           }),
           'No se pudo enviar el correo de recuperación'
         );

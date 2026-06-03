@@ -1,16 +1,70 @@
-# React + Vite
+# Somos Mision Colombia
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicacion React + Vite conectada a Supabase para registro, login, contenido, ranking, misiones y perfil.
 
-Currently, two official plugins are available:
+## Desarrollo local
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+Variables locales:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+cp .env.example .env.local
+```
 
-## Expanding the ESLint configuration
+## Variables de entorno en Vercel
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+En Vercel, agrega estas variables en `Project Settings > Environment Variables`:
+
+```bash
+VITE_API_MODE=supabase
+VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+VITE_SUPABASE_ANON_KEY=tu-anon-key
+VITE_PUBLIC_SITE_URL=https://tu-dominio.com
+VITE_AUTH_REDIRECT_URL=https://tu-dominio.com
+```
+
+`VITE_PUBLIC_SITE_URL` y `VITE_AUTH_REDIRECT_URL` evitan que los correos de Supabase Auth apunten a `localhost`.
+
+## Supabase Auth Redirects
+
+En Supabase Dashboard:
+
+1. Ve a `Authentication > URL Configuration`.
+2. En `Site URL`, pon tu dominio final, por ejemplo `https://tu-dominio.com`.
+3. En `Redirect URLs`, agrega:
+
+```text
+https://tu-dominio.com/**
+https://www.tu-dominio.com/**
+http://localhost:5173/**
+```
+
+El wildcard local sirve solo para pruebas. En produccion, Supabase debe tener permitido tu dominio real.
+
+## Dominio personalizado con Hostinger y Vercel
+
+1. En Vercel, ve a `Project Settings > Domains`.
+2. Agrega `tu-dominio.com` y tambien `www.tu-dominio.com`.
+3. Vercel te dira que registros DNS crear.
+4. En Hostinger, abre la zona DNS del dominio y crea/actualiza esos registros.
+5. Cuando Vercel marque el dominio como verificado, vuelve a desplegar si cambiaste variables.
+
+Recomendado:
+
+```text
+tu-dominio.com      A      76.76.21.21
+www.tu-dominio.com  CNAME  cname.vercel-dns.com
+```
+
+Si Vercel te muestra valores distintos, usa los valores exactos que te da Vercel.
+
+## Build
+
+```bash
+npm run lint
+npm run build
+```
