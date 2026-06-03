@@ -3429,48 +3429,63 @@ body {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+  align-items: stretch;
 }
 
 .auth-brand-stats div {
-  min-height: 86px;
-  padding: 15px;
+  min-height: 112px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 15px 14px;
   border: 1px solid rgba(255,255,255,0.14);
   border-radius: 18px;
   background: rgba(255,255,255,0.09);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  min-width: 0;
 }
 
 .auth-brand-stats strong,
 .auth-brand-stats span {
   display: block;
+  min-width: 0;
 }
 
 .auth-brand-stats strong {
-  display: flex;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   color: white;
-  font-size: 1.35rem;
+  font-size: clamp(0.76rem, 1.05vw, 0.96rem);
   font-weight: 900;
-  line-height: 1;
+  line-height: 1.16;
+  overflow-wrap: anywhere;
 }
 
 .auth-brand-stats span {
-  margin-top: 7px;
+  margin-top: 9px;
   color: rgba(255,255,255,0.58);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
+  line-height: 1.38;
+}
+
+.auth-brand-stats svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
 }
 
 .auth-brand-stats .auth-stat-logo {
-  width: 28px;
-  height: 20px;
+  width: 22px;
+  height: 17px;
   display: inline-flex;
   flex: 0 0 auto;
   margin-top: 0;
   padding: 2px;
-  border-radius: 7px;
+  border-radius: 6px;
   background: rgba(255,255,255,0.92);
 }
 

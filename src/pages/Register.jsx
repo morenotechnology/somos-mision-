@@ -53,9 +53,9 @@ function RegisterBrandPanel() {
           <strong>Somos Misión Colombia</strong>
         </button>
         <div className="auth-brand-copy">
-          <p>Registro conectado</p>
-          <h2>Crea tu cuenta real y activa tu perfil misionero.</h2>
-          <span>El registro crea tu usuario en Supabase Auth y tu perfil extendido en la base de datos.</span>
+          <p>Registro nacional</p>
+          <h2>Crea tu cuenta y activa tu perfil de multiplicador.</h2>
+          <span>Completa tus datos para unirte a la red y comenzar a participar desde tu iglesia local.</span>
         </div>
       </div>
     </aside>
@@ -177,7 +177,7 @@ export default function Register() {
           <div className="auth-card-header">
             <p className="auth-eyebrow">Nuevo perfil</p>
             <h1>Únete a la red</h1>
-            <p>Completa tu información para crear una cuenta conectada con Supabase.</p>
+            <p>Completa tu información para crear tu cuenta de multiplicador o pastor/directivo.</p>
           </div>
 
           <div className="auth-stepper">

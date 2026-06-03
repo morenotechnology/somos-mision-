@@ -17,9 +17,9 @@ import BrandLogo from '../components/common/BrandLogo';
 import { useAppStore } from '../store/useAppStore';
 
 const roleHints = [
-  { label: 'Multiplicadores', desc: 'Embajadores digitales con progreso y ranking.', Icon: Users },
-  { label: 'Pastores/Directivos', desc: 'Supervisión territorial, métricas y publicaciones oficiales.', Icon: ShieldCheck },
-  { label: 'IPUC', desc: 'Un solo ecosistema nacional para coordinar misión.', brand: true },
+  { label: 'Multiplicador', desc: 'Lee contenido oficial y comparte avance.', Icon: Users },
+  { label: 'Pastor/Directivo', desc: 'Publica contenido y revisa métricas.', Icon: ShieldCheck },
+  { label: 'Red IPUC', desc: 'Una señal nacional para coordinar misión.', brand: true },
 ];
 
 function AuthBrandPanel() {
@@ -38,9 +38,9 @@ function AuthBrandPanel() {
 
         <div className="auth-brand-copy">
           <p>Acceso seguro</p>
-          <h2>Inicia sesión con tu cuenta real de embajador.</h2>
+          <h2>Entra con tu cuenta de multiplicador o de pastor/directivo.</h2>
           <span>
-            Tu autenticación vive en Supabase y tu perfil se sincroniza con misión, ranking y contenido compartido.
+            Accede a tu panel, contenido oficial, ranking y avance nacional desde un solo lugar.
           </span>
         </div>
 
@@ -128,7 +128,7 @@ export default function Login() {
           <div className="auth-card-header">
             <p className="auth-eyebrow">Acceso real</p>
             <h1>Iniciar sesión</h1>
-            <p>Usa tu correo y contraseña para entrar a la plataforma conectada con Supabase.</p>
+            <p>Usa tu correo y contraseña para entrar con tu cuenta de multiplicador o de pastor/directivo.</p>
           </div>
 
           <form onSubmit={handleLogin} className="auth-form">
