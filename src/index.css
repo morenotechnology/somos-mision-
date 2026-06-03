@@ -3070,8 +3070,9 @@ body {
     z-index: 4;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 13px 14px;
+    justify-content: center;
+    text-align: center;
+    padding: 15px 18px;
     border-radius: 20px;
     border: 1px solid rgba(255,255,255,0.28);
     background: rgba(6,10,42,0.68);
@@ -3083,16 +3084,6 @@ body {
   .ln-mobile-hero-status svg {
     color: white;
     flex: 0 0 auto;
-  }
-
-  .ln-mobile-status-logo {
-    width: 48px;
-    height: 36px;
-    flex: 0 0 auto;
-    display: inline-flex;
-    padding: 5px;
-    border-radius: 13px;
-    background: rgba(255,255,255,0.92);
   }
 
   .ln-mobile-hero-status span,

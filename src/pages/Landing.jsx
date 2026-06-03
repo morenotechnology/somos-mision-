@@ -201,7 +201,6 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
         <img src="/hero-map.png" alt="" className="ln-mobile-hero-map" />
         <img src="/bg-palmas.png" alt="" className="ln-mobile-hero-photo" />
         <div className="ln-mobile-hero-status">
-          <span className="ln-mobile-status-logo"><BrandLogo decorative /></span>
           <div>
             <span>Red Nacional IPUC</span>
             <strong>{metrics.totalEmbajadores.toLocaleString()} embajadores activos</strong>
@@ -467,7 +466,7 @@ function CoordinationsSection({ coordinations }) {
       <div className="ln-container">
         <motion.div {...fadeUp(0)} className="ln-band-header">
           <p className="ln-eyebrow"><Globe size={13} strokeWidth={2.5} /> Coordinaciones</p>
-          <h2>Áreas misionales con identidad propia</h2>
+          <h2>Coordinaciones nacionales</h2>
           <p className="ln-band-desc">Cada coordinación comparte el mismo sistema de contenido, actividad y medición.</p>
         </motion.div>
         <div className="ln-coord-grid">
