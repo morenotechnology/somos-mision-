@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, Award, Medal, Trophy } from 'lucide-react';
+import { Award, Crown, Filter, Globe2, Medal, Sparkles, Trophy, Users, Zap } from 'lucide-react';
 import RankingCard from '../components/ranking/RankingCard';
 import { api } from '../api';
+import { formatNumber } from '../utils/helpers';
 
 const tabs = ['Nacional', 'Por Región'];
 const medalConfig = [
@@ -12,25 +13,33 @@ const medalConfig = [
 ];
 
 function Podium({ top3 }) {
-  const order = [top3[1], top3[0], top3[2]];
-  const heights = ['h-24', 'h-32', 'h-20'];
-  const medals = [medalConfig[1], medalConfig[0], medalConfig[2]];
+  const order = top3.length >= 3 ? [top3[1], top3[0], top3[2]] : top3;
+  const medals = top3.length >= 3 ? [medalConfig[1], medalConfig[0], medalConfig[2]] : medalConfig;
 
   return (
-    <div className="flex items-end justify-center gap-4 mb-8">
+    <div className="rank-podium-pro">
       {order.map((user, index) => {
         const medal = medals[index];
         const MedalIcon = medal.Icon;
+        const actualPosition = top3.indexOf(user) + 1;
         return (
-          <motion.div key={user.id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.15 + 0.2, type: 'spring', bounce: 0.35 }} className="flex flex-col items-center gap-2">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: medal.bg, boxShadow: medal.shadow }}><MedalIcon size={14} className="text-white" strokeWidth={2.5} /></div>
-            <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm ring-2" style={{ background: user.avatarColor, ringColor: medal.color, boxShadow: `0 0 0 2px ${medal.color}` }}>{user.avatar}</div>
-            <div className="text-center">
-              <p className="text-[#0F172A] text-xs font-bold">{user.name.split(' ')[0]}</p>
-              <div className="flex items-center gap-0.5 justify-center mt-0.5"><Zap size={10} className="text-[#D4AF37]" fill="#D4AF37" /><span className="text-[10px] font-bold text-[#D4AF37]">{user.xp.toLocaleString()}</span></div>
+          <motion.article
+            key={user.id}
+            initial={{ opacity: 0, y: 32, rotate: actualPosition === 1 ? 0 : -2 }}
+            animate={{ opacity: 1, y: 0, rotate: actualPosition === 1 ? 0 : -2 }}
+            transition={{ delay: index * 0.11 + 0.15, type: 'spring', bounce: 0.36 }}
+            className={`rank-podium-card position-${actualPosition}`}
+          >
+            <div className="rank-podium-orb" style={{ background: medal.bg, boxShadow: medal.shadow }}>
+              <MedalIcon size={15} className="text-white" strokeWidth={2.5} />
             </div>
-            <div className={`w-20 ${heights[index]} rounded-t-2xl flex items-center justify-center`} style={{ background: `${medal.color}18`, border: `2px solid ${medal.color}40` }}><span className="text-2xl font-black" style={{ color: medal.color }}>{medal.label}</span></div>
-          </motion.div>
+            <div className="rank-podium-avatar" style={{ background: user.avatarColor, boxShadow: `0 0 0 3px ${medal.color}44` }}>
+              {user.avatar}
+            </div>
+            <strong>{user.name.split(' ')[0]}</strong>
+            <span><Zap size={12} fill="currentColor" strokeWidth={0} />{formatNumber(user.xp)} XP</span>
+            <small>#{actualPosition}</small>
+          </motion.article>
         );
       })}
     </div>
@@ -59,40 +68,112 @@ export default function Ranking() {
   }, [tab, regionFilter]);
 
   const top3 = users.slice(0, 3);
+  const leader = users[0];
+  const totalXp = users.reduce((sum, user) => sum + Number(user.xp || 0), 0);
+  const activeRegions = new Set(users.map((user) => user.region).filter(Boolean)).size;
 
   return (
-    <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center gap-2 mb-1"><Trophy size={20} className="text-[#D4AF37]" /><h2 className="text-2xl font-black text-[#0F172A]">Hall de Honor</h2></div>
-        <p className="text-[#475569] text-sm">Los embajadores más activos de toda Colombia.</p>
-      </motion.div>
-
-      <div className="flex gap-2">
-        {tabs.map((item) => (
-          <button key={item} onClick={() => setTab(item)} className={`px-4 py-2 rounded-xl text-sm font-semibold transition ${tab === item ? 'bg-[#1A237E] text-white' : 'bg-white text-[#475569] hover:bg-[#F5F7FA] border border-[#E2E8F0]'}`}>
-            {item}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'Por Región' && (
-        <select className="input-base max-w-xs" value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)}>
-          <option value="">Todas las regiones</option>
-          {regions.map((region) => <option key={region.id} value={region.id}>{region.name}</option>)}
-        </select>
-      )}
-
-      {top3.length >= 3 && (
-        <div className="card p-6">
-          <h3 className="text-center font-bold text-[#0F172A] mb-6">Podio de Honor</h3>
-          <Podium top3={top3} />
+    <div className="rank-pro-page">
+      <motion.section
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        className="rank-hero-pro"
+      >
+        <div className="rank-hero-copy">
+          <p className="rank-kicker"><Trophy size={15} /> Hall de honor nacional</p>
+          <h2>La mesa alta de los multiplicadores</h2>
+          <span>Reconoce a quienes están moviendo contenido, misiones y avance en toda Colombia.</span>
         </div>
+
+        <div className="rank-hero-leader">
+          <div className="rank-leader-crown"><Crown size={18} fill="currentColor" strokeWidth={0} /></div>
+          <div className="rank-leader-avatar" style={{ background: leader?.avatarColor || '#1A237E' }}>
+            {leader?.avatar || 'SM'}
+          </div>
+          <div>
+            <small>Líder actual</small>
+            <strong>{leader?.name || 'Aún sin ranking'}</strong>
+            <span><Zap size={14} fill="currentColor" strokeWidth={0} />{formatNumber(leader?.xp || 0)} XP</span>
+          </div>
+        </div>
+      </motion.section>
+
+      <section className="rank-signal-grid">
+        {[
+          { label: 'Participantes', value: users.length, Icon: Users, tone: '#1A237E' },
+          { label: 'XP visible', value: formatNumber(totalXp), Icon: Zap, tone: '#D4AF37' },
+          { label: 'Regiones', value: activeRegions || regions.length, Icon: Globe2, tone: '#00838F' },
+        ].map((item, index) => (
+          <motion.article
+            key={item.label}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 + index * 0.08 }}
+            className="rank-signal-card"
+            style={{ '--rank-tone': item.tone }}
+          >
+            <item.Icon size={18} />
+            <strong>{item.value}</strong>
+            <span>{item.label}</span>
+          </motion.article>
+        ))}
+      </section>
+
+      <div className="rank-controls-pro">
+        <div className="rank-tab-group">
+          {tabs.map((item) => (
+            <button key={item} onClick={() => setTab(item)} className={tab === item ? 'is-active' : ''}>
+              {item}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'Por Región' && (
+          <label className="rank-filter-pro">
+            <Filter size={15} />
+            <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)}>
+              <option value="">Todas las regiones</option>
+              {regions.map((region) => <option key={region.id} value={region.id}>{region.name}</option>)}
+            </select>
+          </label>
+        )}
+      </div>
+
+      {top3.length > 0 && (
+        <section className="rank-podium-shell">
+          <div className="rank-section-head">
+            <div>
+              <p><Sparkles size={13} /> Top de impacto</p>
+              <h3>Podio en movimiento</h3>
+            </div>
+            <span>{top3.length} destacados</span>
+          </div>
+          <Podium top3={top3} />
+        </section>
       )}
 
-      <div className="space-y-2">
-        <h3 className="font-bold text-[#0F172A] mb-3">Clasificación completa</h3>
-        {users.map((user, index) => <RankingCard key={user.id} user={user} position={index + 1} delay={index * 0.04} />)}
-      </div>
+      <section className="rank-list-panel">
+        <div className="rank-section-head">
+          <div>
+            <p><Medal size={13} /> Clasificación completa</p>
+            <h3>{tab === 'Por Región' && regionFilter ? 'Ranking regional' : 'Ranking nacional'}</h3>
+          </div>
+          <span>{users.length} perfiles</span>
+        </div>
+
+        <div className="rank-list-pro">
+          {users.length ? (
+            users.map((user, index) => <RankingCard key={user.id} user={user} position={index + 1} delay={index * 0.045} />)
+          ) : (
+            <div className="rank-empty-state">
+              <Trophy size={22} />
+              <strong>Aún no hay registros para este filtro</strong>
+              <span>Cuando empiece la actividad, el ranking se llenará automáticamente.</span>
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

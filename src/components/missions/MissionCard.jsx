@@ -12,24 +12,28 @@ const statusConfig = {
 
 const typeLabels = { daily: 'Diaria', weekly: 'Semanal', special: 'Especial' };
 const typeTone = { daily: 'is-daily', weekly: 'is-weekly', special: 'is-special' };
+const typeAccent = { daily: '#1A237E', weekly: '#6A1B9A', special: '#D4AF37' };
 
 export default function MissionCard({ mission, delay = 0 }) {
   const { completeMission, completedMissions } = useAppStore();
   const isDone = completedMissions.includes(mission.id) || mission.status === 'completed';
-  const cfg = statusConfig[isDone ? 'completed' : mission.status];
+  const cfg = statusConfig[isDone ? 'completed' : mission.status] || statusConfig.pending;
   const StatusIcon = cfg.Icon;
   const progress = mission.progress != null ? mission.progress : (isDone ? mission.goal : 0);
   const pct = Math.min((progress / mission.goal) * 100, 100);
+  const accent = typeAccent[mission.type] || '#1A237E';
 
   return (
     <motion.div
       initial={{ opacity: 0, x: -16 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay, duration: 0.35 }}
-      className={`mission-card-pro ${cfg.tone}`}
+      whileHover={mission.status !== 'locked' ? { y: -4, scale: 1.01 } : {}}
+      className={`mission-card-pro ${cfg.tone} ${typeTone[mission.type] || ''}`}
+      style={{ '--mission-tone': accent }}
     >
       <div className="mission-card-icon">
-        <LucideIcon name={mission.icon} size={18} className="text-[#1A237E]" />
+        <LucideIcon name={mission.icon} size={19} className="mission-card-symbol" />
       </div>
 
       <div className="mission-card-body">
