@@ -1,0 +1,244 @@
+========================================================================
+ SOMOS MISION COLOMBIA - BACKEND, MOCK API E INTEGRACION
+========================================================================
+
+Fecha: 2026-05-15
+Estado: Backend mock listo, API client listo, variables de entorno listas.
+
+
+1. ARCHIVOS AGREGADOS
+------------------------------------------------------------------------
+
+Backend mock:
+  backend/mock-api.js
+  backend/dev-with-mock.js
+
+Cliente frontend:
+  src/api/index.js
+  src/api/httpClient.js
+  src/api/httpAdapter.js
+  src/api/mockAdapter.js
+  src/api/supabaseAdapter.js
+
+Configuracion:
+  .env.example
+  vite.config.js                 proxy /api -> http://127.0.0.1:8787
+  package.json                   scripts mock:api y dev:mock
+
+
+2. MODOS DE API
+------------------------------------------------------------------------
+
+VITE_API_MODE=mock
+  Usa src/api/mockAdapter.js.
+  No requiere servidor. Ideal para desarrollo rapido o demos offline.
+
+VITE_API_MODE=http
+  Usa src/api/httpAdapter.js.
+  Requiere backend/mock-api.js o un backend real compatible.
+  En local, Vite proxya /api hacia http://127.0.0.1:8787.
+
+VITE_API_MODE=supabase
+  Reservado para la integracion final.
+  El adapter existe como placeholder para instalar @supabase/supabase-js
+  y mapear las llamadas al schema real.
+
+
+3. SETUP LOCAL
+------------------------------------------------------------------------
+
+1) Crear variables locales:
+
+   cp .env.example .env.local
+
+2) Para usar mock frontend sin servidor:
+
+   VITE_API_MODE=mock
+   npm run dev
+
+3) Para usar mock API HTTP:
+
+   VITE_API_MODE=http
+   npm run dev:mock
+
+   Esto levanta:
+   - Vite en http://127.0.0.1:5173 o el siguiente puerto libre
+   - Mock API en http://127.0.0.1:8787/api
+
+4) Para levantar solo el backend mock:
+
+   npm run mock:api
+
+
+4. ENDPOINTS PRINCIPALES DEL MOCK API
+------------------------------------------------------------------------
+
+Sistema:
+  GET  /api/health
+  GET  /api/bootstrap
+  GET  /api/schema
+
+Auth:
+  POST /api/auth/login
+       body: { "role": "multiplicador" | "pastor" | "admin" }
+
+  POST /api/auth/register
+       body: {
+         "name": "Nombre",
+         "email": "correo@ipuc.org",
+         "role": "multiplicador",
+         "region": "r3",
+         "district": "d5",
+         "congregation": "Bogota Centro Vivo"
+       }
+
+Dashboard y contenido:
+  GET  /api/dashboard?role=multiplicador
+  GET  /api/hub?q=misiones&format=imagen&coordination=c8
+  GET  /api/ranking
+  GET  /api/content
+  GET  /api/content/:id
+  POST /api/content/:id/share
+
+Misiones:
+  GET  /api/missions
+  POST /api/missions/:id/complete
+
+Tablas tipo schema:
+  GET    /api/perfiles
+  GET    /api/perfiles/:id
+  PATCH  /api/perfiles/:id
+
+  GET    /api/congregaciones
+  GET    /api/publicaciones
+  POST   /api/publicaciones
+
+  GET    /api/comunicados-nacionales
+  GET    /api/victorias
+  GET    /api/compartidos
+  GET    /api/reacciones
+  GET    /api/comentarios
+  GET    /api/actividad-xp
+  GET    /api/metas-globales
+  GET    /api/seguidores
+  GET    /api/codigos-roles
+  GET    /api/llaves
+
+
+5. COMO CONECTAR LAS PANTALLAS AL API CLIENT
+------------------------------------------------------------------------
+
+La app todavia puede seguir usando mockData.js directo mientras se migra por
+pantalla. La nueva capa recomendada es:
+
+  import { api } from '../api';
+
+Ejemplos:
+
+  const dashboard = await api.dashboard.get({
+    role: currentUser.role,
+    userId: currentUser.id,
+  });
+
+  const hub = await api.hub.list({
+    q: query,
+    format,
+    coordination: coord,
+    sort,
+  });
+
+  const loginResult = await api.auth.login({ role });
+
+  await api.content.share(contentId, {
+    usuario_id: currentUser.schemaId,
+    red_social: 'whatsapp',
+  });
+
+Orden sugerido de migracion:
+  1. Login y Register -> api.auth.login / api.auth.register
+  2. Dashboard -> api.dashboard.get
+  3. Hub -> api.hub.list y api.content.share
+  4. Ranking -> api.ranking.list
+  5. Profile/Admin -> api.perfiles, api.publicaciones, api.social
+
+
+6. INTEGRACION CON SUPABASE
+------------------------------------------------------------------------
+
+Cuando la base real este lista:
+
+1) Instalar cliente:
+
+   npm install @supabase/supabase-js
+
+2) Configurar variables:
+
+   VITE_API_MODE=supabase
+   VITE_SUPABASE_URL=https://xxxxx.supabase.co
+   VITE_SUPABASE_ANON_KEY=xxxxx
+
+3) Implementar src/api/supabaseAdapter.js con estas tablas:
+
+   perfiles
+   congregaciones
+   publicaciones
+   comunicados_nacionales
+   victorias
+   compartidos
+   reacciones
+   comentarios
+   actividad_xp
+   seguidores
+   metas_globales
+   codigos_roles
+   llaves
+
+4) Mantener la interfaz publica del adapter:
+
+   api.auth.login()
+   api.auth.register()
+   api.dashboard.get()
+   api.hub.list()
+   api.ranking.list()
+   api.content.share()
+   api.missions.complete()
+   api.perfiles.list/get/update()
+   api.publicaciones.list/create()
+
+Asi las pantallas no dependen de si el origen es mock, HTTP o Supabase.
+
+
+7. VARIABLES EN VERCEL
+------------------------------------------------------------------------
+
+Para deploy frontend con mock local:
+  VITE_API_MODE=mock
+
+Para deploy frontend conectado a backend HTTP:
+  VITE_API_MODE=http
+  VITE_API_BASE_URL=https://tu-backend.com/api
+
+Para deploy con Supabase:
+  VITE_API_MODE=supabase
+  VITE_SUPABASE_URL=...
+  VITE_SUPABASE_ANON_KEY=...
+
+No subir .env ni .env.local al repo. Usar .env.example como plantilla.
+
+
+8. CHECKLIST DE IMPLEMENTACION
+------------------------------------------------------------------------
+
+[ ] Copiar .env.example a .env.local
+[ ] Elegir VITE_API_MODE
+[ ] Probar npm run lint
+[ ] Probar npm run build
+[ ] Probar npm run mock:api y GET /api/health
+[ ] Migrar pantallas desde mockData.js hacia src/api
+[ ] Conectar auth real cuando Supabase este listo
+[ ] Agregar RLS policies en Supabase antes de produccion
+[ ] Configurar variables de entorno en Vercel
+
+========================================================================
+ FIN
+========================================================================

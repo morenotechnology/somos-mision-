@@ -1,0 +1,355 @@
+
+
+═══════════════════════════════════════════════════════════════════════
+  HANDOFF DOCUMENT — SOMOS MISIÓN COLOMBIA · IPUC
+  Para: Siguiente agente IA / MCP que continúe este proyecto
+  Última actualización: 2026-05-08
+  Estado: MVP COMPLETO — BUILD OK — SIN EMOJIS — CON PERSIST
+═══════════════════════════════════════════════════════════════════════
+
+## CONTEXTO DEL PROYECTO
+
+Nombre: Somos Misión Colombia
+Tipo: SaaS Premium — Red de Embajadores Digitales
+Cliente: Misiones Nacionales de la IPUC (Iglesia Pentecostal Unida de Colombia)
+Propósito: Plataforma de gestión, distribución de contenido y gamificación
+           para una red de ~5.000 embajadores digitales.
+
+## UBICACIÓN Y COMANDOS
+
+Ruta absoluta:
+  /Users/morenotechnology/mision/somos-mision-app
+
+Comandos clave:
+  npm run dev      → Dev server en http://localhost:5173
+  npm run build    → Build de producción (pasa OK, cero errores)
+  npm run preview  → Previsualizar build de producción
+
+## STACK TECNOLÓGICO
+
+- React 19 + Vite 8
+- Tailwind CSS v4 (via @tailwindcss/vite — NO tailwind.config.js)
+- Framer Motion (animaciones)
+- React Router DOM v7 (routing)
+- Zustand + zustand/persist (estado global con persistencia en localStorage)
+- Recharts (gráficos: AreaChart, BarChart, PieChart)
+- Lucide React (TODOS los iconos — cero emojis en UI)
+- React Hot Toast (notificaciones tipo toast)
+- Date-fns (fechas — importado pero disponible)
+
+## ESTRUCTURA DE CARPETAS (COMPLETA Y ACTUALIZADA)
+
+src/
+├── App.jsx                              ← Router principal (lazy loading + Suspense)
+├── main.jsx                             ← Entry point React
+├── index.css                            ← Sistema de diseño (variables CSS, utilities, Tailwind)
+│
+├── data/
+│   └── mockData.js                      ← Mock data completo:
+│                                          - users (8 usuarios: 6 mult, 2 pastor, 1 admin)
+│                                          - contentItems (6 contenidos con gradientes)
+│                                          - missions (7 misiones: diarias/semanales/especiales)
+│                                          - badges (8 insignias con iconos Lucide string)
+│                                          - coordinations (8 coordinaciones con iconos Lucide)
+│                                          - regions (6 regiones de Colombia)
+│                                          - districts (10 distritos)
+│                                          - globalMetrics (KPIs nacionales)
+│                                          - weeklyActivity (datos para gráficos)
+│                                          - regionActivity (datos por región)
+│
+├── store/
+│   └── useAppStore.js                   ← Zustand store con persist middleware:
+│                                          - auth: currentUser, isAuthenticated, login(), logout()
+│                                          - XP: addXP(), xpNotification
+│                                          - sidebar: sidebarOpen, toggleSidebar()
+│                                          - mobile: mobileSidebarOpen, setMobileSidebar()
+│                                          - sharing: sharedContent[], shareContent()
+│                                          - missions: completedMissions[], completeMission()
+│                                          - notifications: notificationsOpen, toggleNotifications()
+│                                          PERSISTE en localStorage: auth, sharing, missions, sidebar
+│
+├── utils/
+│   └── helpers.js                       ← xpProgress, getLevelTitle, xpToNextLevel,
+│                                          formatNumber, medalColor, truncate, timeAgo
+│
+├── components/
+│   ├── layout/
+│   │   ├── AppLayout.jsx                ← Layout principal (Sidebar + Topbar + Outlet + XPNotif)
+│   │   ├── Sidebar.jsx                  ← Sidebar desktop colapsable (256px ↔ 72px), Framer Motion
+│   │   ├── MobileSidebar.jsx            ← Drawer lateral móvil con overlay animado
+│   │   ├── Topbar.jsx                   ← Header sticky con NotificationPanel integrado
+│   │   └── BottomNav.jsx                ← Nav inferior móvil (5 tabs)
+│   │
+│   ├── common/
+│   │   ├── StatCard.jsx                 ← Card de estadística: icon, label, value, sub, color
+│   │   ├── XPNotification.jsx           ← Toast flotante dorado al ganar XP
+│   │   ├── LucideIcon.jsx               ← Renderer dinámico: <LucideIcon name="Flame" size={20} />
+│   │   ├── EmptyState.jsx               ← Estado vacío: icon, title, description, action
+│   │   ├── LoadingSkeleton.jsx          ← Skeletons: ContentCardSkeleton, StatCardSkeleton,
+│   │   │                                  RankingCardSkeleton, TableRowSkeleton, SkeletonBox
+│   │   ├── Modal.jsx                    ← Modal animado: open, onClose, title, size (sm/md/lg/xl)
+│   │   └── NotificationPanel.jsx        ← Panel dropdown de notificaciones (5 mock notifs)
+│   │
+│   ├── content/
+│   │   └── ContentCard.jsx              ← Card: gradiente, copiar texto, compartir WhatsApp, +XP
+│   │
+│   ├── missions/
+│   │   └── MissionCard.jsx              ← Card: LucideIcon, progreso animado, estados, completar
+│   │
+│   └── ranking/
+│       └── RankingCard.jsx              ← Card: posición, avatar, nombre, XP, medallas top 3
+│
+└── pages/
+    ├── Landing.jsx                      ← Landing pública (hero, metrics, how-it-works,
+    │                                      coordinaciones, ranking teaser, visión, CTA)
+    ├── Login.jsx                        ← Login split-layout + selector de rol + link forgot pw
+    ├── Register.jsx                     ← Registro multi-step (3 pasos con progress bar)
+    ├── ForgotPassword.jsx               ← Recuperar contraseña + estado de confirmación
+    ├── Dashboard.jsx                    ← Dashboard x3 roles (multiplicador/pastor/admin)
+    ├── Hub.jsx                          ← Hub de contenido con búsqueda y filtros
+    ├── Ranking.jsx                      ← Hall de Honor con podio animado
+    ├── Missions.jsx                     ← Misiones + galería de insignias con LucideIcon
+    ├── Profile.jsx                      ← Perfil con chart, badges, actividad
+    ├── Admin.jsx                        ← Admin: analítica, contenido, usuarios, misiones
+    └── NotFound.jsx                     ← 404 personalizado
+
+## RUTAS CONFIGURADAS
+
+Públicas:
+  /                → Landing
+  /login           → Login (selector de rol demo)
+  /register        → Registro 3 pasos
+  /forgot-password → Recuperar contraseña
+  *                → NotFound (404)
+
+Protegidas (requieren isAuthenticated === true):
+  /dashboard       → Dashboard adaptativo según rol
+  /hub             → Hub de Contenido
+  /ranking         → Ranking Nacional
+  /missions        → Misiones & Recompensas
+  /profile         → Mi Perfil
+  /admin           → Panel Admin
+
+## USUARIOS DEMO (para probar cada rol)
+
+Accede a /login, selecciona el rol y haz clic en "Entrar":
+  admin@ipuc.org   → Admin       → Dashboard Admin + acceso a /admin
+  maria@ipuc.org   → Pastor      → Dashboard Pastor con vista de región
+  carlos@ipuc.org  → Multiplicador → Dashboard completo con XP, misiones, badges
+
+El store persiste en localStorage ("somos-mision-store").
+Para resetear: localStorage.clear() en la consola del navegador.
+
+## SISTEMA DE ICONOS (IMPORTANTE)
+
+TODOS los iconos usan Lucide React. CERO emojis en la UI.
+
+Para iconos data-driven (badges, missions, coordinations):
+  - En mockData.js se almacena el nombre como string: icon: 'Flame'
+  - Para renderizarlos usar el componente LucideIcon:
+    import { LucideIcon } from '../components/common/LucideIcon';
+    <LucideIcon name="Flame" size={18} style={{ color: '#E65100' }} />
+
+## SISTEMA DE DISEÑO
+
+Colores:
+  --primary:    #1A237E  (Azul profundo IPUC)
+  --secondary:  #D4AF37  (Oro — XP, badges, prestigio)
+  --accent:     #5C1800  (Rojo oscuro — alertas)
+  --bg:         #F5F7FA  (Fondo general)
+  --text:       #0F172A  (Texto principal)
+  --text-muted: #475569  (Texto secundario)
+  --border:     #E2E8F0  (Bordes)
+
+Clases CSS globales (en index.css):
+  .card          → bg-white, rounded-20px, border, shadow
+  .card-hover    → lift animation on hover
+  .btn-primary   → gradiente azul oscuro
+  .btn-gold      → gradiente dorado
+  .input-base    → input estilizado con focus ring
+  .glass         → glassmorphism claro
+  .glass-dark    → glassmorphism oscuro
+  .hero-gradient → gradiente hero azul oscuro
+  .gold-shimmer  → texto dorado animado
+  .skeleton      → skeleton loader animado
+
+Tipografía: Inter (cargada en index.html vía Google Fonts)
+
+## ZUSTAND STORE — ACCIONES DISPONIBLES
+
+  login(role)              → loguea como 'admin' | 'pastor' | 'multiplicador'
+  logout()                 → desloguea y limpia sharing/missions
+  addXP(amount)            → suma XP al usuario actual + muestra notificación flotante
+  toggleSidebar()          → colapsa/expande sidebar desktop
+  setMobileSidebar(bool)   → abre/cierra drawer móvil
+  shareContent(contentId)  → registra compartido + suma 50 XP (idempotente)
+  completeMission(id, xp)  → completa misión + suma XP (idempotente)
+  toggleNotifications()    → abre/cierra panel de notificaciones
+
+## ESTADO DEL BUILD
+
+  Chunks generados (code splitting funcionando):
+  - ForgotPassword: 2.10 kB (gzip: 0.97 kB)
+  - NotFound:       2.47 kB
+  - Missions:       3.93 kB
+  - Login:          5.51 kB
+  - Hub:            6.00 kB
+  - Register:       6.41 kB
+  - Profile:        7.62 kB
+  - Dashboard:     11.22 kB
+  - Landing:       11.33 kB
+  - Admin:         26.92 kB
+  - index (core):  271 kB (gzip: 87 kB)
+  - lucide-react:  743 kB (gzip: 194 kB) ← ver pendiente
+
+## LO QUE YA ESTÁ HECHO (COMPLETO)
+
+✓ Proyecto Vite + React scaffolded y funcionando
+✓ Dependencias instaladas (Tailwind, Framer Motion, Zustand, Recharts, Lucide, etc.)
+✓ Sistema de diseño completo en index.css (colores, utilidades, animaciones)
+✓ Mock data realista (Colombia, IPUC, coordinations, regions, districts)
+✓ Zustand store CON persist (sobrevive recargas de página)
+✓ CERO emojis en la UI — todos reemplazados con Lucide React
+✓ LucideIcon renderer dinámico para iconos data-driven
+✓ Todas las rutas configuradas con lazy loading + Suspense
+✓ Layout completo (Sidebar colapsable, Topbar, MobileSidebar, BottomNav)
+✓ NotificationPanel funcional en Topbar
+✓ Landing page completa (hero, secciones, CTA — sin emojis)
+✓ Login (split layout, selector de rol, link a forgot-password)
+✓ Register (multi-step 3 pasos, regiones/distritos dinámicos)
+✓ ForgotPassword (formulario + estado de confirmación)
+✓ Dashboard x3 roles (multiplicador con XP hero card, pastor con stats región, admin con charts)
+✓ Hub de Contenido (búsqueda, filtros formato/coordinación/orden, ContentCards)
+✓ Ranking (podio animado, tabs Nacional/Región/Distrito, tabla completa)
+✓ Misiones (tabs diaria/semanal/especial, galería de badges con LucideIcon)
+✓ Perfil (banner, XP bar animada, stats, AreaChart, badges, actividad reciente)
+✓ Admin (analítica + PieChart + BarChart, gestión contenido, usuarios con búsqueda, misiones)
+✓ EmptyState, LoadingSkeleton (4 variantes), Modal, NotificationPanel
+✓ NotFound 404 personalizado
+✓ Zustand persist en localStorage
+✓ Code splitting — cada página es un chunk separado
+✓ Build de producción pasa sin errores de código
+
+## PENDIENTES (priorizados)
+
+ALTA PRIORIDAD:
+────────────────────────────────────────────────────────────────────
+□ Reducir tamaño del chunk lucide-react (743 kB)
+    Solución: importar iconos individualmente en lugar de wildcard en LucideIcon.jsx
+    Cambiar la implementación de LucideIcon para usar un mapa estático:
+    
+    import { Flame, Zap, Crown, Medal, Globe, ... } from 'lucide-react';
+    const iconMap = { Flame, Zap, Crown, Medal, Globe, ... };
+    export function LucideIcon({ name, ...props }) {
+      const Icon = iconMap[name];
+      return Icon ? <Icon {...props} /> : null;
+    }
+
+□ Conectar ForgotPassword al flujo real de auth
+    (actualmente simula envío pero no hace nada real)
+
+□ Hub → agregar vista detalle de contenido (/hub/:id)
+    Crear página ContentDetail.jsx con:
+    - Texto completo del contenido
+    - Botón copiar texto grande
+    - Botón compartir WhatsApp
+    - Botones compartir otras redes
+    - Metadata (categoria, coordinación, fecha)
+    - XP reward visible
+    
+MEDIA PRIORIDAD:
+────────────────────────────────────────────────────────────────────
+□ Ranking → implementar filtro "Por Periodo" (semana/mes/todo)
+    Actualmente las tabs están pero el filtro de periodo no funciona
+
+□ Profile → formulario real de edición
+    El botón "Editar perfil" existe pero no abre modal/formulario
+
+□ Admin → formulario de creación de contenido
+    El botón "Nuevo contenido" existe pero muestra toast de placeholder
+
+□ Admin → formulario de creación de misión
+    Similar al anterior
+
+□ Notificaciones reales
+    NotificationPanel muestra mock data. Conectar a estado real del store
+
+□ PWA (Progressive Web App)
+    Agregar public/manifest.json:
+    {
+      "name": "Somos Misión Colombia",
+      "short_name": "SomosMisión",
+      "theme_color": "#1A237E",
+      "background_color": "#F5F7FA",
+      "display": "standalone",
+      "start_url": "/dashboard"
+    }
+    Agregar vite-plugin-pwa o service worker manual
+
+□ Ranking → tabs Por Distrito y Por Región completamente funcionales
+    Actualmente "Por Región" filtra, pero "Por Distrito" no está implementado
+
+BAJA PRIORIDAD / FUTURO:
+────────────────────────────────────────────────────────────────────
+□ Backend / API real
+    Reemplazar mockData.js con llamadas a:
+    - Supabase (recomendado: auth + db + realtime + storage)
+    - O Firebase / PocketBase
+    
+□ Autenticación real (JWT o Supabase Auth)
+    
+□ Tests (Vitest + React Testing Library)
+    
+□ Analytics (Plausible o PostHog)
+    
+□ Internacionalización (i18n) — ya está en español, no urgente
+
+□ Dark mode — la paleta soporta bien dark mode, añadir toggle
+
+□ Animaciones de transición entre rutas
+    Actualmente Suspense muestra spinner. Añadir AnimatePresence en el router
+
+## INSTRUCCIONES PARA CONTINUAR
+
+1. Lee este archivo completo antes de tocar código.
+2. Inicia con: npm run dev (puerto 5173)
+3. Para probar: abre http://localhost:5173
+4. Empieza por el fix de lucide-react (reduce bundle 74%)
+5. Luego implementa /hub/:id (vista detalle de contenido)
+6. Mantén la consistencia: sin emojis, iconos Lucide, paleta #1A237E / #D4AF37
+
+## NOTAS TÉCNICAS IMPORTANTES
+
+- Tailwind v4: NO existe tailwind.config.js. La config va en index.css via @theme o directamente.
+  Los colores custom se usan como clases arbitrarias: bg-[#1A237E], text-[#D4AF37]
+  
+- Para añadir una nueva página:
+  1. Crear src/pages/NuevaPagina.jsx
+  2. Agregar lazy import en App.jsx
+  3. Agregar <Route> en App.jsx
+  4. Si es protegida: dentro del ProtectedRoute
+  5. Agregar al Sidebar si necesita nav item
+
+- Para añadir un nuevo campo al store Zustand:
+  1. Añadir el state y action en src/store/useAppStore.js
+  2. Si debe persistir, añadirlo a partialize()
+
+- Para usar skeleton loaders:
+  import { ContentCardSkeleton, StatCardSkeleton } from '../components/common/LoadingSkeleton';
+  Mostrar condicionalmente mientras loading === true
+
+- Para usar Modal:
+  import Modal from '../components/common/Modal';
+  const [open, setOpen] = useState(false);
+  <Modal open={open} onClose={() => setOpen(false)} title="Título" size="md">
+    ...contenido...
+  </Modal>
+
+═══════════════════════════════════════════════════════════════════════
+  FIN DEL DOCUMENTO
+  Estado: PRODUCCIÓN-READY MVP
+  Último build: ✓ OK (448ms, cero errores)
+  Componentes: 24 archivos JS/JSX
+  Páginas: 11 (Landing, Login, Register, ForgotPassword, Dashboard,
+             Hub, Ranking, Missions, Profile, Admin, NotFound)
+═══════════════════════════════════════════════════════════════════════
