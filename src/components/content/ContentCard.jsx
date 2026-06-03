@@ -6,11 +6,18 @@ import toast from 'react-hot-toast';
 
 const formatCount = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
 const dateFmt = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short' });
+const formatTone = {
+  imagen: '#1A237E',
+  video: '#AD1457',
+  texto: '#2E7D32',
+  carrusel: '#D4AF37',
+};
 
 export default function ContentCard({ item, delay = 0 }) {
   const { shareContent, sharedContent } = useAppStore();
   const [imgErr, setImgErr] = useState(false);
   const alreadyShared = sharedContent.includes(String(item.id));
+  const accent = formatTone[item.format] || '#1A237E';
 
   const handleCopy = () => {
     navigator.clipboard?.writeText(item.copyText)
@@ -35,64 +42,63 @@ export default function ContentCard({ item, delay = 0 }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 18, scale: 0.98 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className="content-card card card-hover flex flex-col overflow-hidden"
+      transition={{ delay, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={{ y: -5, scale: 1.01 }}
+      className={`content-card-pro ${alreadyShared ? 'is-shared' : ''}`}
+      style={{ '--content-tone': accent }}
     >
-      <div className="relative h-44 flex-shrink-0 overflow-hidden">
+      <div className="content-media-pro">
         {item.imageUrl && !imgErr ? (
           <>
-            <img src={item.imageUrl} alt={item.title} className="absolute inset-0 w-full h-full object-cover" onError={() => setImgErr(true)} loading="lazy" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#050716]/85 via-[#050716]/24 to-transparent" />
+            <img src={item.imageUrl} alt={item.title} onError={() => setImgErr(true)} loading="lazy" />
+            <div className="content-media-overlay" />
           </>
         ) : (
-          <div className="absolute inset-0 grad-primary" />
+          <div className="content-media-fallback" />
         )}
 
-        <div className="absolute left-3 top-3 flex items-center gap-2">
-          <span className="content-chip bg-white/18 text-white backdrop-blur-md capitalize">{item.format}</span>
+        <div className="content-chip-row">
+          <span className="content-format-chip">{item.format}</span>
           {item.coordinationName && (
-            <span className="content-chip bg-white/18 text-white backdrop-blur-md">{item.coordinationName}</span>
+            <span className="content-glass-chip">{item.coordinationName}</span>
           )}
         </div>
 
         {item.featured && (
-          <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-[#D4AF37] text-[#0D1257] text-[10px] font-bold px-2.5 py-1 rounded-full shadow-md">
+          <div className="content-featured-chip">
             <Star size={10} fill="currentColor" />
             Destacado
           </div>
         )}
 
-        <div className="absolute bottom-3 left-3 right-3">
-          <span className="content-chip bg-white text-[#1A237E]">{item.category}</span>
+        <div className="content-category-row">
+          <span>{item.category}</span>
         </div>
       </div>
 
-      <div className="p-4 flex flex-col flex-1">
-        <div className="flex items-center justify-between gap-3 mb-2">
-          <span className="t-caption">{dateFmt.format(new Date(item.createdAt))}</span>
-          <div className="flex items-center gap-1 bg-[#FBF6E2] px-2.5 py-1 rounded-full border border-[#D4AF37]/25">
-            <Zap size={11} className="text-[#D4AF37]" fill="#D4AF37" />
-            <span className="text-[10px] font-black text-[#8B6914]">+{item.xpReward} XP</span>
-          </div>
+      <div className="content-card-body-pro">
+        <div className="content-card-meta-pro">
+          <span>{dateFmt.format(new Date(item.createdAt))}</span>
+          <strong><Zap size={12} fill="currentColor" strokeWidth={0} />+{item.xpReward} XP</strong>
         </div>
 
-        <h3 className="text-[15px] font-bold leading-snug mb-1.5 line-clamp-2" style={{ color: 'var(--text)' }}>{item.title}</h3>
-        <p className="text-xs leading-relaxed line-clamp-2 flex-1 mb-4" style={{ color: 'var(--text-3)' }}>{item.description}</p>
+        <h3>{item.title}</h3>
+        <p>{item.description}</p>
 
-        <div className="flex items-center gap-3 mb-4 text-xs" style={{ color: 'var(--text-4)' }}>
-          <span className="flex items-center gap-1"><Send size={11} />{formatCount(item.shares)}</span>
-          <span className="flex items-center gap-1"><Heart size={11} />{formatCount(item.likes)}</span>
-          <span className="ml-auto flex items-center gap-1"><MessageCircle size={11} />Oficial</span>
+        <div className="content-engagement-pro">
+          <span><Send size={12} />{formatCount(item.shares)}</span>
+          <span><Heart size={12} />{formatCount(item.likes)}</span>
+          <span><MessageCircle size={12} />Oficial</span>
         </div>
 
-        <div className="flex gap-2">
-          <button type="button" onClick={handleCopy} className="action-button action-button-ghost flex-1">
-            <Copy size={13} /> Copiar
+        <div className="content-actions-pro">
+          <button type="button" onClick={handleCopy} className="content-action-ghost">
+            <Copy size={14} /> Copiar
           </button>
-          <button type="button" onClick={handleShare} className={`action-button flex-1 ${alreadyShared ? 'bg-[#DCFCE7] text-[#16A34A] border border-[#BBF7D0]' : 'action-button-primary'}`}>
-            <Send size={13} />
+          <button type="button" onClick={handleShare} className={`content-action-primary ${alreadyShared ? 'is-shared' : ''}`}>
+            <Send size={14} />
             {alreadyShared ? 'Compartido' : 'Compartir'}
           </button>
         </div>

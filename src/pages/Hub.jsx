@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Building2, Filter, Megaphone, Search, SearchX, Send, SlidersHorizontal } from 'lucide-react';
+import { BookOpen, Building2, Filter, Megaphone, Search, SearchX, Send, SlidersHorizontal, Sparkles, Star, TrendingUp, Zap } from 'lucide-react';
 import ContentCard from '../components/content/ContentCard';
 import EmptyState from '../components/common/EmptyState';
 import { api } from '../api';
+import { formatNumber } from '../utils/helpers';
 
 const formats = ['Todos', 'imagen', 'video', 'texto', 'carrusel'];
 const sorts = ['Recientes', 'Populares', 'Destacados'];
@@ -40,66 +41,110 @@ export default function Hub() {
     { label: 'Comunicados', value: data.schemaMetrics.comunicadosActivos || 0, Icon: Megaphone, color: '#5C1800' },
     { label: 'Congregaciones', value: data.schemaMetrics.congregaciones || 0, Icon: Building2, color: '#2E7D32' },
   ];
+  const featuredCount = data.items.filter((item) => item.featured).length;
+  const xpAvailable = data.items.reduce((sum, item) => sum + Number(item.xpReward || 0), 0);
 
   return (
-    <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="page-header">
-        <div className="flex items-start gap-4">
-          <div className="icon-box icon-box-lg bg-[#EEF0FF] text-[#1A237E]"><BookOpen size={22} /></div>
-          <div className="min-w-0"><p className="eyebrow">Contenido nacional</p><h2 className="page-title">Hub de Contenido</h2><p className="page-subtitle">Publicaciones oficiales listas para copiar, filtrar y compartir.</p></div>
+    <div className="content-hub-page">
+      <motion.section
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.52, ease: [0.22, 1, 0.36, 1] }}
+        className="content-hub-hero"
+      >
+        <div className="content-hub-hero-copy">
+          <div className="content-hub-orb"><BookOpen size={26} /></div>
+          <p className="content-hub-kicker"><Sparkles size={14} /> Contenido nacional</p>
+          <h2>Hub de Contenido</h2>
+          <span>Piezas oficiales listas para copiar, adaptar y compartir desde una sola biblioteca misionera.</span>
         </div>
 
-        <div className="hub-stat-grid">
+        <div className="content-hub-stat-grid">
           {hubStats.map(({ label, value, Icon, color }, index) => (
-            <motion.div key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 + index * 0.04 }} className="schema-stat">
-              <span className="schema-stat-icon" style={{ background: `${color}16`, color }}><Icon size={15} /></span>
-              <span><strong>{value.toLocaleString()}</strong><small>{label}</small></span>
-            </motion.div>
+            <motion.article
+              key={label}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08 + index * 0.045 }}
+              className="content-hub-stat"
+              style={{ '--content-stat-color': color }}
+            >
+              <div><Icon size={17} /></div>
+              <strong>{formatNumber(value)}</strong>
+              <span>{label}</span>
+            </motion.article>
           ))}
         </div>
-      </motion.div>
+      </motion.section>
 
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="toolbar-panel">
-        <div className="toolbar-row">
-          <div className="relative flex-1 min-w-[220px]">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-4)' }} />
-            <input className="input-base pl-10" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por título o descripción..." />
-          </div>
+      <motion.section
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08 }}
+        className="content-toolbar-pro"
+      >
+        <div className="content-search-row">
+          <label className="content-search-pro">
+            <Search size={17} />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar campaña, testimonio o comunicado..." />
+          </label>
 
-          <div className="filter-select-wrap">
-            <Filter size={14} />
-            <select className="filter-select" value={coord} onChange={(e) => setCoord(e.target.value)}>
+          <label className="content-filter-pro">
+            <Filter size={16} />
+            <select value={coord} onChange={(e) => setCoord(e.target.value)}>
               <option value="">Todas las coordinaciones</option>
               {data.coordinations.map((coordination) => <option key={coordination.id} value={coordination.id}>{coordination.name}</option>)}
             </select>
-          </div>
+          </label>
         </div>
 
-        <div className="toolbar-row toolbar-row-compact">
-          <div className="segmented-control">
-            {formats.map((option) => <button key={option} onClick={() => setFormat(option)} className={format === option ? 'active' : ''}>{option === 'Todos' ? option : option.charAt(0).toUpperCase() + option.slice(1)}</button>)}
+        <div className="content-segments-stack">
+          <div className="content-segment-pro" role="tablist" aria-label="Formato de contenido">
+            {formats.map((option) => (
+              <button key={option} type="button" onClick={() => setFormat(option)} className={format === option ? 'is-active' : ''}>
+                {option === 'Todos' ? option : option.charAt(0).toUpperCase() + option.slice(1)}
+              </button>
+            ))}
           </div>
 
-          <div className="segmented-control segmented-control-gold ml-auto">
-            {sorts.map((option) => <button key={option} onClick={() => setSort(option)} className={sort === option ? 'active' : ''}>{option}</button>)}
+          <div className="content-segment-pro is-gold" role="tablist" aria-label="Orden de contenido">
+            {sorts.map((option) => (
+              <button key={option} type="button" onClick={() => setSort(option)} className={sort === option ? 'is-active' : ''}>
+                {option}
+              </button>
+            ))}
           </div>
         </div>
-      </motion.div>
+      </motion.section>
 
-      <div className="result-strip">
-        <span className="flex items-center gap-2"><SlidersHorizontal size={14} />{data.items.length} contenido{data.items.length !== 1 ? 's' : ''} encontrado{data.items.length !== 1 ? 's' : ''}</span>
-        <span>{sort}</span>
+      <div className="content-signal-strip">
+        <span><SlidersHorizontal size={14} />{data.items.length} contenido{data.items.length !== 1 ? 's' : ''} encontrado{data.items.length !== 1 ? 's' : ''}</span>
+        <span><Star size={14} />{featuredCount} destacados</span>
+        <span><Zap size={14} />{formatNumber(xpAvailable)} XP disponibles</span>
+        <span><TrendingUp size={14} />{sort}</span>
       </div>
 
-      {loading ? (
-        <div className="card p-8 text-sm text-[#475569]">Cargando contenidos...</div>
-      ) : data.items.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">{data.items.map((item, i) => <ContentCard key={item.id} item={item} delay={i * 0.06} />)}</div>
-      ) : (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-16">
-          <EmptyState icon={SearchX} title="Sin resultados" description="Prueba con otros filtros o palabras clave." />
-        </motion.div>
-      )}
+      <section className="content-feed-section">
+        <div className="content-feed-head">
+          <div>
+            <p><Megaphone size={13} /> Biblioteca oficial</p>
+            <h3>{sort}</h3>
+          </div>
+          <span>{format === 'Todos' ? 'Todos los formatos' : format}</span>
+        </div>
+
+        {loading ? (
+          <div className="content-loading-grid">
+            {[0, 1, 2].map((item) => <div key={item} className="content-card-skeleton" />)}
+          </div>
+        ) : data.items.length > 0 ? (
+          <div className="content-feed-grid">{data.items.map((item, i) => <ContentCard key={item.id} item={item} delay={i * 0.055} />)}</div>
+        ) : (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="content-empty-wrap">
+            <EmptyState icon={SearchX} title="Sin resultados" description="Prueba con otros filtros o palabras clave." />
+          </motion.div>
+        )}
+      </section>
     </div>
   );
 }
