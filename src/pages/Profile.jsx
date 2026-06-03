@@ -7,7 +7,7 @@ import { api } from '../api';
 import { getLevelTitle, xpProgress, xpToNextLevel } from '../utils/helpers';
 import { LucideIcon } from '../components/common/LucideIcon';
 
-const roleLabel = { admin: 'Administrador', pastor: 'Pastor', multiplicador: 'Multiplicador' };
+const roleLabel = { admin: 'Administrador', pastor: 'Pastor/Directivo', multiplicador: 'Multiplicador' };
 
 export default function Profile() {
   const { currentUser, loginFromApi } = useAppStore();

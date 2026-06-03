@@ -12,7 +12,7 @@ const pageTitles = {
   '/admin':     'Panel Admin',
 };
 
-const roleLabels = { admin: 'Administrador', pastor: 'Pastor', multiplicador: 'Multiplicador' };
+const roleLabels = { admin: 'Administrador', pastor: 'Pastor/Directivo', multiplicador: 'Multiplicador' };
 const roleBadgeColors = {
   admin:         'bg-red-100 text-red-700',
   pastor:        'bg-purple-100 text-purple-700',

@@ -340,7 +340,7 @@ export const seguidores = [
 
 export const codigos_roles = [
   { id: 1, codigo: 'IPUC-ADMIN-2024', rol_asignado: 'admin', descripcion: 'Acceso equipo nacional', activo: true },
-  { id: 2, codigo: 'IPUC-PASTOR-2024', rol_asignado: 'pastor', descripcion: 'Acceso pastoral por distrito', activo: true },
+  { id: 2, codigo: 'IPUC2026MISION', rol_asignado: 'pastor', descripcion: 'Acceso Pastor/Directivo temporal', activo: true },
   { id: 3, codigo: 'IPUC-MULT-2024', rol_asignado: 'multiplicador', descripcion: 'Registro de embajadores digitales', activo: true },
 ];
 

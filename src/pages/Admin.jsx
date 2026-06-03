@@ -13,7 +13,7 @@ const adminTabs = [
 ];
 
 const PIE_COLORS = ['#1A237E', '#D4AF37', '#5C6BC0'];
-const roleLabel = { admin: 'Admin', pastor: 'Pastor', multiplicador: 'Multiplicador' };
+const roleLabel = { admin: 'Admin', pastor: 'Pastor/Directivo', multiplicador: 'Multiplicador' };
 const roleBadge = { admin: 'bg-red-100 text-red-700', pastor: 'bg-purple-100 text-purple-700', multiplicador: 'bg-blue-100 text-[#1A237E]' };
 
 export default function Admin() {
@@ -33,7 +33,7 @@ export default function Admin() {
   const filteredUsers = payload.users.filter((user) => user.name.toLowerCase().includes(userQuery.toLowerCase()) || user.email.toLowerCase().includes(userQuery.toLowerCase()));
   const roleData = [
     { name: 'Multiplicadores', value: payload.users.filter((user) => user.role === 'multiplicador').length },
-    { name: 'Pastores', value: payload.users.filter((user) => user.role === 'pastor').length },
+    { name: 'Pastores/Directivos', value: payload.users.filter((user) => user.role === 'pastor').length },
     { name: 'Admins', value: payload.users.filter((user) => user.role === 'admin').length },
   ];
 

@@ -3657,6 +3657,13 @@ body {
   font-weight: 800;
 }
 
+.auth-key-hint {
+  color: var(--text-4);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
 .auth-input-wrap {
   position: relative;
   min-height: 52px;
@@ -3875,6 +3882,11 @@ select.auth-input {
   cursor: pointer;
 }
 
+.auth-stepper button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
 .auth-stepper button > span {
   grid-row: 1 / 3;
   width: 30px;
@@ -3978,13 +3990,22 @@ select.auth-input {
   backdrop-filter: blur(12px);
 }
 
-.auth-beta-modal {
+.auth-beta-modal-shell {
   position: fixed;
-  left: 50%;
-  top: 50%;
+  inset: 0;
   z-index: 71;
-  width: min(92vw, 460px);
-  padding: 28px;
+  display: grid;
+  place-items: center;
+  padding: clamp(14px, 4vw, 30px);
+  overflow-y: auto;
+  pointer-events: none;
+}
+
+.auth-beta-modal {
+  width: min(100%, 520px);
+  max-height: calc(100dvh - 28px);
+  overflow-y: auto;
+  padding: clamp(22px, 5vw, 32px);
   border: 1px solid rgba(255,255,255,0.58);
   border-radius: 32px;
   background:
@@ -3992,8 +4013,9 @@ select.auth-input {
   box-shadow:
     0 30px 90px rgba(10,15,82,0.25),
     inset 0 1px 0 rgba(255,255,255,0.9);
-  transform: translate(-50%, -50%);
   text-align: center;
+  pointer-events: auto;
+  overscroll-behavior: contain;
 }
 
 .auth-beta-pill {
@@ -4032,7 +4054,7 @@ select.auth-input {
 .auth-beta-modal h3 {
   margin-top: 8px;
   color: var(--blue-900);
-  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  font-size: clamp(1.75rem, 5vw, 2.45rem);
   line-height: 1.04;
   font-weight: 900;
 }
@@ -4042,6 +4064,27 @@ select.auth-input {
   color: var(--text-3);
   font-size: 0.95rem;
   line-height: 1.6;
+}
+
+.auth-beta-modal.is-email-confirm h3 {
+  font-size: clamp(1.8rem, 7vw, 2.7rem);
+}
+
+.auth-email-callout {
+  margin: 18px auto 0;
+  width: min(100%, 380px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(26,35,126,0.07);
+  border: 1px solid rgba(26,35,126,0.08);
+  color: var(--blue-900);
+  font-size: 0.9rem;
+  font-weight: 800;
+  word-break: break-word;
 }
 
 .auth-beta-progress {

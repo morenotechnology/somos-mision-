@@ -18,7 +18,7 @@ import { useAppStore } from '../store/useAppStore';
 
 const roleHints = [
   { label: 'Multiplicadores', desc: 'Embajadores digitales con progreso y ranking.', Icon: Users },
-  { label: 'Pastores', desc: 'Supervisión territorial con métricas e informes.', Icon: ShieldCheck },
+  { label: 'Pastores/Directivos', desc: 'Supervisión territorial, métricas y publicaciones oficiales.', Icon: ShieldCheck },
   { label: 'IPUC', desc: 'Un solo ecosistema nacional para coordinar misión.', brand: true },
 ];
 

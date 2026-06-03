@@ -30,6 +30,8 @@ const profileSelect = `
   congregations:congregations(id, nombre, portada_url)
 `;
 
+const PASTOR_ACCESS_KEY = 'IPUC2026MISION';
+
 function ensureClient() {
   if (!hasSupabaseEnv || !supabase) {
     throw new ApiError(
@@ -63,8 +65,9 @@ function emptyProfileStats() {
   };
 }
 
-function safeRole(value) {
-  return ['admin', 'pastor', 'multiplicador'].includes(value) ? value : 'multiplicador';
+function roleFromMetadata(meta = {}) {
+  if (meta.rol === 'pastor' && meta.pastor_access_key === PASTOR_ACCESS_KEY) return 'pastor';
+  return 'multiplicador';
 }
 
 function cleanOptional(value) {
@@ -83,7 +86,7 @@ function profilePayloadFromAuthUser(authUser = {}) {
     nombre: firstName,
     nombre_completo: fullName,
     email,
-    rol: safeRole(meta.rol),
+    rol: roleFromMetadata(meta),
     region_id: cleanOptional(meta.region_id),
     district_id: cleanOptional(meta.district_id),
     congregacion: cleanOptional(meta.congregacion),
@@ -542,6 +545,7 @@ export function createSupabaseApi() {
                 nombre_completo: payload.name,
                 nombre: payload.name?.split(' ')?.[0] || payload.name,
                 rol: payload.role,
+                pastor_access_key: payload.role === 'pastor' ? payload.accessKey : null,
                 region_id: payload.region,
                 district_id: payload.district,
                 congregacion: payload.congregation,
@@ -782,6 +786,10 @@ export function createSupabaseApi() {
 
       async create(payload) {
         const sessionBundle = await fetchCurrentSessionBundle(client);
+        if (!['admin', 'pastor'].includes(sessionBundle?.user?.role)) {
+          throw new ApiError('Solo los perfiles Pastor/Directivo pueden crear publicaciones oficiales.', 403);
+        }
+
         const row = unwrap(
           await client
             .from('publications')

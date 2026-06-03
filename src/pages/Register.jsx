@@ -7,6 +7,7 @@ import {
   Building2,
   CheckCircle,
   CircleAlert,
+  KeyRound,
   Lock,
   Mail,
   MapPin,
@@ -38,6 +39,8 @@ const DISTRICTS = Array.from({ length: 35 }, (_, index) => ({
   id: `d${index + 1}`,
   name: `Distrito ${index + 1}`,
 }));
+
+const PASTOR_ACCESS_KEY = 'IPUC2026MISION';
 
 function RegisterBrandPanel() {
   return (
@@ -90,6 +93,7 @@ export default function Register() {
     phone: '',
     password: '',
     role: 'multiplicador',
+    accessKey: '',
     region: '',
     district: '',
     congregation: '',
@@ -97,31 +101,45 @@ export default function Register() {
 
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
-  const validateStep = () => {
-    if (step === 0 && (!form.name || !form.email || !form.phone || !form.password)) {
+  const validateStep = (stepToValidate = step) => {
+    if (stepToValidate === 0 && (!form.name || !form.email || !form.phone || !form.password)) {
       toast.error('Completa todos los datos de la cuenta');
       return false;
     }
-    if (step === 1 && (!form.role || !form.region || !form.district)) {
+    if (stepToValidate === 1 && (!form.role || !form.region || !form.district)) {
       toast.error('Selecciona rol, región y distrito');
       return false;
     }
-    if (step === 2 && !form.congregation) {
+    if (stepToValidate === 1 && form.role === 'pastor' && form.accessKey.trim() !== PASTOR_ACCESS_KEY) {
+      toast.error('La llave especial para Pastor/Directivo no es válida');
+      return false;
+    }
+    if (stepToValidate === 2 && !form.congregation) {
       toast.error('Escribe el nombre de tu congregación');
       return false;
     }
     return true;
   };
 
+  const validateRegistration = () => {
+    for (const stepIndex of [0, 1, 2]) {
+      if (!validateStep(stepIndex)) {
+        setStep(stepIndex);
+        return false;
+      }
+    }
+    return true;
+  };
+
   const finishRegistration = () => {
     if (!betaModal) return;
-    const target = betaModal.needsEmailConfirmation ? '/login' : '/dashboard';
+    const target = betaModal.needsEmailConfirmation ? '/' : '/dashboard';
     setBetaModal(null);
     navigate(target);
   };
 
   const handleSubmit = async () => {
-    if (!validateStep()) return;
+    if (!validateRegistration()) return;
     setLoading(true);
     try {
       const result = await api.auth.register(form);
@@ -131,6 +149,7 @@ export default function Register() {
       setBetaModal({
         betaPosition: result.betaPosition || 1,
         betaTotal: result.betaTotal || 500,
+        email: form.email,
         needsEmailConfirmation: Boolean(result.needsEmailConfirmation),
       });
     } catch (error) {
@@ -166,7 +185,15 @@ export default function Register() {
               const active = index === step;
               const done = index < step;
               return (
-                <button key={item.label} type="button" onClick={() => setStep(index)} className={`${active ? 'is-active' : ''} ${done ? 'is-done' : ''}`}>
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => {
+                    if (index <= step) setStep(index);
+                  }}
+                  disabled={index > step}
+                  className={`${active ? 'is-active' : ''} ${done ? 'is-done' : ''}`}
+                >
                   <span>{done ? <CheckCircle size={15} /> : index + 1}</span>
                   <strong>{item.label}</strong>
                   <small>{item.desc}</small>
@@ -197,11 +224,27 @@ export default function Register() {
               {step === 1 && (
                 <>
                   <FieldGroup label="Rol en la red">
-                    <AuthInput as="select" icon={ShieldCheck} value={form.role} onChange={(event) => set('role', event.target.value)}>
+                    <AuthInput as="select" icon={ShieldCheck} value={form.role} onChange={(event) => {
+                      set('role', event.target.value);
+                      if (event.target.value !== 'pastor') set('accessKey', '');
+                    }}>
                       <option value="multiplicador">Multiplicador - Embajador digital</option>
-                      <option value="pastor">Pastor / Supervisor territorial</option>
+                      <option value="pastor">PASTOR/DIRECTIVO</option>
                     </AuthInput>
                   </FieldGroup>
+                  {form.role === 'pastor' && (
+                    <FieldGroup label="Llave especial Pastor/Directivo">
+                      <AuthInput
+                        icon={KeyRound}
+                        type="password"
+                        value={form.accessKey}
+                        onChange={(event) => set('accessKey', event.target.value)}
+                        placeholder="Ingresa la llave de acceso"
+                        autoComplete="off"
+                      />
+                      <small className="auth-key-hint">Este rol puede crear publicaciones oficiales dentro de la plataforma.</small>
+                    </FieldGroup>
+                  )}
                   <FieldGroup label="Región">
                     <AuthInput as="select" icon={MapPin} value={form.region} onChange={(event) => set('region', event.target.value)}>
                       <option value="">Seleccionar región</option>
@@ -272,34 +315,52 @@ export default function Register() {
                 exit={{ opacity: 0 }}
               />
               <motion.div
-                className="auth-beta-modal"
+                className="auth-beta-modal-shell"
                 initial={{ opacity: 0, y: 24, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 18, scale: 0.96 }}
                 transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
               >
-                <div className="auth-beta-pill">Beta cerrada</div>
-                <div className="auth-beta-badge">
-                  <CheckCircle size={26} />
+                <div className={`auth-beta-modal ${betaModal.needsEmailConfirmation ? 'is-email-confirm' : ''}`}>
+                  <div className="auth-beta-pill">{betaModal.needsEmailConfirmation ? 'Confirma tu email' : 'Beta cerrada'}</div>
+                  <div className="auth-beta-badge">
+                    <CheckCircle size={26} />
+                  </div>
+                  <p className="auth-beta-kicker">
+                    {betaModal.needsEmailConfirmation ? 'Revisa tu bandeja de entrada' : 'Registro confirmado'}
+                  </p>
+                  <h3>
+                    {betaModal.needsEmailConfirmation
+                      ? 'Confirma tu email para activar tu cuenta'
+                      : `Eres el registro número ${betaModal.betaPosition} de ${betaModal.betaTotal}`}
+                  </h3>
+                  <p>
+                    {betaModal.needsEmailConfirmation
+                      ? 'Te enviamos un enlace de confirmación. Después de validar tu correo podrás iniciar sesión y entrar a la plataforma.'
+                      : 'Tu lugar ya quedó reservado en la beta. Tu perfil está listo para entrar y empezar a usar la plataforma.'}
+                  </p>
+                  {betaModal.needsEmailConfirmation && (
+                    <div className="auth-email-callout">
+                      <Mail size={17} />
+                      <span>{betaModal.email}</span>
+                    </div>
+                  )}
+                  {!betaModal.needsEmailConfirmation && (
+                    <>
+                      <div className="auth-beta-progress" aria-hidden="true">
+                        <span style={{ width: `${Math.min((betaModal.betaPosition / betaModal.betaTotal) * 100, 100)}%` }} />
+                      </div>
+                      <div className="auth-beta-meta">
+                        <span><Zap size={14} /> Cupos limitados</span>
+                        <span><CircleAlert size={14} /> Acceso anticipado</span>
+                      </div>
+                    </>
+                  )}
+                  <button type="button" className="auth-submit-button auth-beta-cta" onClick={finishRegistration}>
+                    {betaModal.needsEmailConfirmation ? 'Volver a la página' : 'Entrar al panel'}
+                    <ArrowRight size={17} />
+                  </button>
                 </div>
-                <p className="auth-beta-kicker">Registro confirmado</p>
-                <h3>Eres el registro número {betaModal.betaPosition} de {betaModal.betaTotal}</h3>
-                <p>
-                  {betaModal.needsEmailConfirmation
-                    ? 'Tu lugar quedó reservado. Confirma tu correo para activar el acceso y entrar a la plataforma.'
-                    : 'Tu lugar ya quedó reservado en la beta. Tu perfil está listo para entrar y empezar a usar la plataforma.'}
-                </p>
-                <div className="auth-beta-progress" aria-hidden="true">
-                  <span style={{ width: `${Math.min((betaModal.betaPosition / betaModal.betaTotal) * 100, 100)}%` }} />
-                </div>
-                <div className="auth-beta-meta">
-                  <span><Zap size={14} /> Cupos limitados</span>
-                  <span><CircleAlert size={14} /> Acceso anticipado</span>
-                </div>
-                <button type="button" className="auth-submit-button auth-beta-cta" onClick={finishRegistration}>
-                  {betaModal.needsEmailConfirmation ? 'Ir al login' : 'Entrar al panel'}
-                  <ArrowRight size={17} />
-                </button>
               </motion.div>
             </>
           )}

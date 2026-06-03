@@ -239,7 +239,12 @@ as $$
 declare
   meta jsonb := coalesce(new.raw_user_meta_data, '{}'::jsonb);
   full_name text := coalesce(meta ->> 'nombre_completo', meta ->> 'name', split_part(new.email, '@', 1));
+  assigned_role public.app_role := 'multiplicador';
 begin
+  if meta ->> 'rol' = 'pastor' and meta ->> 'pastor_access_key' = 'IPUC2026MISION' then
+    assigned_role := 'pastor';
+  end if;
+
   insert into public.profiles (
     id,
     nombre,
@@ -261,7 +266,7 @@ begin
     coalesce(meta ->> 'nombre', split_part(full_name, ' ', 1)),
     full_name,
     new.email,
-    coalesce((meta ->> 'rol')::public.app_role, 'multiplicador'),
+    assigned_role,
     nullif(meta ->> 'region_id', ''),
     nullif(meta ->> 'district_id', ''),
     nullif(meta ->> 'congregacion', ''),
@@ -625,6 +630,16 @@ drop policy if exists "public read missions" on public.missions;
 create policy "public read missions" on public.missions for select using (active = true);
 drop policy if exists "public read publications" on public.publications;
 create policy "public read publications" on public.publications for select using (active = true);
+drop policy if exists "pastors create publications" on public.publications;
+create policy "pastors create publications" on public.publications for insert to authenticated with check (
+  author_profile_id = auth.uid()
+  and exists (
+    select 1
+    from public.profiles
+    where id = auth.uid()
+      and rol in ('admin', 'pastor')
+  )
+);
 
 drop policy if exists "authenticated read profiles" on public.profiles;
 create policy "authenticated read profiles" on public.profiles for select to authenticated using (true);
@@ -809,7 +824,7 @@ select setval(pg_get_serial_sequence('public.publications', 'id'), greatest((sel
 
 insert into public.role_codes (codigo, rol_asignado, descripcion, activo) values
   ('IPUC-ADMIN-2024', 'admin', 'Acceso equipo nacional', true),
-  ('IPUC-PASTOR-2024', 'pastor', 'Acceso pastoral por distrito', true),
+  ('IPUC2026MISION', 'pastor', 'Acceso Pastor/Directivo temporal', true),
   ('IPUC-MULT-2024', 'multiplicador', 'Registro de embajadores digitales', true)
 on conflict (codigo) do update set rol_asignado = excluded.rol_asignado, descripcion = excluded.descripcion, activo = excluded.activo;
 

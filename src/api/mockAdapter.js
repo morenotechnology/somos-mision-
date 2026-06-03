@@ -60,6 +60,11 @@ function getUser(payload = {}) {
   return state.users.find((user) => user.email === payload.email) || state.users.find((user) => user.email === roleMap[role]) || state.users[0];
 }
 
+function resolveRegisterRole(payload = {}) {
+  if (payload.role === 'pastor' && payload.accessKey === 'IPUC2026MISION') return 'pastor';
+  return 'multiplicador';
+}
+
 async function resolve(data) {
   await wait();
   return clone(data);
@@ -78,12 +83,13 @@ export function createMockApi() {
         return resolve({ user, profile, session: { access_token: `local-mock-${user.role}`, token_type: 'Bearer' } });
       },
       register: async (payload) => {
+        const role = resolveRegisterRole(payload);
         const user = {
           id: `u${state.users.length + 1}`,
           schemaId: crypto.randomUUID(),
           name: payload.name || payload.nombre_completo || 'Nuevo Embajador',
           email: payload.email,
-          role: payload.role || 'multiplicador',
+          role,
           region: payload.region || 'r3',
           district: payload.district || 'd5',
           congregation: payload.congregation || 'Misiones Nacionales',

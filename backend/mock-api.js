@@ -278,7 +278,10 @@ async function handleAuth(req, res, segments) {
   }
 
   if (req.method === 'POST' && segments[1] === 'register') {
-    const role = body.role || body.rol || 'multiplicador';
+    const requestedRole = body.role || body.rol || 'multiplicador';
+    const role = requestedRole === 'pastor' && body.accessKey === 'IPUC2026MISION'
+      ? 'pastor'
+      : 'multiplicador';
     const id = `u${db.users.length + 1}`;
     const schemaId = randomUUID();
     const name = body.name || body.nombre_completo || 'Nuevo Embajador';

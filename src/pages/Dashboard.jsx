@@ -109,7 +109,7 @@ function PastorDash({ user, weeklyActivity, topUsers }) {
   return (
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center gap-2 mb-1"><Shield size={20} className="text-[#1A237E]" /><h2 className="text-2xl font-black text-[#0F172A]">Panel Pastoral</h2></div>
+        <div className="flex items-center gap-2 mb-1"><Shield size={20} className="text-[#1A237E]" /><h2 className="text-2xl font-black text-[#0F172A]">Panel Pastor/Directivo</h2></div>
         <p className="text-[#475569] text-sm">Monitorea tu región y equipo.</p>
       </motion.div>
 
