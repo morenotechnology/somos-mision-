@@ -29,7 +29,7 @@ import regionAndina from '../assets/regiones/ANDINA_1.png';
 import regionCaribe from '../assets/regiones/CARIBE_1.png';
 import regionOrinoquia from '../assets/regiones/ORINOQUIA_1.png';
 import regionPacifica from '../assets/regiones/PACIFICA_1.png';
-import heroBrandLogo from '../assets/logos/logo-somos-mision-nacionales.png';
+import heroBrandLogo from '../assets/logos/logosinfondo.png';
 import amigosLogo from '../assets/logos/LOGO 5000 AMIGOS.svg';
 
 /* ─── Animation variants ─────────────────────────────────────────────── */
@@ -201,7 +201,7 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
           </button>
         </div>
         <img src="/hero-map.png" alt="" className="ln-mobile-hero-map" />
-        <img src={amigosLogo} alt="" className="ln-mobile-hero-photo ln-mobile-hero-amigos" />
+        <img src={heroBrandLogo} alt="" className="ln-mobile-hero-photo ln-mobile-hero-brand-art" />
         <div className="ln-mobile-hero-status">
           <div>
             <span>Misiones Nacionales</span>
