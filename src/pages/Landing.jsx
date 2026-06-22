@@ -29,6 +29,8 @@ import regionAndina from '../assets/regiones/ANDINA_1.png';
 import regionCaribe from '../assets/regiones/CARIBE_1.png';
 import regionOrinoquia from '../assets/regiones/ORINOQUIA_1.png';
 import regionPacifica from '../assets/regiones/PACIFICA_1.png';
+import heroBrandLogo from '../assets/logos/logo-somos-mision-nacionales.png';
+import amigosLogo from '../assets/logos/LOGO 5000 AMIGOS.svg';
 
 /* ─── Animation variants ─────────────────────────────────────────────── */
 const fadeUp = (delay = 0, distance = 28) => ({
@@ -124,12 +126,12 @@ function Nav({ onLogin, onRegister }) {
       className={`ln-nav ${scrolled ? 'is-scrolled' : ''}`}
     >
       <div className="ln-container ln-nav-inner">
-        <button className="ln-brand" onClick={onRegister} aria-label="Somos Misión Colombia">
+        <button className="ln-brand" onClick={onRegister} aria-label="Misiones Nacionales">
           <span className="ln-brand-mark">
             <BrandLogo decorative />
           </span>
           <span className="ln-brand-name">
-            <strong>Somos Misión</strong>
+            <strong>Misiones</strong>
             <span>Colombia</span>
           </span>
         </button>
@@ -185,7 +187,7 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
         <div className="ln-mobile-hero-top">
           <div className="ln-mobile-hero-brand">
             <span className="ln-mobile-hero-logo"><BrandLogo decorative /></span>
-            <span>Red Nacional<br />IPUC</span>
+            <span>Misiones<br />Nacionales</span>
           </div>
           <button
             type="button"
@@ -199,10 +201,10 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
           </button>
         </div>
         <img src="/hero-map.png" alt="" className="ln-mobile-hero-map" />
-        <img src="/bg-palmas.png" alt="" className="ln-mobile-hero-photo" />
+        <img src={amigosLogo} alt="" className="ln-mobile-hero-photo ln-mobile-hero-amigos" />
         <div className="ln-mobile-hero-status">
           <div>
-            <span>Red Nacional IPUC</span>
+            <span>Misiones Nacionales</span>
             <strong>{metrics.totalEmbajadores.toLocaleString()} embajadores activos</strong>
           </div>
         </div>
@@ -234,7 +236,7 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
               <div className="ln-mobile-menu-head">
                 <div className="ln-mobile-menu-brand">
                   <span><BrandLogo decorative /></span>
-                  <strong>Somos Misión</strong>
+                  <strong>Misiones Nacionales</strong>
                 </div>
                 <button type="button" onClick={() => setMobileMenuOpen(false)} aria-label="Cerrar menú">
                   <X size={20} strokeWidth={2.6} />
@@ -278,7 +280,7 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
         aria-hidden="true"
       >
         <img src="/hero-map.png" alt="" className="ln-hero-map" />
-        <img src="/bg-palmas.png" alt="" className="ln-hero-polaroid is-one" />
+        <img src={amigosLogo} alt="" className="ln-hero-polaroid is-one is-amigos-logo" />
         <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=700&q=80" alt="" className="ln-hero-polaroid is-two" />
       </motion.div>
 
@@ -286,22 +288,20 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
         <motion.div {...fadeUp(0.1)} className="ln-hero-pill">
           <span className="ln-hero-pill-dot" />
           <BrandLogo decorative className="ln-pill-logo" />
-          <span>Red Nacional IPUC</span>
+          <span>Misiones Nacionales</span>
           <span className="ln-hero-pill-sep" />
           <strong>{metrics.totalEmbajadores.toLocaleString()} embajadores activos</strong>
         </motion.div>
 
-        {/* Main headline */}
         <motion.div {...fadeUp(0.2)} className="ln-hero-headline">
-          <h1>
-            <span className="ln-hero-h1-line">Somos</span>
-            <span className="ln-hero-h1-accent">Misión</span>
-            <span className="ln-hero-h1-line">Colombia</span>
-          </h1>
+          <h1 className="ln-hero-hidden-title">Somos Misión Colombia</h1>
+          <div className="ln-hero-logo-headline" aria-hidden="true">
+            <img src={heroBrandLogo} alt="" />
+          </div>
         </motion.div>
 
         <motion.p {...fadeUp(0.32)} className="ln-hero-sub">
-          La plataforma para registrar embajadores, compartir contenido oficial y mirar el avance misionero de Colombia con una experiencia clara, móvil y medible.
+          Somos Misión Colombia es una iniciativa de Misiones Nacionales de las Iglesias Pentecostales Unidas de Colombia para anunciar el evangelio en todo el territorio nacional. Por medio de Biblias y testimonios, articula iglesias, distritos, misioneros nacionales y creyentes para que el mensaje de Jesucristo llegue a cada región del país. No es solo una campaña: es un compromiso espiritual.
         </motion.p>
 
         {/* CTAs */}
@@ -353,9 +353,9 @@ function MetricsBand({ metrics }) {
           <p className="ln-band-desc">Menos ruido, más lectura: lo que importa se ve en segundos desde el celular.</p>
         </motion.div>
         <div className="ln-metrics-shell">
-          <div className="ln-metrics-image" aria-hidden="true">
-            <img src="/bg-palmas.png" alt="" />
-            <span>Red nacional</span>
+          <div className="ln-metrics-image is-logo" aria-hidden="true">
+            <img src={amigosLogo} alt="" />
+            <span>5000 amigos</span>
           </div>
           <div className="ln-metrics-grid">
             {items.map((item, i) => (
@@ -497,7 +497,7 @@ function RankingSection({ topUsers, onLogin }) {
     <section className="ln-ranking-section" id="ranking">
       {/* Subtle palms bg on left */}
       <div className="ln-ranking-bg" aria-hidden="true">
-        <img src="/bg-palmas.png" alt="" />
+        <img src={amigosLogo} alt="" />
         <div className="ln-ranking-bg-overlay" />
       </div>
 
@@ -585,9 +585,9 @@ function Footer() {
       <div className="ln-container ln-footer-inner">
         <div className="ln-footer-brand">
           <span className="ln-footer-mark"><BrandLogo decorative /></span>
-          <span>Somos Misión Colombia</span>
+          <span>Misiones Nacionales</span>
         </div>
-        <p>Red Nacional IPUC — {new Date().getFullYear()}</p>
+        <p>Red Nacional — {new Date().getFullYear()}</p>
       </div>
     </footer>
   );

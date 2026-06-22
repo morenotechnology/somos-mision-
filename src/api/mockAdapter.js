@@ -56,12 +56,12 @@ function searchRows(rows, params = {}) {
 
 function getUser(payload = {}) {
   const role = payload.role || 'multiplicador';
-  const roleMap = { admin: 'admin@ipuc.org', pastor: 'maria@ipuc.org', multiplicador: 'carlos@ipuc.org' };
+  const roleMap = { admin: 'admin@misiones.org', pastor: 'maria@misiones.org', multiplicador: 'carlos@misiones.org' };
   return state.users.find((user) => user.email === payload.email) || state.users.find((user) => user.email === roleMap[role]) || state.users[0];
 }
 
 function resolveRegisterRole(payload = {}) {
-  if (payload.role === 'pastor' && payload.accessKey === 'IPUC2026MISION') return 'pastor';
+  if (payload.role === 'pastor' && payload.accessKey === 'MISION2026NACIONAL') return 'pastor';
   return 'multiplicador';
 }
 

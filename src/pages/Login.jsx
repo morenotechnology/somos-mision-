@@ -19,7 +19,7 @@ import { useAppStore } from '../store/useAppStore';
 const roleHints = [
   { label: 'Multiplicador', desc: 'Lee contenido oficial y comparte avance.', Icon: Users },
   { label: 'Pastor/Directivo', desc: 'Publica contenido y revisa métricas.', Icon: ShieldCheck },
-  { label: 'Red IPUC', desc: 'Una señal nacional para coordinar misión.', brand: true },
+  { label: 'Misiones Nacionales', desc: 'Una señal nacional para coordinar misión.', brand: true },
 ];
 
 function AuthBrandPanel() {
@@ -29,11 +29,11 @@ function AuthBrandPanel() {
       <div className="auth-brand-overlay" />
 
       <div className="auth-brand-content">
-        <button type="button" className="auth-brand-lockup" aria-label="Somos Misión Colombia">
+        <button type="button" className="auth-brand-lockup" aria-label="Misiones Nacionales">
           <span>
             <BrandLogo decorative />
           </span>
-          <strong>Somos Misión Colombia</strong>
+          <strong>Misiones Nacionales</strong>
         </button>
 
         <div className="auth-brand-copy">
@@ -122,7 +122,7 @@ export default function Login() {
             <span>
               <BrandLogo decorative />
             </span>
-            <strong>Somos Misión Colombia</strong>
+            <strong>Misiones Nacionales</strong>
           </div>
 
           <div className="auth-card-header">

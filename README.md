@@ -1,4 +1,4 @@
-# Somos Mision Colombia
+# Misiones Nacionales
 
 Aplicacion React + Vite conectada a Supabase para registro, login, contenido, ranking, misiones y perfil.
 

@@ -38,7 +38,7 @@ export const congregaciones = [
     lat: 4.60971,
     lng: -74.08175,
     descripcion: 'Congregación urbana con equipos activos de medios y juventud.',
-    redes_sociales: { instagram: '@ipucbogotacentro', facebook: 'IPUC Bogotá Centro' },
+    redes_sociales: { instagram: '@misionesbogotacentro', facebook: 'Misiones Bogotá Centro' },
     es_punto_blanco: false,
     portada_url: 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=1200&q=75',
   },
@@ -52,7 +52,7 @@ export const congregaciones = [
     lat: 6.2442,
     lng: -75.5812,
     descripcion: 'Base regional para equipos de evangelismo estudiantil.',
-    redes_sociales: { instagram: '@ipucmedellinlv' },
+    redes_sociales: { instagram: '@misionesmedellinlv' },
     es_punto_blanco: false,
     portada_url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&q=75',
   },
@@ -66,7 +66,7 @@ export const congregaciones = [
     lat: 10.9878,
     lng: -74.7889,
     descripcion: 'Equipo de alcance territorial en barrios y universidades.',
-    redes_sociales: { facebook: 'IPUC Nueva Esperanza' },
+    redes_sociales: { facebook: 'Misiones Nueva Esperanza' },
     es_punto_blanco: true,
     portada_url: 'https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&q=75',
   },
@@ -80,7 +80,7 @@ export const congregaciones = [
     lat: 3.4516,
     lng: -76.532,
     descripcion: 'Congregación pastoral con multiplicadores en formación.',
-    redes_sociales: { instagram: '@ipuccalimaranatha' },
+    redes_sociales: { instagram: '@misionescalimaranatha' },
     es_punto_blanco: false,
     portada_url: 'https://images.unsplash.com/photo-1511818966892-d7d671e672a2?w=1200&q=75',
   },
@@ -94,7 +94,7 @@ export const congregaciones = [
     lat: 4.5709,
     lng: -74.117,
     descripcion: 'Punto de movilización digital para campañas metropolitanas.',
-    redes_sociales: { instagram: '@ipucbogotasur' },
+    redes_sociales: { instagram: '@misionesbogotasur' },
     es_punto_blanco: true,
     portada_url: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1f?w=1200&q=75',
   },
@@ -108,7 +108,7 @@ export const congregaciones = [
     lat: 6.2914,
     lng: -75.5361,
     descripcion: 'Red de apoyo para campañas rurales y digitales.',
-    redes_sociales: { facebook: 'IPUC Antioquia Esperanza Viva' },
+    redes_sociales: { facebook: 'Misiones Antioquia Esperanza Viva' },
     es_punto_blanco: false,
     portada_url: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&q=75',
   },
@@ -122,21 +122,21 @@ export const congregaciones = [
     lat: 10.391,
     lng: -75.4794,
     descripcion: 'Congregación conectada a frentes de evangelismo turístico y social.',
-    redes_sociales: { instagram: '@ipuccartagenamision' },
+    redes_sociales: { instagram: '@misionescartagenamision' },
     es_punto_blanco: false,
     portada_url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=75',
   },
   {
     id: 108,
     nombre: 'Misiones Nacionales',
-    direccion: 'Sede nacional IPUC',
+    direccion: 'Sede nacional',
     distrito: 'Bogotá Centro',
     latitud: 4.6483,
     longitud: -74.0962,
     lat: 4.6483,
     lng: -74.0962,
     descripcion: 'Equipo nacional de coordinación y contenido oficial.',
-    redes_sociales: { instagram: '@misionesipuc', facebook: 'Misiones Nacionales IPUC' },
+    redes_sociales: { instagram: '@misionesnacionales', facebook: 'Misiones Nacionales' },
     es_punto_blanco: false,
     portada_url: '/hero-map.png',
   },
@@ -165,7 +165,7 @@ export const badges = [
   { id: 'b5', name: 'Misionero Digital', icon: 'Globe',     description: 'Completaste 5 misiones',          xp: 750,  color: '#5C1800' },
   { id: 'b6', name: 'Llama de Fuego',    icon: 'Flame',     description: 'Top 10 del ranking nacional',     xp: 2000, color: '#E65100' },
   { id: 'b7', name: 'Columna de Luz',    icon: 'Sparkles',  description: 'Racha de 30 días',                xp: 3000, color: '#7986CB' },
-  { id: 'b8', name: 'Pionero IPUC',      icon: 'Crown',     description: 'Nivel 10 alcanzado',              xp: 5000, color: '#D4AF37' },
+  { id: 'b8', name: 'Pionero Nacional',   icon: 'Crown',     description: 'Nivel 10 alcanzado',              xp: 5000, color: '#D4AF37' },
 ];
 
 // ─── MISSIONS ──────────────────────────────────────────────────────────────
@@ -181,14 +181,14 @@ export const missions = [
 
 // ─── USERS — internal app adapter (derived from perfiles for the UI) ───────
 const baseUsers = [
-  { id: 'u1', name: 'Carlos Andrés Pérez',  email: 'carlos@ipuc.org',  role: 'multiplicador', region: 'r3', district: 'd5', congregation: 'Bogotá Centro Vivo',       xp: 4850, level: 9,  streak: 14,  shared: 127, missionsCompleted: 18, badges: ['b1','b2','b3','b4','b5','b6'],            avatar: 'CA', avatarColor: '#1A237E', joinedAt: '2024-01-15', active: true },
-  { id: 'u2', name: 'Sandra Milena Ríos',   email: 'sandra@ipuc.org',  role: 'multiplicador', region: 'r2', district: 'd3', congregation: 'Medellín Luz y Vida',      xp: 4210, level: 8,  streak: 21,  shared: 98,  missionsCompleted: 15, badges: ['b1','b2','b3','b4','b5'],                 avatar: 'SM', avatarColor: '#AD1457', joinedAt: '2024-02-10', active: true },
-  { id: 'u3', name: 'Jhon Freddy Torres',   email: 'jhon@ipuc.org',    role: 'multiplicador', region: 'r1', district: 'd1', congregation: 'Barranquilla Nueva Esp.', xp: 3980, level: 8,  streak: 7,   shared: 85,  missionsCompleted: 12, badges: ['b1','b2','b3','b4'],                      avatar: 'JT', avatarColor: '#283593', joinedAt: '2024-01-28', active: true },
-  { id: 'u4', name: 'María Lucía Vargas',   email: 'maria@ipuc.org',   role: 'pastor',        region: 'r4', district: 'd7', congregation: 'Cali Maranatha',           xp: 3540, level: 7,  streak: 5,   shared: 62,  missionsCompleted: 10, badges: ['b1','b2','b3'],                           avatar: 'ML', avatarColor: '#6A1B9A', joinedAt: '2024-03-05', active: true },
-  { id: 'u5', name: 'Diego Hernán Castro',  email: 'diego@ipuc.org',   role: 'multiplicador', region: 'r3', district: 'd6', congregation: 'Bogotá Sur Bendición',     xp: 3210, level: 7,  streak: 3,   shared: 71,  missionsCompleted: 9,  badges: ['b1','b2','b3'],                           avatar: 'DC', avatarColor: '#00838F', joinedAt: '2024-02-20', active: true },
-  { id: 'u6', name: 'Adriana Gómez Reyes',  email: 'adriana@ipuc.org', role: 'multiplicador', region: 'r2', district: 'd4', congregation: 'Antioquia Esperanza Viva', xp: 2870, level: 6,  streak: 9,   shared: 55,  missionsCompleted: 8,  badges: ['b1','b2'],                                avatar: 'AG', avatarColor: '#E65100', joinedAt: '2024-03-15', active: true },
-  { id: 'u7', name: 'Eduardo Lozano',       email: 'eduardo@ipuc.org', role: 'pastor',        region: 'r1', district: 'd2', congregation: 'Cartagena Misión',         xp: 2650, level: 6,  streak: 12,  shared: 48,  missionsCompleted: 7,  badges: ['b1','b2'],                                avatar: 'EL', avatarColor: '#2E7D32', joinedAt: '2024-01-10', active: true },
-  { id: 'u8', name: 'Admin Nacional IPUC',  email: 'admin@ipuc.org',   role: 'admin',         region: 'r3', district: 'd5', congregation: 'Nacional',                 xp: 9999, level: 10, streak: 365, shared: 500, missionsCompleted: 50, badges: ['b1','b2','b3','b4','b5','b6','b7','b8'],  avatar: 'AN', avatarColor: '#D4AF37', joinedAt: '2023-01-01', active: true },
+  { id: 'u1', name: 'Carlos Andrés Pérez',  email: 'carlos@misiones.org',  role: 'multiplicador', region: 'r3', district: 'd5', congregation: 'Bogotá Centro Vivo',       xp: 4850, level: 9,  streak: 14,  shared: 127, missionsCompleted: 18, badges: ['b1','b2','b3','b4','b5','b6'],            avatar: 'CA', avatarColor: '#1A237E', joinedAt: '2024-01-15', active: true },
+  { id: 'u2', name: 'Sandra Milena Ríos',   email: 'sandra@misiones.org',  role: 'multiplicador', region: 'r2', district: 'd3', congregation: 'Medellín Luz y Vida',      xp: 4210, level: 8,  streak: 21,  shared: 98,  missionsCompleted: 15, badges: ['b1','b2','b3','b4','b5'],                 avatar: 'SM', avatarColor: '#AD1457', joinedAt: '2024-02-10', active: true },
+  { id: 'u3', name: 'Jhon Freddy Torres',   email: 'jhon@misiones.org',    role: 'multiplicador', region: 'r1', district: 'd1', congregation: 'Barranquilla Nueva Esp.', xp: 3980, level: 8,  streak: 7,   shared: 85,  missionsCompleted: 12, badges: ['b1','b2','b3','b4'],                      avatar: 'JT', avatarColor: '#283593', joinedAt: '2024-01-28', active: true },
+  { id: 'u4', name: 'María Lucía Vargas',   email: 'maria@misiones.org',   role: 'pastor',        region: 'r4', district: 'd7', congregation: 'Cali Maranatha',           xp: 3540, level: 7,  streak: 5,   shared: 62,  missionsCompleted: 10, badges: ['b1','b2','b3'],                           avatar: 'ML', avatarColor: '#6A1B9A', joinedAt: '2024-03-05', active: true },
+  { id: 'u5', name: 'Diego Hernán Castro',  email: 'diego@misiones.org',   role: 'multiplicador', region: 'r3', district: 'd6', congregation: 'Bogotá Sur Bendición',     xp: 3210, level: 7,  streak: 3,   shared: 71,  missionsCompleted: 9,  badges: ['b1','b2','b3'],                           avatar: 'DC', avatarColor: '#00838F', joinedAt: '2024-02-20', active: true },
+  { id: 'u6', name: 'Adriana Gómez Reyes',  email: 'adriana@misiones.org', role: 'multiplicador', region: 'r2', district: 'd4', congregation: 'Antioquia Esperanza Viva', xp: 2870, level: 6,  streak: 9,   shared: 55,  missionsCompleted: 8,  badges: ['b1','b2'],                                avatar: 'AG', avatarColor: '#E65100', joinedAt: '2024-03-15', active: true },
+  { id: 'u7', name: 'Eduardo Lozano',       email: 'eduardo@misiones.org', role: 'pastor',        region: 'r1', district: 'd2', congregation: 'Cartagena Misión',         xp: 2650, level: 6,  streak: 12,  shared: 48,  missionsCompleted: 7,  badges: ['b1','b2'],                                avatar: 'EL', avatarColor: '#2E7D32', joinedAt: '2024-01-10', active: true },
+  { id: 'u8', name: 'Admin Nacional',       email: 'admin@misiones.org',   role: 'admin',         region: 'r3', district: 'd5', congregation: 'Nacional',                 xp: 9999, level: 10, streak: 365, shared: 500, missionsCompleted: 50, badges: ['b1','b2','b3','b4','b5','b6','b7','b8'],  avatar: 'AN', avatarColor: '#D4AF37', joinedAt: '2023-01-01', active: true },
 ];
 
 export const users = baseUsers.map((u) => ({
@@ -234,11 +234,11 @@ export const perfiles = users.map((u) => ({
 
 // ─── CONTENT — internal app schema ────────────────────────────────────────
 export const contentItems = [
-  { id: 'cnt1', title: '¡Colombia se está transformando!',         description: 'Las misiones nacionales de la IPUC están llegando a los rincones más alejados de Colombia.',     category: 'Testimonio', coordination: 'c8', format: 'texto',    featured: true,  xpReward: 50,  shares: 1247, likes: 3892, createdAt: '2024-05-01', copyText: 'Las misiones nacionales de la IPUC están llevando esperanza a cada rincón de nuestra nación. #SomosMisiónColombia #IPUC',              imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=75' },
-  { id: 'cnt2', title: 'Campaña: Estudiantes con Misión 2024',     description: 'El evangelismo estudiantil llega a 200 universidades colombianas. Comparte y suma al movimiento.', category: 'Campaña',   coordination: 'c1', format: 'imagen',   featured: true,  xpReward: 75,  shares: 892,  likes: 2341, createdAt: '2024-05-03', copyText: 'El evangelismo estudiantil de la IPUC llega a 200 universidades colombianas. #EstudiantesConMisión',                               imageUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=75' },
-  { id: 'cnt3', title: 'Ministerio en Hospitales: Fe que Sana',    description: 'Nuestros equipos hospitalarios visitaron 45 hospitales en Colombia este mes.',                     category: 'Impacto',   coordination: 'c2', format: 'video',    featured: false, xpReward: 60,  shares: 534,  likes: 1876, createdAt: '2024-05-05', copyText: 'Los equipos hospitalarios de la IPUC visitaron 45 hospitales este mes. #FeMisiónIPUC',                                               imageUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=75' },
-  { id: 'cnt4', title: 'Grupos Étnicos: El Evangelio en Amazonía', description: 'Por primera vez, equipos misioneros llegaron a comunidades indígenas del Vaupés.',                 category: 'Hito',      coordination: 'c4', format: 'texto',    featured: true,  xpReward: 100, shares: 2103, likes: 5421, createdAt: '2024-05-07', copyText: 'Por primera vez el evangelio llega a comunidades indígenas del Vaupés. La IPUC avanza hasta los confines. #GruposÉtnicos',              imageUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=75' },
-  { id: 'cnt5', title: 'Juventud Misionera: 10.000 Jóvenes',       description: 'El movimiento de juventud misionera superó los 10.000 jóvenes activos en Colombia.',               category: 'Campaña',   coordination: 'c8', format: 'carrusel', featured: true,  xpReward: 80,  shares: 3412, likes: 8934, createdAt: '2024-05-08', copyText: '10.000 jóvenes en acción. La Juventud Misionera de la IPUC rompe récords. #JuventudMisionera',                                       imageUrl: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=75' },
+  { id: 'cnt1', title: '¡Colombia se está transformando!',         description: 'Misiones Nacionales está llegando a los rincones más alejados de Colombia.',     category: 'Testimonio', coordination: 'c8', format: 'texto',    featured: true,  xpReward: 50,  shares: 1247, likes: 3892, createdAt: '2024-05-01', copyText: 'Misiones Nacionales está llevando esperanza a cada rincón de nuestra nación. #SomosMisiónColombia #MisionesNacionales',              imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=75' },
+  { id: 'cnt2', title: 'Campaña: Estudiantes con Misión 2024',     description: 'El evangelismo estudiantil llega a 200 universidades colombianas. Comparte y suma al movimiento.', category: 'Campaña',   coordination: 'c1', format: 'imagen',   featured: true,  xpReward: 75,  shares: 892,  likes: 2341, createdAt: '2024-05-03', copyText: 'El evangelismo estudiantil llega a 200 universidades colombianas. #EstudiantesConMisión',                               imageUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=75' },
+  { id: 'cnt3', title: 'Ministerio en Hospitales: Fe que Sana',    description: 'Nuestros equipos hospitalarios visitaron 45 hospitales en Colombia este mes.',                     category: 'Impacto',   coordination: 'c2', format: 'video',    featured: false, xpReward: 60,  shares: 534,  likes: 1876, createdAt: '2024-05-05', copyText: 'Los equipos hospitalarios visitaron 45 hospitales este mes. #FeMisiónNacional',                                               imageUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=75' },
+  { id: 'cnt4', title: 'Grupos Étnicos: El Evangelio en Amazonía', description: 'Por primera vez, equipos misioneros llegaron a comunidades indígenas del Vaupés.',                 category: 'Hito',      coordination: 'c4', format: 'texto',    featured: true,  xpReward: 100, shares: 2103, likes: 5421, createdAt: '2024-05-07', copyText: 'Por primera vez el evangelio llega a comunidades indígenas del Vaupés. Misiones Nacionales avanza hasta los confines. #GruposÉtnicos',              imageUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=75' },
+  { id: 'cnt5', title: 'Juventud Misionera: 10.000 Jóvenes',       description: 'El movimiento de juventud misionera superó los 10.000 jóvenes activos en Colombia.',               category: 'Campaña',   coordination: 'c8', format: 'carrusel', featured: true,  xpReward: 80,  shares: 3412, likes: 8934, createdAt: '2024-05-08', copyText: '10.000 jóvenes en acción. La Juventud Misionera rompe récords. #JuventudMisionera',                                       imageUrl: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=75' },
   { id: 'cnt6', title: 'Ministerio Carcelario en 2024',            description: 'Más de 80 centros penitenciarios están siendo alcanzados por el evangelio cada domingo.',           category: 'Impacto',   coordination: 'c3', format: 'imagen',   featured: false, xpReward: 55,  shares: 321,  likes: 987,  createdAt: '2024-05-09', copyText: '80 centros penitenciarios alcanzados. La libertad espiritual no tiene muros. #MisiónCarcelaria',                                        imageUrl: 'https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?w=800&q=75' },
 ];
 
@@ -339,9 +339,9 @@ export const seguidores = [
 ];
 
 export const codigos_roles = [
-  { id: 1, codigo: 'IPUC-ADMIN-2024', rol_asignado: 'admin', descripcion: 'Acceso equipo nacional', activo: true },
-  { id: 2, codigo: 'IPUC2026MISION', rol_asignado: 'pastor', descripcion: 'Acceso Pastor/Directivo temporal', activo: true },
-  { id: 3, codigo: 'IPUC-MULT-2024', rol_asignado: 'multiplicador', descripcion: 'Registro de embajadores digitales', activo: true },
+  { id: 1, codigo: 'MISION-ADMIN-2026', rol_asignado: 'admin', descripcion: 'Acceso equipo nacional', activo: true },
+  { id: 2, codigo: 'MISION2026NACIONAL', rol_asignado: 'pastor', descripcion: 'Acceso Pastor/Directivo temporal', activo: true },
+  { id: 3, codigo: 'MISION-MULT-2026', rol_asignado: 'multiplicador', descripcion: 'Registro de embajadores digitales', activo: true },
 ];
 
 export const llaves = [

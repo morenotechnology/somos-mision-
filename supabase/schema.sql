@@ -241,7 +241,7 @@ declare
   full_name text := coalesce(meta ->> 'nombre_completo', meta ->> 'name', split_part(new.email, '@', 1));
   assigned_role public.app_role := 'multiplicador';
 begin
-  if meta ->> 'rol' = 'pastor' and meta ->> 'pastor_access_key' = 'IPUC2026MISION' then
+  if meta ->> 'rol' = 'pastor' and meta ->> 'pastor_access_key' = 'MISION2026NACIONAL' then
     assigned_role := 'pastor';
   end if;
 
@@ -743,14 +743,14 @@ insert into public.coordinations (id, name, icon, color, members_count, active) 
 on conflict (id) do update set name = excluded.name, icon = excluded.icon, color = excluded.color, members_count = excluded.members_count, active = excluded.active;
 
 insert into public.congregations (id, region_id, district_id, nombre, direccion, latitud, longitud, descripcion, redes_sociales, es_punto_blanco, portada_url) values
-  (101, 'r3', 'd5', 'Bogotá Centro Vivo', 'Carrera 13 #32-45', 4.609710, -74.081750, 'Congregación urbana con equipos activos de medios y juventud.', '{"instagram":"@ipucbogotacentro","facebook":"IPUC Bogotá Centro"}'::jsonb, false, 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=1200&q=75'),
-  (102, 'r2', 'd3', 'Medellín Luz y Vida', 'Calle 50 #48-22', 6.244200, -75.581200, 'Base regional para equipos de evangelismo estudiantil.', '{"instagram":"@ipucmedellinlv"}'::jsonb, false, 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&q=75'),
-  (103, 'r1', 'd1', 'Barranquilla Nueva Esperanza', 'Calle 72 #43-18', 10.987800, -74.788900, 'Equipo de alcance territorial en barrios y universidades.', '{"facebook":"IPUC Nueva Esperanza"}'::jsonb, true, 'https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&q=75'),
-  (104, 'r4', 'd7', 'Cali Maranatha', 'Avenida 6N #23-15', 3.451600, -76.532000, 'Congregación pastoral con multiplicadores en formación.', '{"instagram":"@ipuccalimaranatha"}'::jsonb, false, 'https://images.unsplash.com/photo-1511818966892-d7d671e672a2?w=1200&q=75'),
-  (105, 'r3', 'd6', 'Bogotá Sur Bendición', 'Calle 42 Sur #18-10', 4.570900, -74.117000, 'Punto de movilización digital para campañas metropolitanas.', '{"instagram":"@ipucbogotasur"}'::jsonb, true, 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1f?w=1200&q=75'),
-  (106, 'r2', 'd4', 'Antioquia Esperanza Viva', 'Carrera 45 #77-20', 6.291400, -75.536100, 'Red de apoyo para campañas rurales y digitales.', '{"facebook":"IPUC Antioquia Esperanza Viva"}'::jsonb, false, 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&q=75'),
-  (107, 'r1', 'd2', 'Cartagena Misión', 'Calle 30 #17-50', 10.391000, -75.479400, 'Congregación conectada a frentes de evangelismo turístico y social.', '{"instagram":"@ipuccartagenamision"}'::jsonb, false, 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=75'),
-  (108, 'r3', 'd5', 'Misiones Nacionales', 'Sede nacional IPUC', 4.648300, -74.096200, 'Equipo nacional de coordinación y contenido oficial.', '{"instagram":"@misionesipuc","facebook":"Misiones Nacionales IPUC"}'::jsonb, false, '/hero-map.png')
+  (101, 'r3', 'd5', 'Bogotá Centro Vivo', 'Carrera 13 #32-45', 4.609710, -74.081750, 'Congregación urbana con equipos activos de medios y juventud.', '{"instagram":"@misionesbogotacentro","facebook":"Misiones Bogotá Centro"}'::jsonb, false, 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?w=1200&q=75'),
+  (102, 'r2', 'd3', 'Medellín Luz y Vida', 'Calle 50 #48-22', 6.244200, -75.581200, 'Base regional para equipos de evangelismo estudiantil.', '{"instagram":"@misionesmedellinlv"}'::jsonb, false, 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&q=75'),
+  (103, 'r1', 'd1', 'Barranquilla Nueva Esperanza', 'Calle 72 #43-18', 10.987800, -74.788900, 'Equipo de alcance territorial en barrios y universidades.', '{"facebook":"Misiones Nueva Esperanza"}'::jsonb, true, 'https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200&q=75'),
+  (104, 'r4', 'd7', 'Cali Maranatha', 'Avenida 6N #23-15', 3.451600, -76.532000, 'Congregación pastoral con multiplicadores en formación.', '{"instagram":"@misionescalimaranatha"}'::jsonb, false, 'https://images.unsplash.com/photo-1511818966892-d7d671e672a2?w=1200&q=75'),
+  (105, 'r3', 'd6', 'Bogotá Sur Bendición', 'Calle 42 Sur #18-10', 4.570900, -74.117000, 'Punto de movilización digital para campañas metropolitanas.', '{"instagram":"@misionesbogotasur"}'::jsonb, true, 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1f?w=1200&q=75'),
+  (106, 'r2', 'd4', 'Antioquia Esperanza Viva', 'Carrera 45 #77-20', 6.291400, -75.536100, 'Red de apoyo para campañas rurales y digitales.', '{"facebook":"Misiones Antioquia Esperanza Viva"}'::jsonb, false, 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&q=75'),
+  (107, 'r1', 'd2', 'Cartagena Misión', 'Calle 30 #17-50', 10.391000, -75.479400, 'Congregación conectada a frentes de evangelismo turístico y social.', '{"instagram":"@misionescartagenamision"}'::jsonb, false, 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=75'),
+  (108, 'r3', 'd5', 'Misiones Nacionales', 'Sede nacional', 4.648300, -74.096200, 'Equipo nacional de coordinación y contenido oficial.', '{"instagram":"@misionesnacionales","facebook":"Misiones Nacionales"}'::jsonb, false, '/hero-map.png')
 on conflict (id) do update set
   region_id = excluded.region_id,
   district_id = excluded.district_id,
@@ -773,7 +773,7 @@ insert into public.badges (id, name, icon, description, xp, color) values
   ('b5', 'Misionero Digital', 'Globe', 'Completaste 5 misiones', 750, '#5C1800'),
   ('b6', 'Llama de Fuego', 'Flame', 'Top 10 del ranking nacional', 2000, '#E65100'),
   ('b7', 'Columna de Luz', 'Sparkles', 'Racha de 30 días', 3000, '#7986CB'),
-  ('b8', 'Pionero IPUC', 'Crown', 'Nivel 10 alcanzado', 5000, '#D4AF37')
+  ('b8', 'Pionero Nacional', 'Crown', 'Nivel 10 alcanzado', 5000, '#D4AF37')
 on conflict (id) do update set name = excluded.name, icon = excluded.icon, description = excluded.description, xp = excluded.xp, color = excluded.color;
 
 insert into public.missions (id, type, title, description, xp_reward, goal, unit, icon, default_status, default_progress, active, order_index) values
@@ -798,11 +798,11 @@ on conflict (id) do update set
   order_index = excluded.order_index;
 
 insert into public.publications (id, author_profile_id, coordination_id, title, description, category, format, featured, xp_reward, shares_count, likes_count, copy_text, media_url, active, is_official, created_at, published_at) values
-  (1, null, 'c8', '¡Colombia se está transformando!', 'Las misiones nacionales de la IPUC están llegando a los rincones más alejados de Colombia.', 'Testimonio', 'texto', true, 50, 0, 3892, 'Las misiones nacionales de la IPUC están llevando esperanza a cada rincón de nuestra nación. #SomosMisiónColombia #IPUC', 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=75', true, true, '2024-05-01T10:00:00Z', '2024-05-01T10:00:00Z'),
-  (2, null, 'c1', 'Campaña: Estudiantes con Misión 2024', 'El evangelismo estudiantil llega a 200 universidades colombianas. Comparte y suma al movimiento.', 'Campaña', 'imagen', true, 75, 0, 2341, 'El evangelismo estudiantil de la IPUC llega a 200 universidades colombianas. #EstudiantesConMisión', 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=75', true, true, '2024-05-03T10:00:00Z', '2024-05-03T10:00:00Z'),
-  (3, null, 'c2', 'Ministerio en Hospitales: Fe que Sana', 'Nuestros equipos hospitalarios visitaron 45 hospitales en Colombia este mes.', 'Impacto', 'video', false, 60, 0, 1876, 'Los equipos hospitalarios de la IPUC visitaron 45 hospitales este mes. #FeMisiónIPUC', 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=75', true, true, '2024-05-05T10:00:00Z', '2024-05-05T10:00:00Z'),
-  (4, null, 'c4', 'Grupos Étnicos: El Evangelio en Amazonía', 'Por primera vez, equipos misioneros llegaron a comunidades indígenas del Vaupés.', 'Hito', 'texto', true, 100, 0, 5421, 'Por primera vez el evangelio llega a comunidades indígenas del Vaupés. La IPUC avanza hasta los confines. #GruposÉtnicos', 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=75', true, true, '2024-05-07T10:00:00Z', '2024-05-07T10:00:00Z'),
-  (5, null, 'c8', 'Juventud Misionera: 10.000 Jóvenes', 'El movimiento de juventud misionera superó los 10.000 jóvenes activos en Colombia.', 'Campaña', 'carrusel', true, 80, 0, 8934, '10.000 jóvenes en acción. La Juventud Misionera de la IPUC rompe récords. #JuventudMisionera', 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=75', true, true, '2024-05-08T10:00:00Z', '2024-05-08T10:00:00Z'),
+  (1, null, 'c8', '¡Colombia se está transformando!', 'Misiones Nacionales está llegando a los rincones más alejados de Colombia.', 'Testimonio', 'texto', true, 50, 0, 3892, 'Misiones Nacionales está llevando esperanza a cada rincón de nuestra nación. #SomosMisiónColombia #MisionesNacionales', 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=75', true, true, '2024-05-01T10:00:00Z', '2024-05-01T10:00:00Z'),
+  (2, null, 'c1', 'Campaña: Estudiantes con Misión 2024', 'El evangelismo estudiantil llega a 200 universidades colombianas. Comparte y suma al movimiento.', 'Campaña', 'imagen', true, 75, 0, 2341, 'El evangelismo estudiantil llega a 200 universidades colombianas. #EstudiantesConMisión', 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=75', true, true, '2024-05-03T10:00:00Z', '2024-05-03T10:00:00Z'),
+  (3, null, 'c2', 'Ministerio en Hospitales: Fe que Sana', 'Nuestros equipos hospitalarios visitaron 45 hospitales en Colombia este mes.', 'Impacto', 'video', false, 60, 0, 1876, 'Los equipos hospitalarios visitaron 45 hospitales este mes. #FeMisiónNacional', 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=75', true, true, '2024-05-05T10:00:00Z', '2024-05-05T10:00:00Z'),
+  (4, null, 'c4', 'Grupos Étnicos: El Evangelio en Amazonía', 'Por primera vez, equipos misioneros llegaron a comunidades indígenas del Vaupés.', 'Hito', 'texto', true, 100, 0, 5421, 'Por primera vez el evangelio llega a comunidades indígenas del Vaupés. Misiones Nacionales avanza hasta los confines. #GruposÉtnicos', 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=75', true, true, '2024-05-07T10:00:00Z', '2024-05-07T10:00:00Z'),
+  (5, null, 'c8', 'Juventud Misionera: 10.000 Jóvenes', 'El movimiento de juventud misionera superó los 10.000 jóvenes activos en Colombia.', 'Campaña', 'carrusel', true, 80, 0, 8934, '10.000 jóvenes en acción. La Juventud Misionera rompe récords. #JuventudMisionera', 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=75', true, true, '2024-05-08T10:00:00Z', '2024-05-08T10:00:00Z'),
   (6, null, 'c3', 'Ministerio Carcelario en 2024', 'Más de 80 centros penitenciarios están siendo alcanzados por el evangelio cada domingo.', 'Impacto', 'imagen', false, 55, 0, 987, '80 centros penitenciarios alcanzados. La libertad espiritual no tiene muros. #MisiónCarcelaria', 'https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?w=800&q=75', true, true, '2024-05-09T10:00:00Z', '2024-05-09T10:00:00Z')
 on conflict (id) do update set
   coordination_id = excluded.coordination_id,
@@ -823,9 +823,9 @@ on conflict (id) do update set
 select setval(pg_get_serial_sequence('public.publications', 'id'), greatest((select max(id) from public.publications), 6), true);
 
 insert into public.role_codes (codigo, rol_asignado, descripcion, activo) values
-  ('IPUC-ADMIN-2024', 'admin', 'Acceso equipo nacional', true),
-  ('IPUC2026MISION', 'pastor', 'Acceso Pastor/Directivo temporal', true),
-  ('IPUC-MULT-2024', 'multiplicador', 'Registro de embajadores digitales', true)
+  ('MISION-ADMIN-2026', 'admin', 'Acceso equipo nacional', true),
+  ('MISION2026NACIONAL', 'pastor', 'Acceso Pastor/Directivo temporal', true),
+  ('MISION-MULT-2026', 'multiplicador', 'Registro de embajadores digitales', true)
 on conflict (codigo) do update set rol_asignado = excluded.rol_asignado, descripcion = excluded.descripcion, activo = excluded.activo;
 
 insert into public.access_keys (codigo, tipo, district_id, estado) values

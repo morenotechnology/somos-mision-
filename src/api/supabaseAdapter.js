@@ -30,7 +30,7 @@ const profileSelect = `
   congregations:congregations(id, nombre, portada_url)
 `;
 
-const PASTOR_ACCESS_KEY = 'IPUC2026MISION';
+const PASTOR_ACCESS_KEY = 'MISION2026NACIONAL';
 
 function ensureClient() {
   if (!hasSupabaseEnv || !supabase) {

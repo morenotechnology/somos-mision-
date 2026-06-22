@@ -1,7 +1,9 @@
-export default function BrandLogo({ className = '', alt = 'Somos Misión Colombia', decorative = false }) {
+import isologoMisionesNacionales from '../../assets/logos/ISOLOGO SOMOS MISIONES NACIONALES.png';
+
+export default function BrandLogo({ className = '', alt = 'Misiones Nacionales', decorative = false }) {
   return (
     <img
-      src="/isologo-somos-mision.svg"
+      src={isologoMisionesNacionales}
       alt={decorative ? '' : alt}
       aria-hidden={decorative ? 'true' : undefined}
       className={`brand-logo ${className}`.trim()}

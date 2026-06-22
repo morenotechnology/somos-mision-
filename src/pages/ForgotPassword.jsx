@@ -45,7 +45,7 @@ export default function ForgotPassword() {
           <div className="w-11 h-8 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center p-1.5 shadow-sm">
             <BrandLogo decorative />
           </div>
-          <span className="font-bold text-[#0F172A] text-sm">Somos Misión Colombia</span>
+          <span className="font-bold text-[#0F172A] text-sm">Misiones Nacionales</span>
         </div>
 
         <div className="card p-8">

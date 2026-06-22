@@ -42,8 +42,8 @@ export default function MobileSidebar() {
                   <BrandLogo decorative />
                 </div>
                 <div>
-                  <p className="text-white font-bold text-sm">Somos Misión</p>
-                  <p className="text-[#D4AF37] text-xs">Colombia · IPUC</p>
+                  <p className="text-white font-bold text-sm">Misiones Nacionales</p>
+                  <p className="text-[#D4AF37] text-xs">Colombia</p>
                 </div>
               </div>
               <button onClick={() => setMobileSidebar(false)} className="p-2 rounded-xl hover:bg-white/10 transition">

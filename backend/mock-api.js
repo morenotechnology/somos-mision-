@@ -87,9 +87,9 @@ const tableRoutes = {
 };
 
 const roleDemoMap = {
-  admin: 'admin@ipuc.org',
-  pastor: 'maria@ipuc.org',
-  multiplicador: 'carlos@ipuc.org',
+  admin: 'admin@misiones.org',
+  pastor: 'maria@misiones.org',
+  multiplicador: 'carlos@misiones.org',
 };
 
 function wait(ms = LATENCY_MS) {
@@ -279,13 +279,13 @@ async function handleAuth(req, res, segments) {
 
   if (req.method === 'POST' && segments[1] === 'register') {
     const requestedRole = body.role || body.rol || 'multiplicador';
-    const role = requestedRole === 'pastor' && body.accessKey === 'IPUC2026MISION'
+    const role = requestedRole === 'pastor' && body.accessKey === 'MISION2026NACIONAL'
       ? 'pastor'
       : 'multiplicador';
     const id = `u${db.users.length + 1}`;
     const schemaId = randomUUID();
     const name = body.name || body.nombre_completo || 'Nuevo Embajador';
-    const email = body.email || `usuario-${Date.now()}@ipuc.org`;
+    const email = body.email || `usuario-${Date.now()}@misiones.org`;
     const congregationName = body.congregation || body.congregacion_nombre || body.congregacion || 'Misiones Nacionales';
 
     const user = {

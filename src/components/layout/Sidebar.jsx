@@ -53,9 +53,9 @@ export default function Sidebar() {
                 className="min-w-0 overflow-hidden"
               >
                 <p className="font-bold text-[0.8125rem] leading-tight whitespace-nowrap" style={{ color: '#1D1D1F', letterSpacing: '-0.01em' }}>
-                  Somos Misión
+                  Misiones Nacionales
                 </p>
-                <p className="text-[0.6875rem] font-medium whitespace-nowrap" style={{ color: '#6E6E73' }}>Colombia · IPUC</p>
+                <p className="text-[0.6875rem] font-medium whitespace-nowrap" style={{ color: '#6E6E73' }}>Colombia</p>
               </motion.div>
             )}
           </AnimatePresence>

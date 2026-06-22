@@ -40,7 +40,7 @@ const DISTRICTS = Array.from({ length: 35 }, (_, index) => ({
   name: `Distrito ${index + 1}`,
 }));
 
-const PASTOR_ACCESS_KEY = 'IPUC2026MISION';
+const PASTOR_ACCESS_KEY = 'MISION2026NACIONAL';
 
 function RegisterBrandPanel() {
   return (
@@ -48,9 +48,9 @@ function RegisterBrandPanel() {
       <img src="/hero-map.png" alt="" aria-hidden="true" className="auth-brand-map" />
       <div className="auth-brand-overlay" />
       <div className="auth-brand-content">
-        <button type="button" className="auth-brand-lockup" aria-label="Somos Misión Colombia">
+        <button type="button" className="auth-brand-lockup" aria-label="Misiones Nacionales">
           <span><BrandLogo decorative /></span>
-          <strong>Somos Misión Colombia</strong>
+          <strong>Misiones Nacionales</strong>
         </button>
         <div className="auth-brand-copy">
           <p>Registro nacional</p>
@@ -171,7 +171,7 @@ export default function Register() {
 
           <div className="auth-mobile-brand">
             <span><BrandLogo decorative /></span>
-            <strong>Somos Misión Colombia</strong>
+            <strong>Misiones Nacionales</strong>
           </div>
 
           <div className="auth-card-header">
@@ -273,7 +273,7 @@ export default function Register() {
                     <span><Zap size={17} fill="currentColor" /></span>
                     <div>
                       <strong>Acceso Beta</strong>
-                      <p>Tu cuenta quedará lista para entrar a la beta privada de Somos Misión y empezar a compartir contenido oficial.</p>
+                      <p>Tu cuenta quedará lista para entrar a la beta privada de Misiones Nacionales y empezar a compartir contenido oficial.</p>
                     </div>
                   </div>
                 </>
