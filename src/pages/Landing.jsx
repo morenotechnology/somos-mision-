@@ -201,7 +201,7 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
           </button>
         </div>
         <img src="/hero-map.png" alt="" className="ln-mobile-hero-map" />
-        <img src={heroBrandLogo} alt="" className="ln-mobile-hero-photo ln-mobile-hero-brand-art" />
+        <img src={amigosLogo} alt="" className="ln-mobile-hero-photo ln-mobile-hero-amigos" />
         <div className="ln-mobile-hero-status">
           <div>
             <span>Misiones Nacionales</span>
