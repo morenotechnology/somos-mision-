@@ -29,11 +29,20 @@ function FacebookIcon(props) {
   );
 }
 
+function InstagramIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path fill="currentColor" d="M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2Zm-.2 2.1a3.5 3.5 0 0 0-3.5 3.5v8.8a3.5 3.5 0 0 0 3.5 3.5h8.8a3.5 3.5 0 0 0 3.5-3.5V7.6a3.5 3.5 0 0 0-3.5-3.5H7.6Zm9.02 2.38a1.18 1.18 0 1 1 0 2.36 1.18 1.18 0 0 1 0-2.36ZM12 7.05A4.95 4.95 0 1 1 12 16.95 4.95 4.95 0 0 1 12 7.05Zm0 2.1a2.85 2.85 0 1 0 0 5.7 2.85 2.85 0 0 0 0-5.7Z" />
+    </svg>
+  );
+}
+
 export default function ContentCard({ item, delay = 0 }) {
   const { shareContent, sharedContent } = useAppStore();
   const [imgErr, setImgErr] = useState(false);
   const alreadyShared = sharedContent.includes(String(item.id));
   const accent = formatTone[item.format] || '#1A237E';
+  const networkNames = { whatsapp: 'WhatsApp', facebook: 'Facebook', instagram: 'Instagram' };
 
   const handleCopy = () => {
     navigator.clipboard?.writeText(item.copyText)
@@ -43,9 +52,15 @@ export default function ContentCard({ item, delay = 0 }) {
 
   const getShareMessage = () => `${item.copyText}\n\n${item.title}`;
 
-  const openNetworkShare = (network) => {
+  const openNetworkShare = async (network) => {
     const shareUrl = `${window.location.origin}/dashboard?contenido=${encodeURIComponent(item.id)}`;
     const message = getShareMessage();
+    if (network === 'instagram') {
+      await navigator.clipboard?.writeText(`${message}\n${shareUrl}`).catch(() => {});
+      window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     const url = network === 'facebook'
       ? `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(message)}`
       : `https://wa.me/?text=${encodeURIComponent(`${message}\n${shareUrl}`)}`;
@@ -53,9 +68,9 @@ export default function ContentCard({ item, delay = 0 }) {
   };
 
   const handleShare = async (network) => {
-    openNetworkShare(network);
+    await openNetworkShare(network);
     if (alreadyShared) {
-      toast.success(`Abriendo ${network === 'facebook' ? 'Facebook' : 'WhatsApp'}`);
+      toast.success(network === 'instagram' ? 'Texto copiado. Abriendo Instagram' : `Abriendo ${networkNames[network]}`);
       return;
     }
     try {
@@ -130,6 +145,10 @@ export default function ContentCard({ item, delay = 0 }) {
           <button type="button" onClick={() => handleShare('facebook')} className={`content-action-social is-facebook ${alreadyShared ? 'is-shared' : ''}`}>
             <FacebookIcon />
             Facebook
+          </button>
+          <button type="button" onClick={() => handleShare('instagram')} className={`content-action-social is-instagram ${alreadyShared ? 'is-shared' : ''}`}>
+            <InstagramIcon />
+            Instagram
           </button>
         </div>
       </div>

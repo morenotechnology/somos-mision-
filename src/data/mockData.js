@@ -164,7 +164,7 @@ export const coordinations = [
 export const badges = [
   { id: 'b1', name: 'Primer Paso',       icon: 'Sprout',    description: 'Compartiste tu primer contenido', xp: 50,   color: '#22c55e' },
   { id: 'b2', name: 'Multiplicador',     icon: 'Zap',       description: 'Compartiste 10 contenidos',       xp: 200,  color: '#D4AF37' },
-  { id: 'b3', name: 'Embajador Activo',  icon: 'Medal',     description: 'Mantuviste racha de 7 días',      xp: 500,  color: '#1A237E' },
+  { id: 'b3', name: 'Multiplicador Activo',  icon: 'Medal',     description: 'Mantuviste racha de 7 días',      xp: 500,  color: '#1A237E' },
   { id: 'b4', name: 'Voz Nacional',      icon: 'Megaphone', description: 'Llegaste a 1000 XP',              xp: 1000, color: '#D4AF37' },
   { id: 'b5', name: 'Misionero Digital', icon: 'Globe',     description: 'Completaste 5 misiones',          xp: 750,  color: '#5C1800' },
   { id: 'b6', name: 'Llama de Fuego',    icon: 'Flame',     description: 'Top 10 del ranking nacional',     xp: 2000, color: '#E65100' },
@@ -345,7 +345,7 @@ export const seguidores = [
 export const codigos_roles = [
   { id: 1, codigo: 'MISION-ADMIN-2026', rol_asignado: 'admin', descripcion: 'Acceso equipo nacional', activo: true },
   { id: 2, codigo: 'IPUC2026MISION', rol_asignado: 'pastor', descripcion: 'Acceso Pastor/Directivo temporal', activo: true },
-  { id: 3, codigo: 'MISION-MULT-2026', rol_asignado: 'multiplicador', descripcion: 'Registro de embajadores digitales', activo: true },
+  { id: 3, codigo: 'MISION-MULT-2026', rol_asignado: 'multiplicador', descripcion: 'Registro de multiplicadores digitales', activo: true },
 ];
 
 export const llaves = [

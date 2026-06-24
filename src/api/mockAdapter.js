@@ -87,7 +87,7 @@ export function createMockApi() {
         const user = {
           id: `u${state.users.length + 1}`,
           schemaId: crypto.randomUUID(),
-          name: payload.name || payload.nombre_completo || 'Nuevo Embajador',
+          name: payload.name || payload.nombre_completo || 'Nuevo Multiplicador',
           email: payload.email,
           role,
           region: payload.region || 'r3',

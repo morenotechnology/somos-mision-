@@ -184,7 +184,7 @@ function AdminDash({ metrics, weeklyActivity, regionActivity, topUsers }) {
       </div>
 
       <div className="card p-5">
-        <div className="flex items-center justify-between mb-4"><h3 className="font-bold text-[#0F172A]">Top embajadores nacionales</h3><div className="flex items-center gap-1 text-[#D4AF37]"><Star size={13} fill="#D4AF37" /><span className="text-xs font-bold text-[#8B6914]">Hall de Honor</span></div></div>
+        <div className="flex items-center justify-between mb-4"><h3 className="font-bold text-[#0F172A]">Top multiplicadores nacionales</h3><div className="flex items-center gap-1 text-[#D4AF37]"><Star size={13} fill="#D4AF37" /><span className="text-xs font-bold text-[#8B6914]">Hall de Honor</span></div></div>
         <div className="grid md:grid-cols-2 gap-2">{topUsers.map((rankingUser, index) => <RankingCard key={rankingUser.id} user={rankingUser} position={index + 1} delay={index * 0.04} />)}</div>
       </div>
     </div>

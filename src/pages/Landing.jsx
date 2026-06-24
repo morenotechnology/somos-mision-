@@ -45,14 +45,14 @@ const fadeUp = (delay = 0, distance = 28) => ({
 const steps = [
   {
     Icon: BookOpen,
-    title: 'Recibe contenido oficial',
+    title: 'Visualiza contenido oficial',
     desc: 'Publicaciones, comunicados y piezas listas para usar desde un solo hub centralizado.',
     number: '01',
   },
   {
     Icon: Send,
-    title: 'Comparte en tus canales',
-    desc: 'Activa WhatsApp y redes sociales sin perder consistencia en el mensaje.',
+    title: 'Comparte en tus redes',
+    desc: 'Activa WhatsApp, Facebook e Instagram sin perder consistencia en el mensaje.',
     number: '02',
   },
   {
@@ -63,8 +63,8 @@ const steps = [
   },
   {
     Icon: Globe,
-    title: 'Conecta el territorio',
-    desc: 'Congregaciones, distritos y coordinaciones trabajando con una misma señal.',
+    title: 'Conecta las regiones',
+    desc: 'Congregaciones, distritos y coordinaciones trabajando con la misma misión.',
     number: '04',
   },
 ];
@@ -78,25 +78,25 @@ const territoryStories = [
   },
   {
     region: 'Caribe',
-    title: 'Costa, islas y ciudades conectadas por una misma señal',
+    title: 'Costas, islas y ciudades conectadas en una sola misión',
     image: regionCaribe,
     tone: '#00838F',
   },
   {
     region: 'Andina',
-    title: 'Distritos de montaña con embajadores digitales activos',
+    title: 'Distritos de montañas con multiplicadores apasionados por las misiones',
     image: regionAndina,
     tone: '#C5931A',
   },
   {
     region: 'Pacífica',
-    title: 'Selva, costa y comunidades avanzando con contenido oficial',
+    title: 'Selva, costa y comunidades avanzando en la misión',
     image: regionPacifica,
     tone: '#0F766E',
   },
   {
     region: 'Orinoquía',
-    title: 'Llanos abiertos, rutas y equipos listos para avanzar',
+    title: 'Llanos abiertos, rutas y una región por conquistar',
     image: regionOrinoquia,
     tone: '#B45309',
   },
@@ -105,7 +105,7 @@ const territoryStories = [
 const mobileMenuItems = [
   { label: 'Inicio', target: 'hero' },
   { label: 'Impacto', target: 'metricas' },
-  { label: 'Territorio', target: 'territorio' },
+  { label: 'Regiones', target: 'territorio' },
   { label: 'Cómo funciona', target: 'como-funciona' },
   { label: 'Coordinaciones', target: 'coordinaciones' },
   { label: 'Ranking', target: 'ranking' },
@@ -344,7 +344,7 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
         <div className="ln-mobile-hero-status">
           <div>
             <span>Misiones Nacionales</span>
-            <strong>{metrics.totalEmbajadores.toLocaleString()} embajadores activos</strong>
+            <strong>{metrics.totalEmbajadores.toLocaleString()} multiplicadores activos</strong>
           </div>
         </div>
       </motion.div>
@@ -380,6 +380,12 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
                 <button type="button" onClick={() => setMobileMenuOpen(false)} aria-label="Cerrar menú">
                   <X size={20} strokeWidth={2.6} />
                 </button>
+              </div>
+
+              <div className="ln-mobile-menu-feature" aria-hidden="true">
+                <span>Red de los 5.000</span>
+                <strong>12 coordinaciones · 5 regiones · una misión</strong>
+                <img src={amigosLogo} alt="" />
               </div>
 
               <nav className="ln-mobile-menu-links" aria-label="Secciones de la landing">
@@ -429,7 +435,7 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
           <BrandLogo decorative className="ln-pill-logo" />
           <span>Misiones Nacionales</span>
           <span className="ln-hero-pill-sep" />
-          <strong>{metrics.totalEmbajadores.toLocaleString()} embajadores activos</strong>
+          <strong>{metrics.totalEmbajadores.toLocaleString()} multiplicadores activos</strong>
         </motion.div>
 
         <motion.div {...fadeUp(0.2)} className="ln-hero-headline">
@@ -440,7 +446,7 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
         </motion.div>
 
         <motion.p {...fadeUp(0.32)} className="ln-hero-sub">
-          Somos Misión Colombia es una iniciativa de Misiones Nacionales de las Iglesias Pentecostales Unidas de Colombia para anunciar el evangelio en todo el territorio nacional. Por medio de Biblias y testimonios, articula iglesias, distritos, misioneros nacionales y creyentes para que el mensaje de Jesucristo llegue a cada región del país. No es solo una campaña: es un compromiso espiritual.
+          ¡Bienvenido a la Red de los 5.000! En Colombia vivimos las misiones: una nación que ama a Dios, sirve con pasión y lleva la misión en el corazón. Esta red conecta iglesias, distritos, coordinaciones, misioneros nacionales y creyentes para compartir historias, proyectos, noticias y testimonios que anuncian a Jesucristo en cada región. No es solo una campaña: es un compromiso espiritual.
         </motion.p>
 
         {/* CTAs */}
@@ -457,7 +463,7 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
           <span><CheckCircle2 size={14} strokeWidth={2.2} />{schema.publicaciones} publicaciones</span>
           <span><Building2 size={14} strokeWidth={2.2} />{schema.congregaciones} congregaciones</span>
           <span><Star size={14} strokeWidth={2.2} />{schema.comunicadosActivos} comunicados activos</span>
-          <span><Users size={14} strokeWidth={2.2} />{metrics.totalEmbajadores.toLocaleString()} embajadores</span>
+          <span><Users size={14} strokeWidth={2.2} />{metrics.totalEmbajadores.toLocaleString()} multiplicadores</span>
         </motion.div>
       </motion.div>
 
@@ -477,7 +483,7 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
 /* ─── Metrics band ────────────────────────────────────────────────────── */
 function MetricsBand({ metrics }) {
   const items = [
-    { Icon: Users, value: formatNumber(metrics.totalEmbajadores), label: 'Embajadores activos', note: 'Perfiles beta', color: '#1A237E' },
+    { Icon: Users, value: formatNumber(metrics.totalEmbajadores), label: 'Multiplicadores activos', note: 'Perfiles beta', color: '#1A237E' },
     { Icon: Share2, value: formatNumber(metrics.contenidosCompartidos), label: 'Contenidos compartidos', note: 'Impacto social', color: '#C5931A' },
     { Icon: MapPin, value: metrics.regionesConectadas, label: 'Regiones conectadas', note: 'Cobertura nacional', color: '#00838F' },
     { Icon: Zap, value: formatNumber(metrics.xpGenerado), label: 'XP generado', note: 'Actividad trazable', color: '#2E7D32' },
@@ -489,7 +495,7 @@ function MetricsBand({ metrics }) {
         <motion.div {...fadeUp(0)} className="ln-band-header">
           <p className="ln-eyebrow"><TrendingUp size={13} strokeWidth={2.5} /> Impacto nacional</p>
           <h2>Indicadores limpios para una red que se mueve rápido</h2>
-          <p className="ln-band-desc">Una lectura nacional del avance misionero, conectada a regiones, contenidos y embajadores.</p>
+          <p className="ln-band-desc">Una lectura nacional del avance misionero, conectada a regiones, contenidos y multiplicadores.</p>
         </motion.div>
         <div className="ln-metrics-shell">
           <div className="ln-metrics-image is-logo" aria-hidden="true">
@@ -521,7 +527,7 @@ function TerritorySection() {
     <section className="ln-territory-section" id="territorio">
       <div className="ln-container">
         <motion.div {...fadeUp(0)} className="ln-band-header">
-          <p className="ln-eyebrow"><MapPin size={13} strokeWidth={2.5} /> Territorio</p>
+          <p className="ln-eyebrow"><MapPin size={13} strokeWidth={2.5} /> Regiones</p>
           <h2>Colombia como escenario vivo de la misión</h2>
           <p className="ln-band-desc">La identidad visual mezcla paisajes, cultura y acción digital para que el proyecto se sienta propio desde la primera pantalla.</p>
         </motion.div>
@@ -574,9 +580,9 @@ function StepsSection() {
 
       <div className="ln-container ln-steps-inner">
         <motion.div {...fadeUp(0)} className="ln-band-header">
-          <p className="ln-eyebrow"><Radio size={13} strokeWidth={2.5} /> Flujo operativo</p>
-          <h2>Del contenido oficial a la acción medible</h2>
-          <p className="ln-band-desc">Una secuencia simple para que el equipo nacional y cada multiplicador trabajen con la misma estructura.</p>
+          <p className="ln-eyebrow"><Radio size={13} strokeWidth={2.5} /> Multiplicadores de contenido</p>
+          <h2>Recibe, comparte y transforma</h2>
+          <p className="ln-band-desc">Una red simple para que el equipo nacional y cada multiplicador trabajen con la misma estructura.</p>
         </motion.div>
 
         <div className="ln-steps-grid">
@@ -688,7 +694,7 @@ function CoordinationsSection({ coordinations }) {
         <motion.div {...fadeUp(0.12)} className="ln-coord-ribbon">
           <div>
             <span>Una misión compartida</span>
-            <strong>Coordinaciones, iglesias y creyentes avanzando bajo una misma señal nacional.</strong>
+            <strong>Coordinaciones, iglesias y creyentes avanzando bajo una misma misión nacional.</strong>
           </div>
           <img src={unanimesLogo} alt="Unánimes en la misión" />
         </motion.div>
@@ -716,8 +722,9 @@ function RankingSection({ topUsers, onLogin }) {
           <div className="ln-ranking-copy">
             <motion.div {...fadeUp(0)}>
               <p className="ln-eyebrow"><Award size={13} strokeWidth={2.5} /> Hall de Honor</p>
-              <h2>Top Embajadores</h2>
-              <p className="ln-band-desc is-left">El ranking convierte la participación en reconocimiento visible para toda la red nacional.</p>
+              <div className="ln-ranking-live"><span /> En tiempo real</div>
+              <h2>Top Multiplicadores</h2>
+              <p className="ln-band-desc is-left">El ranking convierte la participación en reconocimiento visible para toda la red nacional y se actualiza automáticamente.</p>
             </motion.div>
             <motion.button {...fadeUp(0.18)} id="ranking-cta" type="button" onClick={onLogin} className="ln-btn-primary ln-btn-lg">
               Ver ranking completo <ArrowRight size={18} strokeWidth={2.3} />
@@ -727,7 +734,7 @@ function RankingSection({ topUsers, onLogin }) {
           {/* Right: cards */}
           <div className="ln-ranking-list">
             {topUsers.map((user, i) => (
-              <motion.article key={user.id} {...fadeUp(i * 0.1 + 0.05)} className="ln-ranking-card">
+              <motion.article key={user.id} {...fadeUp(i * 0.1 + 0.05)} className={`ln-ranking-card is-rank-${i + 1}`}>
                 <div
                   className="ln-medal"
                   style={{ background: `${medalColors[i]}18`, color: medalColors[i], borderColor: `${medalColors[i]}44` }}
@@ -740,7 +747,7 @@ function RankingSection({ topUsers, onLogin }) {
                 </div>
                 <div className="ln-rank-info">
                   <strong>{user.name.split(' ').slice(0, 2).join(' ')}</strong>
-                  <small>Nivel {user.level}</small>
+                  <small>Multiplicador · Nivel {user.level}</small>
                 </div>
                 <div className="ln-xp-badge">
                   <Zap size={13} fill="currentColor" strokeWidth={0} />
@@ -748,6 +755,22 @@ function RankingSection({ topUsers, onLogin }) {
                 </div>
               </motion.article>
             ))}
+            {!topUsers.length && (
+              <motion.article {...fadeUp(0.05)} className="ln-ranking-card is-empty">
+                <div className="ln-medal" style={{ background: '#D4AF3718', color: '#D4AF37', borderColor: '#D4AF3744' }}>
+                  <Award size={16} strokeWidth={2} />
+                </div>
+                <div className="ln-avatar" style={{ background: '#1A237E' }}>SM</div>
+                <div className="ln-rank-info">
+                  <strong>Ranking en espera</strong>
+                  <small>Se activará con los primeros multiplicadores.</small>
+                </div>
+                <div className="ln-xp-badge">
+                  <Zap size={13} fill="currentColor" strokeWidth={0} />
+                  0
+                </div>
+              </motion.article>
+            )}
           </div>
         </div>
       </div>
@@ -829,6 +852,7 @@ export default function Landing() {
 
   useEffect(() => {
     let active = true;
+    let rankingTimer;
     api.bootstrap()
       .then((payload) => {
         if (!active) return;
@@ -843,7 +867,22 @@ export default function Landing() {
         if (!active) return;
         setData((c) => ({ ...c }));
       });
-    return () => { active = false; };
+
+    const refreshRanking = () => {
+      api.ranking.list({ limit: 3 })
+        .then((rows) => {
+          if (!active || !Array.isArray(rows)) return;
+          setData((current) => ({ ...current, topUsers: rows.slice(0, 3) }));
+        })
+        .catch(() => {});
+    };
+
+    rankingTimer = window.setInterval(refreshRanking, 15000);
+
+    return () => {
+      active = false;
+      if (rankingTimer) window.clearInterval(rankingTimer);
+    };
   }, []);
 
   const metrics = data.globalMetrics || {

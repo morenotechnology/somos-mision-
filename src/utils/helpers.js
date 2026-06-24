@@ -4,7 +4,7 @@ export const xpToNextLevel = (level) => level * 500;
 // Get level title
 export const getLevelTitle = (level) => {
   const titles = ['', 'Sembrador', 'Mensajero', 'Testigo', 'Heraldo', 'Misionero',
-    'Embajador', 'Defensor', 'Apóstol', 'Pionero', 'Columna Nacional'];
+    'Multiplicador', 'Defensor', 'Apóstol', 'Pionero', 'Columna Nacional'];
   return titles[Math.min(level, 10)] || 'Sembrador';
 };
 

@@ -232,7 +232,7 @@ export default function Register() {
                       set('role', event.target.value);
                       if (event.target.value !== 'pastor') set('accessKey', '');
                     }}>
-                      <option value="multiplicador">Multiplicador - Embajador digital</option>
+                      <option value="multiplicador">Multiplicador digital</option>
                       <option value="pastor">PASTOR/DIRECTIVO</option>
                     </AuthInput>
                   </FieldGroup>
