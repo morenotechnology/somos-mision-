@@ -1,58 +1,91 @@
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { Home, ArrowLeft, Map } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Compass, Home, LayoutDashboard, MapPinned, Search } from 'lucide-react';
 import BrandLogo from '../components/common/BrandLogo';
+import { useAppStore } from '../store/useAppStore';
 
 export default function NotFound() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isAuthenticated = useAppStore((state) => state.isAuthenticated);
+  const safeHome = isAuthenticated ? '/dashboard' : '/';
+
+  const goBackSafely = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate(safeHome, { replace: true });
+  };
+
+  const quickLinks = isAuthenticated
+    ? [
+        { label: 'Dashboard', path: '/dashboard', Icon: LayoutDashboard },
+        { label: 'Contenido', path: '/hub', Icon: Search },
+        { label: 'Misiones', path: '/missions', Icon: Compass },
+      ]
+    : [
+        { label: 'Inicio', path: '/', Icon: Home },
+        { label: 'Iniciar sesión', path: '/login', Icon: Compass },
+        { label: 'Registrarme', path: '/register', Icon: Search },
+      ];
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center p-6">
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="text-center max-w-md"
+    <main className="not-found-page">
+      <motion.section
+        initial={{ opacity: 0, y: 24, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.52, ease: [0.22, 1, 0.36, 1] }}
+        className="not-found-card"
       >
-        {/* Visual */}
-        <div className="relative mb-8 flex items-center justify-center">
-          <div className="w-32 h-32 rounded-full bg-[#1A237E]/10 flex items-center justify-center">
-            <div className="w-20 h-20 rounded-full bg-[#1A237E]/15 flex items-center justify-center">
-              <Map size={36} className="text-[#1A237E]" />
-            </div>
-          </div>
-          <div className="absolute -top-2 -right-2 w-16 h-11 rounded-2xl bg-white border-2 border-[#D4AF37]/40 flex items-center justify-center p-2 shadow-lg">
+        <div className="not-found-brand-row">
+          <div className="not-found-logo">
             <BrandLogo decorative />
           </div>
+          <span>Misiones Nacionales</span>
         </div>
 
-        {/* 404 number */}
-        <p className="text-8xl font-black text-[#E2E8F0] leading-none mb-4 select-none">404</p>
-
-        <h1 className="text-2xl font-black text-[#0F172A] mb-3">Página no encontrada</h1>
-        <p className="text-[#475569] text-sm leading-relaxed mb-8">
-          La ruta que buscas no existe o fue movida. Vuelve al inicio y continúa tu misión.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <motion.button
-            whileHover={{ y: -1 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate(-1)}
-            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-[#E2E8F0] text-sm font-semibold text-[#475569] hover:border-[#1A237E] hover:text-[#1A237E] transition bg-white"
-          >
-            <ArrowLeft size={15} /> Volver atrás
-          </motion.button>
-          <motion.button
-            whileHover={{ y: -1 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate('/dashboard')}
-            className="btn-primary flex items-center justify-center gap-2 py-3 px-5 text-sm"
-          >
-            <Home size={15} /> Ir al Dashboard
-          </motion.button>
+        <div className="not-found-visual" aria-hidden="true">
+          <div className="not-found-map-orb">
+            <MapPinned size={44} />
+          </div>
+          <strong>404</strong>
         </div>
-      </motion.div>
-    </div>
+
+        <div className="not-found-copy">
+          <p className="not-found-kicker">Ruta no encontrada</p>
+          <h1>Esta página se salió del mapa.</h1>
+          <p>
+            La dirección no existe, cambió o el navegador intentó abrir una ruta interna directamente.
+            Ya dejamos un camino seguro para volver sin romper la experiencia.
+          </p>
+        </div>
+
+        <div className="not-found-path">
+          <span>URL actual</span>
+          <code>{location.pathname}{location.search}</code>
+        </div>
+
+        <div className="not-found-actions">
+          <button type="button" className="not-found-secondary" onClick={goBackSafely}>
+            <ArrowLeft size={17} />
+            Volver
+          </button>
+          <button type="button" className="not-found-primary" onClick={() => navigate(safeHome, { replace: true })}>
+            {isAuthenticated ? <LayoutDashboard size={17} /> : <Home size={17} />}
+            {isAuthenticated ? 'Ir al Dashboard' : 'Ir al inicio'}
+          </button>
+        </div>
+
+        <nav className="not-found-links" aria-label="Rutas rápidas">
+          {quickLinks.map(({ label, path, Icon }) => (
+            <button key={path} type="button" onClick={() => navigate(path, { replace: true })}>
+              <Icon size={16} />
+              {label}
+            </button>
+          ))}
+        </nav>
+      </motion.section>
+    </main>
   );
 }

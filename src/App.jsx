@@ -85,17 +85,39 @@ export default function App() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/home" element={<Navigate to="/" replace />} />
+          <Route path="/inicio" element={<Navigate to="/" replace />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/ingresar" element={<Navigate to="/login" replace />} />
+          <Route path="/signin" element={<Navigate to="/login" replace />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/registro" element={<Navigate to="/register" replace />} />
+          <Route path="/crear-cuenta" element={<Navigate to="/register" replace />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/recuperar" element={<Navigate to="/forgot-password" replace />} />
+          <Route path="/auth/callback" element={<Login />} />
 
           <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/inicio-app" element={<Navigate to="/dashboard" replace />} />
             <Route path="/hub" element={<Hub />} />
+            <Route path="/hub/*" element={<Navigate to="/hub" replace />} />
+            <Route path="/contenido" element={<Navigate to="/hub" replace />} />
+            <Route path="/contenidos" element={<Navigate to="/hub" replace />} />
+            <Route path="/publicaciones" element={<Navigate to="/hub" replace />} />
             <Route path="/ranking" element={<Ranking />} />
+            <Route path="/ranking/*" element={<Navigate to="/ranking" replace />} />
+            <Route path="/hall" element={<Navigate to="/ranking" replace />} />
+            <Route path="/hall-de-honor" element={<Navigate to="/ranking" replace />} />
             <Route path="/missions" element={<Missions />} />
+            <Route path="/missions/*" element={<Navigate to="/missions" replace />} />
+            <Route path="/misiones" element={<Navigate to="/missions" replace />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/*" element={<Navigate to="/profile" replace />} />
+            <Route path="/perfil" element={<Navigate to="/profile" replace />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
