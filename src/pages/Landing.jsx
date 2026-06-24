@@ -33,6 +33,7 @@ import heroBrandLogo from '../assets/logos/logosinfondo.png';
 import amigosLogo from '../assets/logos/5.000 Amigos.png';
 import amigosOldLogo from '../assets/logos/LOGO 5000 AMIGOS.svg';
 import unanimesLogo from '../assets/logos/1.png';
+import posterFinal from '../assets/logos/POSTER FINAL.png';
 
 /* ─── Animation variants ─────────────────────────────────────────────── */
 const fadeUp = (delay = 0, distance = 28) => ({
@@ -480,6 +481,41 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
   );
 }
 
+/* ─── Official Poster ─────────────────────────────────────────────────── */
+function PosterFeature({ onRegister }) {
+  return (
+    <section className="ln-poster-section" id="poster-oficial">
+      <div className="ln-container">
+        <div className="ln-poster-shell">
+          <motion.div {...fadeUp(0)} className="ln-poster-copy">
+            <p className="ln-eyebrow is-light"><Star size={13} strokeWidth={2.5} /> Imagen oficial</p>
+            <h2>Somos 12 coordinaciones, 5 regiones y una sola misión</h2>
+            <p>
+              Una pieza visual para presentar la visión de Somos Misión Colombia: iglesias, distritos,
+              misioneros nacionales y creyentes unidos para anunciar el evangelio en cada región del país.
+            </p>
+            <div className="ln-poster-actions">
+              <button type="button" onClick={onRegister} className="ln-btn-primary ln-btn-lg">
+                Unirme a la red <ArrowRight size={18} strokeWidth={2.3} />
+              </button>
+              <span>Poster oficial de campaña</span>
+            </div>
+          </motion.div>
+
+          <motion.figure
+            {...fadeUp(0.12, 34)}
+            className="ln-poster-frame"
+            whileHover={{ y: -6, rotate: -0.4 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <img src={posterFinal} alt="Poster oficial Somos Misión Colombia" loading="lazy" decoding="async" />
+          </motion.figure>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ─── Metrics band ────────────────────────────────────────────────────── */
 function MetricsBand({ metrics }) {
   const items = [
@@ -901,6 +937,7 @@ export default function Landing() {
       <Nav onLogin={toLogin} onRegister={toRegister} />
       <main>
         <Hero metrics={metrics} schema={schema} onRegister={toRegister} onLogin={toLogin} />
+        <PosterFeature onRegister={toRegister} />
         <MetricsBand metrics={metrics} />
         <TerritorySection />
         <StepsSection />
