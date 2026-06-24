@@ -667,7 +667,6 @@ function CoordinationsSection({ coordinations }) {
                 </div>
 
                 <div className="ln-coord-body">
-                  <span className="ln-coord-label">{detail.metric}</span>
                   <h3>{item.name}</h3>
                   <p>{detail.brief}</p>
                 </div>
@@ -766,22 +765,37 @@ function FinalCTA({ onRegister }) {
       </div>
       <div className="ln-container">
         <motion.div {...fadeUp(0)} className="ln-final-inner">
-          <div className="ln-final-badge">
-            <BrandLogo decorative />
+          <div className="ln-final-brand-row">
+            <div className="ln-final-badge">
+              <BrandLogo decorative />
+            </div>
+            <div>
+              <span>Misiones Nacionales</span>
+              <strong>Somos una misión</strong>
+            </div>
           </div>
-          <h2>Forma parte de la red</h2>
-          <p>Únete a cientos de embajadores que coordinan, comparten y crecen juntos bajo una misma misión en Colombia.</p>
-          <motion.button
-            {...fadeUp(0.18)}
-            id="final-register"
-            type="button"
-            onClick={onRegister}
-            className="ln-btn-primary ln-btn-xl"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            Unirme ahora <ArrowRight size={20} strokeWidth={2.3} />
-          </motion.button>
+          <div className="ln-final-logo-lockup" aria-hidden="true">
+            <img src={heroBrandLogo} alt="" />
+          </div>
+          <h2>Activa tu iglesia en la red nacional</h2>
+          <p>Comparte contenido oficial, conecta coordinaciones y registra el avance misionero con una experiencia clara, móvil y medible.</p>
+          <div className="ln-final-actions">
+            <motion.button
+              {...fadeUp(0.18)}
+              id="final-register"
+              type="button"
+              onClick={onRegister}
+              className="ln-btn-primary ln-btn-xl"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              Unirme ahora <ArrowRight size={20} strokeWidth={2.3} />
+            </motion.button>
+            <div className="ln-final-amigos" aria-hidden="true">
+              <img src={amigosLogo} alt="" />
+              <span>Red nacional activa</span>
+            </div>
+          </div>
         </motion.div>
       </div>
     </section>

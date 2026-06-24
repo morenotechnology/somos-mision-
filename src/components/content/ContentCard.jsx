@@ -13,6 +13,22 @@ const formatTone = {
   carrusel: '#D4AF37',
 };
 
+function WhatsAppIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path fill="currentColor" d="M12.04 2.2a9.7 9.7 0 0 0-8.37 14.58L2.6 21.8l5.15-1.31a9.7 9.7 0 1 0 4.29-18.29Zm0 17.66a7.9 7.9 0 0 1-4.02-1.1l-.29-.18-3.06.78.65-3.01-.2-.31a7.9 7.9 0 1 1 6.92 3.82Zm4.4-5.9c-.24-.12-1.43-.71-1.65-.79-.22-.08-.38-.12-.54.12-.16.24-.62.79-.76.95-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.95-1.2-.72-.64-1.2-1.44-1.34-1.68-.14-.24-.01-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.19-.46-.39-.4-.54-.41h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.51.58.18 1.1.16 1.52.1.46-.07 1.43-.58 1.63-1.14.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28Z" />
+    </svg>
+  );
+}
+
+function FacebookIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path fill="currentColor" d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.52 1.49-3.92 3.77-3.92 1.09 0 2.23.2 2.23.2v2.47h-1.25c-1.24 0-1.63.78-1.63 1.57v1.89h2.77l-.44 2.91h-2.33V22C18.34 21.24 22 17.08 22 12.06Z" />
+    </svg>
+  );
+}
+
 export default function ContentCard({ item, delay = 0 }) {
   const { shareContent, sharedContent } = useAppStore();
   const [imgErr, setImgErr] = useState(false);
@@ -25,15 +41,25 @@ export default function ContentCard({ item, delay = 0 }) {
       .catch(() => toast.error('No se pudo copiar'));
   };
 
-  const handleShare = async () => {
+  const getShareMessage = () => `${item.copyText}\n\n${item.title}`;
+
+  const openNetworkShare = (network) => {
+    const shareUrl = `${window.location.origin}/dashboard?contenido=${encodeURIComponent(item.id)}`;
+    const message = getShareMessage();
+    const url = network === 'facebook'
+      ? `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(message)}`
+      : `https://wa.me/?text=${encodeURIComponent(`${message}\n${shareUrl}`)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleShare = async (network) => {
+    openNetworkShare(network);
     if (alreadyShared) {
-      toast('Ya compartiste este contenido');
+      toast.success(`Abriendo ${network === 'facebook' ? 'Facebook' : 'WhatsApp'}`);
       return;
     }
-    const url = `https://wa.me/?text=${encodeURIComponent(item.copyText)}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
     try {
-      await shareContent(item.id, item.xpReward);
+      await shareContent(item.id, item.xpReward, network);
       toast.success(`+${item.xpReward} XP ganados`);
     } catch (error) {
       toast.error(error.message || 'No se pudo registrar el compartido');
@@ -97,9 +123,13 @@ export default function ContentCard({ item, delay = 0 }) {
           <button type="button" onClick={handleCopy} className="content-action-ghost">
             <Copy size={14} /> Copiar
           </button>
-          <button type="button" onClick={handleShare} className={`content-action-primary ${alreadyShared ? 'is-shared' : ''}`}>
-            <Send size={14} />
-            {alreadyShared ? 'Compartido' : 'Compartir'}
+          <button type="button" onClick={() => handleShare('whatsapp')} className={`content-action-social is-whatsapp ${alreadyShared ? 'is-shared' : ''}`}>
+            <WhatsAppIcon />
+            WhatsApp
+          </button>
+          <button type="button" onClick={() => handleShare('facebook')} className={`content-action-social is-facebook ${alreadyShared ? 'is-shared' : ''}`}>
+            <FacebookIcon />
+            Facebook
           </button>
         </div>
       </div>
