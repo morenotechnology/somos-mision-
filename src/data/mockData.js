@@ -146,14 +146,18 @@ const congregationByName = Object.fromEntries(congregaciones.map((c) => [c.nombr
 
 // ─── COORDINACIONES ────────────────────────────────────────────────────────
 export const coordinations = [
-  { id: 'c1', name: 'Evangelismo Estudiantil',  icon: 'GraduationCap', color: '#1A237E', members: 842 },
-  { id: 'c2', name: 'Evangelismo Hospitalario', icon: 'HeartPulse',     color: '#5C1800', members: 315 },
-  { id: 'c3', name: 'Evangelismo Carcelario',   icon: 'Scale',          color: '#283593', members: 228 },
-  { id: 'c4', name: 'Grupos Étnicos',            icon: 'Leaf',           color: '#2E7D32', members: 194 },
-  { id: 'c5', name: 'Grupos Especiales',         icon: 'Heart',          color: '#6A1B9A', members: 267 },
-  { id: 'c6', name: 'Medios y Comunicación',     icon: 'Radio',          color: '#E65100', members: 531 },
-  { id: 'c7', name: 'Ministerio Infantil',       icon: 'Baby',           color: '#00838F', members: 612 },
-  { id: 'c8', name: 'Juventud Misionera',        icon: 'Flame',          color: '#AD1457', members: 978 },
+  { id: 'c1', name: 'Evangelismo Estudiantil', icon: 'GraduationCap', color: '#1A237E', members: 842 },
+  { id: 'c2', name: 'Hospitalaria', icon: 'HeartPulse', color: '#5C1800', members: 315 },
+  { id: 'c3', name: 'Evangelismo Carcelario', icon: 'Scale', color: '#283593', members: 228 },
+  { id: 'c4', name: 'Asuntos Étnicos', icon: 'Leaf', color: '#2E7D32', members: 520 },
+  { id: 'c5', name: 'Grupos Especiales', icon: 'Heart', color: '#6A1B9A', members: 267 },
+  { id: 'c6', name: 'Evangelismo en Medios de Comunicación', icon: 'Radio', color: '#E65100', members: 531 },
+  { id: 'c7', name: 'Estadísticas', icon: 'BarChart3', color: '#00838F', members: 184 },
+  { id: 'c8', name: 'Capacitación Misionera', icon: 'BookOpenCheck', color: '#AD1457', members: 412 },
+  { id: 'c9', name: 'Evangelismo Nacional', icon: 'Map', color: '#0B5D91', members: 760 },
+  { id: 'c10', name: 'Instituciones Públicas', icon: 'Landmark', color: '#8B5CF6', members: 236 },
+  { id: 'c11', name: 'Restauración Espiritual', icon: 'RefreshCw', color: '#16A34A', members: 305 },
+  { id: 'c12', name: 'Población Sorda, Ciega y Sordociega', icon: 'HandHeart', color: '#C2410C', members: 148 },
 ];
 
 // ─── BADGES ────────────────────────────────────────────────────────────────
@@ -234,11 +238,11 @@ export const perfiles = users.map((u) => ({
 
 // ─── CONTENT — internal app schema ────────────────────────────────────────
 export const contentItems = [
-  { id: 'cnt1', title: '¡Colombia se está transformando!',         description: 'Misiones Nacionales está llegando a los rincones más alejados de Colombia.',     category: 'Testimonio', coordination: 'c8', format: 'texto',    featured: true,  xpReward: 50,  shares: 1247, likes: 3892, createdAt: '2024-05-01', copyText: 'Misiones Nacionales está llevando esperanza a cada rincón de nuestra nación. #SomosMisiónColombia #MisionesNacionales',              imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=75' },
+  { id: 'cnt1', title: '¡Colombia se está transformando!',         description: 'Misiones Nacionales está llegando a los rincones más alejados de Colombia.',     category: 'Testimonio', coordination: 'c9', format: 'texto',    featured: true,  xpReward: 50,  shares: 1247, likes: 3892, createdAt: '2024-05-01', copyText: 'Misiones Nacionales está llevando esperanza a cada rincón de nuestra nación. #SomosMisiónColombia #MisionesNacionales',              imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=75' },
   { id: 'cnt2', title: 'Campaña: Estudiantes con Misión 2024',     description: 'El evangelismo estudiantil llega a 200 universidades colombianas. Comparte y suma al movimiento.', category: 'Campaña',   coordination: 'c1', format: 'imagen',   featured: true,  xpReward: 75,  shares: 892,  likes: 2341, createdAt: '2024-05-03', copyText: 'El evangelismo estudiantil llega a 200 universidades colombianas. #EstudiantesConMisión',                               imageUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=75' },
   { id: 'cnt3', title: 'Ministerio en Hospitales: Fe que Sana',    description: 'Nuestros equipos hospitalarios visitaron 45 hospitales en Colombia este mes.',                     category: 'Impacto',   coordination: 'c2', format: 'video',    featured: false, xpReward: 60,  shares: 534,  likes: 1876, createdAt: '2024-05-05', copyText: 'Los equipos hospitalarios visitaron 45 hospitales este mes. #FeMisiónNacional',                                               imageUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=75' },
-  { id: 'cnt4', title: 'Grupos Étnicos: El Evangelio en Amazonía', description: 'Por primera vez, equipos misioneros llegaron a comunidades indígenas del Vaupés.',                 category: 'Hito',      coordination: 'c4', format: 'texto',    featured: true,  xpReward: 100, shares: 2103, likes: 5421, createdAt: '2024-05-07', copyText: 'Por primera vez el evangelio llega a comunidades indígenas del Vaupés. Misiones Nacionales avanza hasta los confines. #GruposÉtnicos',              imageUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=75' },
-  { id: 'cnt5', title: 'Juventud Misionera: 10.000 Jóvenes',       description: 'El movimiento de juventud misionera superó los 10.000 jóvenes activos en Colombia.',               category: 'Campaña',   coordination: 'c8', format: 'carrusel', featured: true,  xpReward: 80,  shares: 3412, likes: 8934, createdAt: '2024-05-08', copyText: '10.000 jóvenes en acción. La Juventud Misionera rompe récords. #JuventudMisionera',                                       imageUrl: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=75' },
+  { id: 'cnt4', title: 'Asuntos Étnicos: El Evangelio en Amazonía', description: 'Equipos misioneros acompañan comunidades indígenas, afrocolombianas, raizales, palenqueras y pueblo Rom.', category: 'Hito', coordination: 'c4', format: 'texto', featured: true, xpReward: 100, shares: 2103, likes: 5421, createdAt: '2024-05-07', copyText: 'El evangelio avanza entre comunidades étnicas con respeto, acompañamiento y presencia territorial. #AsuntosÉtnicos #SomosMisiónColombia', imageUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=75' },
+  { id: 'cnt5', title: 'Capacitación Misionera: obreros listos',   description: 'La formación misionera prepara líderes para contextos urbanos, rurales y transculturales.',        category: 'Campaña',   coordination: 'c8', format: 'carrusel', featured: true,  xpReward: 80,  shares: 3412, likes: 8934, createdAt: '2024-05-08', copyText: 'Obreros listos para servir en cada contexto. La capacitación misionera fortalece la visión nacional. #CapacitaciónMisionera', imageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=75' },
   { id: 'cnt6', title: 'Ministerio Carcelario en 2024',            description: 'Más de 80 centros penitenciarios están siendo alcanzados por el evangelio cada domingo.',           category: 'Impacto',   coordination: 'c3', format: 'imagen',   featured: false, xpReward: 55,  shares: 321,  likes: 987,  createdAt: '2024-05-09', copyText: '80 centros penitenciarios alcanzados. La libertad espiritual no tiene muros. #MisiónCarcelaria',                                        imageUrl: 'https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?w=800&q=75' },
 ];
 
@@ -340,7 +344,7 @@ export const seguidores = [
 
 export const codigos_roles = [
   { id: 1, codigo: 'MISION-ADMIN-2026', rol_asignado: 'admin', descripcion: 'Acceso equipo nacional', activo: true },
-  { id: 2, codigo: 'MISION2026NACIONAL', rol_asignado: 'pastor', descripcion: 'Acceso Pastor/Directivo temporal', activo: true },
+  { id: 2, codigo: 'IPUC2026MISION', rol_asignado: 'pastor', descripcion: 'Acceso Pastor/Directivo temporal', activo: true },
   { id: 3, codigo: 'MISION-MULT-2026', rol_asignado: 'multiplicador', descripcion: 'Registro de embajadores digitales', activo: true },
 ];
 

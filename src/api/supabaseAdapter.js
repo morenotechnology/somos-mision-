@@ -30,7 +30,7 @@ const profileSelect = `
   congregations:congregations(id, nombre, portada_url)
 `;
 
-const PASTOR_ACCESS_KEY = 'MISION2026NACIONAL';
+const PASTOR_ACCESS_KEY = 'IPUC2026MISION';
 
 function ensureClient() {
   if (!hasSupabaseEnv || !supabase) {
@@ -558,7 +558,6 @@ export function createSupabaseApi() {
             email: payload.email,
             password: payload.password,
             options: {
-              emailRedirectTo: getAuthRedirectUrl('/login'),
               data: {
                 nombre_completo: payload.name,
                 nombre: payload.name?.split(' ')?.[0] || payload.name,
@@ -589,7 +588,7 @@ export function createSupabaseApi() {
         return {
           ...bundle,
           session: result.session || null,
-          needsEmailConfirmation: !result.session,
+          needsEmailConfirmation: false,
           betaPosition,
           betaTotal: 500,
         };

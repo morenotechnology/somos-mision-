@@ -61,7 +61,7 @@ function getUser(payload = {}) {
 }
 
 function resolveRegisterRole(payload = {}) {
-  if (payload.role === 'pastor' && payload.accessKey === 'MISION2026NACIONAL') return 'pastor';
+  if (payload.role === 'pastor' && payload.accessKey === 'IPUC2026MISION') return 'pastor';
   return 'multiplicador';
 }
 
@@ -105,7 +105,7 @@ export function createMockApi() {
           active: true,
         };
         state.users.push(user);
-        return resolve({ user });
+        return resolve({ user, session: { access_token: `local-mock-${user.role}`, token_type: 'Bearer' }, needsEmailConfirmation: false, betaPosition: state.users.length, betaTotal: 500 });
       },
     },
 

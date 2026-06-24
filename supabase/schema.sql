@@ -241,7 +241,7 @@ declare
   full_name text := coalesce(meta ->> 'nombre_completo', meta ->> 'name', split_part(new.email, '@', 1));
   assigned_role public.app_role := 'multiplicador';
 begin
-  if meta ->> 'rol' = 'pastor' and meta ->> 'pastor_access_key' = 'MISION2026NACIONAL' then
+  if meta ->> 'rol' = 'pastor' and meta ->> 'pastor_access_key' = 'IPUC2026MISION' then
     assigned_role := 'pastor';
   end if;
 
@@ -733,13 +733,17 @@ delete from public.regions where id = 'r6' and name = 'Insular';
 
 insert into public.coordinations (id, name, icon, color, members_count, active) values
   ('c1', 'Evangelismo Estudiantil', 'GraduationCap', '#1A237E', 842, true),
-  ('c2', 'Evangelismo Hospitalario', 'HeartPulse', '#5C1800', 315, true),
+  ('c2', 'Hospitalaria', 'HeartPulse', '#5C1800', 315, true),
   ('c3', 'Evangelismo Carcelario', 'Scale', '#283593', 228, true),
-  ('c4', 'Grupos Étnicos', 'Leaf', '#2E7D32', 194, true),
+  ('c4', 'Asuntos Étnicos', 'Leaf', '#2E7D32', 520, true),
   ('c5', 'Grupos Especiales', 'Heart', '#6A1B9A', 267, true),
-  ('c6', 'Medios y Comunicación', 'Radio', '#E65100', 531, true),
-  ('c7', 'Ministerio Infantil', 'Baby', '#00838F', 612, true),
-  ('c8', 'Juventud Misionera', 'Flame', '#AD1457', 978, true)
+  ('c6', 'Evangelismo en Medios de Comunicación', 'Radio', '#E65100', 531, true),
+  ('c7', 'Estadísticas', 'BarChart3', '#00838F', 184, true),
+  ('c8', 'Capacitación Misionera', 'BookOpenCheck', '#AD1457', 412, true),
+  ('c9', 'Evangelismo Nacional', 'Map', '#0B5D91', 760, true),
+  ('c10', 'Instituciones Públicas', 'Landmark', '#8B5CF6', 236, true),
+  ('c11', 'Restauración Espiritual', 'RefreshCw', '#16A34A', 305, true),
+  ('c12', 'Población Sorda, Ciega y Sordociega', 'HandHeart', '#C2410C', 148, true)
 on conflict (id) do update set name = excluded.name, icon = excluded.icon, color = excluded.color, members_count = excluded.members_count, active = excluded.active;
 
 insert into public.congregations (id, region_id, district_id, nombre, direccion, latitud, longitud, descripcion, redes_sociales, es_punto_blanco, portada_url) values
@@ -798,11 +802,11 @@ on conflict (id) do update set
   order_index = excluded.order_index;
 
 insert into public.publications (id, author_profile_id, coordination_id, title, description, category, format, featured, xp_reward, shares_count, likes_count, copy_text, media_url, active, is_official, created_at, published_at) values
-  (1, null, 'c8', '¡Colombia se está transformando!', 'Misiones Nacionales está llegando a los rincones más alejados de Colombia.', 'Testimonio', 'texto', true, 50, 0, 3892, 'Misiones Nacionales está llevando esperanza a cada rincón de nuestra nación. #SomosMisiónColombia #MisionesNacionales', 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=75', true, true, '2024-05-01T10:00:00Z', '2024-05-01T10:00:00Z'),
+  (1, null, 'c9', '¡Colombia se está transformando!', 'Misiones Nacionales está llegando a los rincones más alejados de Colombia.', 'Testimonio', 'texto', true, 50, 0, 3892, 'Misiones Nacionales está llevando esperanza a cada rincón de nuestra nación. #SomosMisiónColombia #MisionesNacionales', 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=75', true, true, '2024-05-01T10:00:00Z', '2024-05-01T10:00:00Z'),
   (2, null, 'c1', 'Campaña: Estudiantes con Misión 2024', 'El evangelismo estudiantil llega a 200 universidades colombianas. Comparte y suma al movimiento.', 'Campaña', 'imagen', true, 75, 0, 2341, 'El evangelismo estudiantil llega a 200 universidades colombianas. #EstudiantesConMisión', 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=75', true, true, '2024-05-03T10:00:00Z', '2024-05-03T10:00:00Z'),
   (3, null, 'c2', 'Ministerio en Hospitales: Fe que Sana', 'Nuestros equipos hospitalarios visitaron 45 hospitales en Colombia este mes.', 'Impacto', 'video', false, 60, 0, 1876, 'Los equipos hospitalarios visitaron 45 hospitales este mes. #FeMisiónNacional', 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=75', true, true, '2024-05-05T10:00:00Z', '2024-05-05T10:00:00Z'),
-  (4, null, 'c4', 'Grupos Étnicos: El Evangelio en Amazonía', 'Por primera vez, equipos misioneros llegaron a comunidades indígenas del Vaupés.', 'Hito', 'texto', true, 100, 0, 5421, 'Por primera vez el evangelio llega a comunidades indígenas del Vaupés. Misiones Nacionales avanza hasta los confines. #GruposÉtnicos', 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=75', true, true, '2024-05-07T10:00:00Z', '2024-05-07T10:00:00Z'),
-  (5, null, 'c8', 'Juventud Misionera: 10.000 Jóvenes', 'El movimiento de juventud misionera superó los 10.000 jóvenes activos en Colombia.', 'Campaña', 'carrusel', true, 80, 0, 8934, '10.000 jóvenes en acción. La Juventud Misionera rompe récords. #JuventudMisionera', 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=75', true, true, '2024-05-08T10:00:00Z', '2024-05-08T10:00:00Z'),
+  (4, null, 'c4', 'Asuntos Étnicos: El Evangelio en Amazonía', 'Equipos misioneros acompañan comunidades indígenas, afrocolombianas, raizales, palenqueras y pueblo Rom.', 'Hito', 'texto', true, 100, 0, 5421, 'El evangelio avanza entre comunidades étnicas con respeto, acompañamiento y presencia territorial. #AsuntosÉtnicos #SomosMisiónColombia', 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=75', true, true, '2024-05-07T10:00:00Z', '2024-05-07T10:00:00Z'),
+  (5, null, 'c8', 'Capacitación Misionera: obreros listos', 'La formación misionera prepara líderes para contextos urbanos, rurales y transculturales.', 'Campaña', 'carrusel', true, 80, 0, 8934, 'Obreros listos para servir en cada contexto. La capacitación misionera fortalece la visión nacional. #CapacitaciónMisionera', 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=75', true, true, '2024-05-08T10:00:00Z', '2024-05-08T10:00:00Z'),
   (6, null, 'c3', 'Ministerio Carcelario en 2024', 'Más de 80 centros penitenciarios están siendo alcanzados por el evangelio cada domingo.', 'Impacto', 'imagen', false, 55, 0, 987, '80 centros penitenciarios alcanzados. La libertad espiritual no tiene muros. #MisiónCarcelaria', 'https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?w=800&q=75', true, true, '2024-05-09T10:00:00Z', '2024-05-09T10:00:00Z')
 on conflict (id) do update set
   coordination_id = excluded.coordination_id,
@@ -822,9 +826,11 @@ on conflict (id) do update set
 
 select setval(pg_get_serial_sequence('public.publications', 'id'), greatest((select max(id) from public.publications), 6), true);
 
+delete from public.role_codes where codigo = 'MISION2026NACIONAL';
+
 insert into public.role_codes (codigo, rol_asignado, descripcion, activo) values
   ('MISION-ADMIN-2026', 'admin', 'Acceso equipo nacional', true),
-  ('MISION2026NACIONAL', 'pastor', 'Acceso Pastor/Directivo temporal', true),
+  ('IPUC2026MISION', 'pastor', 'Acceso Pastor/Directivo temporal', true),
   ('MISION-MULT-2026', 'multiplicador', 'Registro de embajadores digitales', true)
 on conflict (codigo) do update set rol_asignado = excluded.rol_asignado, descripcion = excluded.descripcion, activo = excluded.activo;
 

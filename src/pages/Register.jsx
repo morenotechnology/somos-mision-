@@ -40,7 +40,8 @@ const DISTRICTS = Array.from({ length: 35 }, (_, index) => ({
   name: `Distrito ${index + 1}`,
 }));
 
-const PASTOR_ACCESS_KEY = 'MISION2026NACIONAL';
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PASTOR_ACCESS_KEY = 'IPUC2026MISION';
 
 function RegisterBrandPanel() {
   return (
@@ -106,6 +107,14 @@ export default function Register() {
       toast.error('Completa todos los datos de la cuenta');
       return false;
     }
+    if (stepToValidate === 0 && !EMAIL_PATTERN.test(form.email.trim())) {
+      toast.error('Ingresa un correo válido');
+      return false;
+    }
+    if (stepToValidate === 0 && form.password.length < 8) {
+      toast.error('La contraseña debe tener mínimo 8 caracteres');
+      return false;
+    }
     if (stepToValidate === 1 && (!form.role || !form.region || !form.district)) {
       toast.error('Selecciona rol, región y distrito');
       return false;
@@ -133,9 +142,8 @@ export default function Register() {
 
   const finishRegistration = () => {
     if (!betaModal) return;
-    const target = betaModal.needsEmailConfirmation ? '/' : '/dashboard';
     setBetaModal(null);
-    navigate(target);
+    navigate('/dashboard');
   };
 
   const handleSubmit = async () => {
@@ -143,14 +151,10 @@ export default function Register() {
     setLoading(true);
     try {
       const result = await api.auth.register(form);
-      if (!result.needsEmailConfirmation) {
-        loginFromApi(result);
-      }
+      loginFromApi(result);
       setBetaModal({
         betaPosition: result.betaPosition || 1,
         betaTotal: result.betaTotal || 500,
-        email: form.email,
-        needsEmailConfirmation: Boolean(result.needsEmailConfirmation),
       });
     } catch (error) {
       toast.error(error.message || 'No se pudo completar el registro');
@@ -321,43 +325,23 @@ export default function Register() {
                 exit={{ opacity: 0, y: 18, scale: 0.96 }}
                 transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
               >
-                <div className={`auth-beta-modal ${betaModal.needsEmailConfirmation ? 'is-email-confirm' : ''}`}>
-                  <div className="auth-beta-pill">{betaModal.needsEmailConfirmation ? 'Confirma tu email' : 'Beta cerrada'}</div>
+                <div className="auth-beta-modal">
+                  <div className="auth-beta-pill">Beta cerrada</div>
                   <div className="auth-beta-badge">
                     <CheckCircle size={26} />
                   </div>
-                  <p className="auth-beta-kicker">
-                    {betaModal.needsEmailConfirmation ? 'Revisa tu bandeja de entrada' : 'Registro confirmado'}
-                  </p>
-                  <h3>
-                    {betaModal.needsEmailConfirmation
-                      ? 'Confirma tu email para activar tu cuenta'
-                      : `Eres el registro número ${betaModal.betaPosition} de ${betaModal.betaTotal}`}
-                  </h3>
-                  <p>
-                    {betaModal.needsEmailConfirmation
-                      ? 'Te enviamos un enlace de confirmación. Después de validar tu correo podrás iniciar sesión y entrar a la plataforma.'
-                      : 'Tu lugar ya quedó reservado en la beta. Tu perfil está listo para entrar y empezar a usar la plataforma.'}
-                  </p>
-                  {betaModal.needsEmailConfirmation && (
-                    <div className="auth-email-callout">
-                      <Mail size={17} />
-                      <span>{betaModal.email}</span>
-                    </div>
-                  )}
-                  {!betaModal.needsEmailConfirmation && (
-                    <>
-                      <div className="auth-beta-progress" aria-hidden="true">
-                        <span style={{ width: `${Math.min((betaModal.betaPosition / betaModal.betaTotal) * 100, 100)}%` }} />
-                      </div>
-                      <div className="auth-beta-meta">
-                        <span><Zap size={14} /> Cupos limitados</span>
-                        <span><CircleAlert size={14} /> Acceso anticipado</span>
-                      </div>
-                    </>
-                  )}
+                  <p className="auth-beta-kicker">Registro confirmado</p>
+                  <h3>Eres el registro número {betaModal.betaPosition} de {betaModal.betaTotal}</h3>
+                  <p>Tu lugar ya quedó reservado en la beta. Tu perfil está listo para entrar y empezar a usar la plataforma.</p>
+                  <div className="auth-beta-progress" aria-hidden="true">
+                    <span style={{ width: `${Math.min((betaModal.betaPosition / betaModal.betaTotal) * 100, 100)}%` }} />
+                  </div>
+                  <div className="auth-beta-meta">
+                    <span><Zap size={14} /> Cupos limitados</span>
+                    <span><CircleAlert size={14} /> Acceso anticipado</span>
+                  </div>
                   <button type="button" className="auth-submit-button auth-beta-cta" onClick={finishRegistration}>
-                    {betaModal.needsEmailConfirmation ? 'Volver a la página' : 'Entrar al panel'}
+                    Entrar al panel
                     <ArrowRight size={17} />
                   </button>
                 </div>

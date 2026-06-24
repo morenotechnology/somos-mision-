@@ -31,6 +31,7 @@ import regionOrinoquia from '../assets/regiones/ORINOQUIA_1.png';
 import regionPacifica from '../assets/regiones/PACIFICA_1.png';
 import heroBrandLogo from '../assets/logos/logosinfondo.png';
 import amigosLogo from '../assets/logos/5.000 Amigos.png';
+import amigosOldLogo from '../assets/logos/LOGO 5000 AMIGOS.svg';
 import unanimesLogo from '../assets/logos/1.png';
 
 /* ─── Animation variants ─────────────────────────────────────────────── */
@@ -110,48 +111,142 @@ const mobileMenuItems = [
   { label: 'Ranking', target: 'ranking' },
 ];
 
-const coordinationDetails = {
-  c1: {
-    brief: 'Conecta campus, colegios y universidades con contenidos listos para compartir.',
-    action: 'Rutas estudiantiles, piezas devocionales y activaciones por temporada.',
+const canonicalCoordinations = [
+  {
+    id: 'c1',
+    name: 'Evangelismo Estudiantil',
+    icon: 'GraduationCap',
+    color: '#1A237E',
+    members_count: 842,
+    brief: 'Alcanza estudiantes de colegios, institutos y universidades con presencia espiritual en campus.',
+    action: 'Grupos de oración, estudios bíblicos, actividades académicas y evangelismo en campus.',
     metric: 'Campus en misión',
+    image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=900&q=80',
   },
-  c2: {
-    brief: 'Acompaña hospitales con esperanza, oración y mensajes sensibles para cada contexto.',
-    action: 'Guías de visita, campañas de cuidado y testimonios de restauración.',
+  {
+    id: 'c2',
+    name: 'Hospitalaria',
+    icon: 'HeartPulse',
+    color: '#5C1800',
+    members_count: 315,
+    brief: 'Evangeliza y acompaña espiritualmente en hospitales, clínicas y centros de atención médica.',
+    action: 'Oración por pacientes, visitas, apoyo a familiares, literatura bíblica y consejería.',
     metric: 'Fe que sana',
+    image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=900&q=80',
   },
-  c3: {
-    brief: 'Coordina alcance carcelario con materiales claros, seguros y pastorales.',
-    action: 'Devocionales, seguimiento espiritual y mensajes de libertad en Cristo.',
+  {
+    id: 'c3',
+    name: 'Evangelismo Carcelario',
+    icon: 'Scale',
+    color: '#283593',
+    members_count: 228,
+    brief: 'Lleva esperanza y restauración espiritual a personas privadas de la libertad.',
+    action: 'Cultos, estudios bíblicos, consejería, restauración familiar y discipulado.',
     metric: 'Sin muros',
+    image: 'https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?w=900&q=80',
   },
-  c4: {
-    brief: 'Impulsa el evangelio en comunidades étnicas con respeto cultural y presencia territorial.',
-    action: 'Historias locales, traducción de esfuerzos y acompañamiento misionero.',
-    metric: 'Pueblos conectados',
+  {
+    id: 'c4',
+    name: 'Asuntos Étnicos',
+    icon: 'Leaf',
+    color: '#2E7D32',
+    members_count: 520,
+    brief: 'Lleva el evangelio a comunidades indígenas, afrocolombianas, raizales, palenqueras y pueblo Rom.',
+    action: 'Trabajo culturalmente respetuoso entre Wayúu, Arhuacos, Nasa, Misak, Embera, Tikunas y más.',
+    metric: 'Pueblos alcanzados',
+    image: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=900&q=80',
   },
-  c5: {
-    brief: 'Sirve a grupos especiales con contenido pertinente, cercano y accionable.',
-    action: 'Campañas de inclusión, cuidado familiar y rutas de acompañamiento.',
+  {
+    id: 'c5',
+    name: 'Grupos Especiales',
+    icon: 'Heart',
+    color: '#6A1B9A',
+    members_count: 267,
+    brief: 'Alcanza poblaciones que requieren estrategias específicas de evangelización y cuidado.',
+    action: 'Acompañamiento a habitantes de calle, personas vulnerables y comunidades de difícil acceso.',
     metric: 'Cuidado integral',
+    image: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=900&q=80',
   },
-  c6: {
-    brief: 'Ordena la voz digital del movimiento para comunicar con unidad y excelencia.',
-    action: 'Publicaciones oficiales, lineamientos visuales y distribución multicanal.',
+  {
+    id: 'c6',
+    name: 'Evangelismo en Medios de Comunicación',
+    icon: 'Radio',
+    color: '#E65100',
+    members_count: 531,
+    brief: 'Usa medios digitales y tradicionales para difundir el evangelio con unidad y alcance nacional.',
+    action: 'Redes sociales, radio, televisión, streaming, producción audiovisual y publicidad evangelística.',
     metric: 'Señal nacional',
+    image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=900&q=80',
   },
-  c7: {
-    brief: 'Forma a la niñez con recursos creativos, bíblicos y fáciles de replicar.',
-    action: 'Retos infantiles, historias bíblicas y dinámicas para iglesias locales.',
-    metric: 'Nueva generación',
+  {
+    id: 'c7',
+    name: 'Estadísticas',
+    icon: 'BarChart3',
+    color: '#00838F',
+    members_count: 184,
+    brief: 'Recolecta y analiza información de la obra misionera nacional para tomar mejores decisiones.',
+    action: 'Seguimiento de iglesias, crecimiento, conversos, bautismos, presencia regional e informes.',
+    metric: 'Datos para avanzar',
+    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=900&q=80',
   },
-  c8: {
-    brief: 'Moviliza jóvenes como embajadores activos de la misión en cada región.',
-    action: 'Retos virales, campañas juveniles y testimonio público de fe.',
-    metric: 'Juventud en acción',
+  {
+    id: 'c8',
+    name: 'Capacitación Misionera',
+    icon: 'BookOpenCheck',
+    color: '#AD1457',
+    members_count: 412,
+    brief: 'Forma obreros y líderes para el trabajo misionero urbano, rural y transcultural.',
+    action: 'Evangelismo, plantación de iglesias, interculturalidad, liderazgo, discipulado y estrategia.',
+    metric: 'Obreros formados',
+    image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=900&q=80',
   },
-};
+  {
+    id: 'c9',
+    name: 'Evangelismo Nacional',
+    icon: 'Map',
+    color: '#0B5D91',
+    members_count: 760,
+    brief: 'Coordina la expansión del evangelio en zonas urbanas y rurales de Colombia.',
+    action: 'Apertura de nuevas obras, campañas evangelísticas, plantación de iglesias y apoyo misionero.',
+    metric: 'Nuevas obras',
+    image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=900&q=80',
+  },
+  {
+    id: 'c10',
+    name: 'Instituciones Públicas',
+    icon: 'Landmark',
+    color: '#8B5CF6',
+    members_count: 236,
+    brief: 'Lleva el evangelio a entidades gubernamentales, estatales y fuerza pública.',
+    action: 'Estudios bíblicos, consejería, capellanías y eventos institucionales.',
+    metric: 'Puertas abiertas',
+    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=900&q=80',
+  },
+  {
+    id: 'c11',
+    name: 'Restauración Espiritual',
+    icon: 'RefreshCw',
+    color: '#16A34A',
+    members_count: 305,
+    brief: 'Busca y restaura personas alejadas de Dios o de la congregación.',
+    action: 'Seguimiento, visitas, consejería, reintegración y discipulado para recuperar vidas.',
+    metric: 'Vidas restauradas',
+    image: 'https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a?w=900&q=80',
+  },
+  {
+    id: 'c12',
+    name: 'Población Sorda, Ciega y Sordociega',
+    icon: 'HandHeart',
+    color: '#C2410C',
+    members_count: 148,
+    brief: 'Garantiza que personas con discapacidad auditiva o visual reciban el evangelio sin barreras.',
+    action: 'Interpretación en lengua de señas, formación de intérpretes, material adaptado y cultos inclusivos.',
+    metric: 'Misión inclusiva',
+    image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=900&q=80',
+  },
+];
+
+const coordinationDetails = Object.fromEntries(canonicalCoordinations.map((item) => [item.id, item]));
 
 /* ─── Nav ─────────────────────────────────────────────────────────────── */
 function Nav({ onLogin, onRegister }) {
@@ -394,11 +489,11 @@ function MetricsBand({ metrics }) {
         <motion.div {...fadeUp(0)} className="ln-band-header">
           <p className="ln-eyebrow"><TrendingUp size={13} strokeWidth={2.5} /> Impacto nacional</p>
           <h2>Indicadores limpios para una red que se mueve rápido</h2>
-          <p className="ln-band-desc">Menos ruido, más lectura: lo que importa se ve en segundos desde el celular.</p>
+          <p className="ln-band-desc">Una lectura nacional del avance misionero, conectada a regiones, contenidos y embajadores.</p>
         </motion.div>
         <div className="ln-metrics-shell">
           <div className="ln-metrics-image is-logo" aria-hidden="true">
-            <img src={amigosLogo} alt="" />
+            <img src={amigosOldLogo} alt="" />
             <span>5000 amigos</span>
           </div>
           <div className="ln-metrics-grid">
@@ -505,7 +600,19 @@ function StepsSection() {
 
 /* ─── Coordinations ───────────────────────────────────────────────────── */
 function CoordinationsSection({ coordinations }) {
-  const totalMembers = coordinations.reduce((sum, item) => sum + (item.members_count || item.members || 0), 0);
+  const incomingById = new Map((coordinations || []).map((item) => [item.id, item]));
+  const visibleCoordinations = canonicalCoordinations.map((base) => {
+    const incoming = incomingById.get(base.id) || {};
+    return {
+      ...base,
+      ...incoming,
+      name: base.name,
+      icon: base.icon,
+      color: base.color,
+      members_count: incoming.members_count || incoming.members || base.members_count,
+    };
+  });
+  const totalMembers = visibleCoordinations.reduce((sum, item) => sum + (item.members_count || item.members || 0), 0);
 
   return (
     <section className="ln-section ln-coord-section" id="coordinaciones">
@@ -520,7 +627,7 @@ function CoordinationsSection({ coordinations }) {
               acción territorial y seguimiento medible para anunciar el evangelio en cada región.
             </p>
             <div className="ln-coord-proof">
-              <span><strong>{coordinations.length || 8}</strong> coordinaciones</span>
+              <span><strong>{visibleCoordinations.length}</strong> coordinaciones</span>
               <span><strong>{formatNumber(totalMembers || 3967)}</strong> miembros activos</span>
               <span><strong>5</strong> regiones conectadas</span>
             </div>
@@ -532,7 +639,7 @@ function CoordinationsSection({ coordinations }) {
         </motion.div>
 
         <div className="ln-coord-grid">
-          {coordinations.map((item, i) => {
+          {visibleCoordinations.map((item, i) => {
             const detail = coordinationDetails[item.id] || {
               brief: 'Equipo nacional conectado a contenido, acción y medición.',
               action: 'Campañas, recursos y seguimiento para la iglesia local.',
@@ -552,6 +659,11 @@ function CoordinationsSection({ coordinations }) {
                     <LucideIcon name={item.icon} size={24} />
                   </div>
                   <span className="ln-coord-number">{String(i + 1).padStart(2, '0')}</span>
+                </div>
+
+                <div className="ln-coord-card-media" aria-hidden="true">
+                  <img src={detail.image} alt="" loading="lazy" decoding="async" />
+                  <span>{detail.metric}</span>
                 </div>
 
                 <div className="ln-coord-body">
