@@ -128,11 +128,30 @@ create table if not exists public.publications (
   likes_count integer not null default 0,
   copy_text text not null,
   media_url text,
+  source_url text,
+  source_platform text not null default 'manual' check (source_platform in ('facebook', 'instagram', 'manual')),
   active boolean not null default true,
   is_official boolean not null default true,
   created_at timestamptz not null default now(),
   published_at timestamptz not null default now()
 );
+
+alter table public.publications add column if not exists source_url text;
+alter table public.publications add column if not exists source_platform text not null default 'manual';
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'publications_source_platform_check'
+      and conrelid = 'public.publications'::regclass
+  ) then
+    alter table public.publications
+      add constraint publications_source_platform_check
+      check (source_platform in ('facebook', 'instagram', 'manual'));
+  end if;
+end $$;
 
 create table if not exists public.shares (
   id uuid primary key default gen_random_uuid(),

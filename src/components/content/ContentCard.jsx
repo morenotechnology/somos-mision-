@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Copy, Heart, MessageCircle, Send, Star, Zap } from 'lucide-react';
+import { Copy, ExternalLink, Heart, MessageCircle, Send, Star, Zap } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import toast from 'react-hot-toast';
 
@@ -50,20 +50,24 @@ export default function ContentCard({ item, delay = 0 }) {
       .catch(() => toast.error('No se pudo copiar'));
   };
 
-  const getShareMessage = () => `${item.copyText}\n\n${item.title}`;
+  const getShareMessage = () => {
+    const base = item.copyText || item.description || item.title;
+    return base.toLowerCase().includes(item.title.toLowerCase()) ? base : `${base}\n\n${item.title}`;
+  };
 
   const openNetworkShare = async (network) => {
-    const shareUrl = `${window.location.origin}/dashboard?contenido=${encodeURIComponent(item.id)}`;
+    const shareUrl = item.sourceUrl || `${window.location.origin}/dashboard?contenido=${encodeURIComponent(item.id)}`;
     const message = getShareMessage();
+    const shareText = message.includes(shareUrl) ? message : `${message}\n${shareUrl}`;
     if (network === 'instagram') {
-      await navigator.clipboard?.writeText(`${message}\n${shareUrl}`).catch(() => {});
+      await navigator.clipboard?.writeText(shareText).catch(() => {});
       window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer');
       return;
     }
 
     const url = network === 'facebook'
       ? `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(message)}`
-      : `https://wa.me/?text=${encodeURIComponent(`${message}\n${shareUrl}`)}`;
+      : `https://wa.me/?text=${encodeURIComponent(shareText)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
@@ -133,6 +137,13 @@ export default function ContentCard({ item, delay = 0 }) {
           <span><Heart size={12} />{formatCount(item.likes)}</span>
           <span><MessageCircle size={12} />Oficial</span>
         </div>
+
+        {item.sourceUrl && (
+          <a className="content-original-link" href={item.sourceUrl} target="_blank" rel="noreferrer">
+            <ExternalLink size={13} />
+            Ver publicación original
+          </a>
+        )}
 
         <div className="content-actions-pro">
           <button type="button" onClick={handleCopy} className="content-action-ghost">

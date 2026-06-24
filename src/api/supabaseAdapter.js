@@ -189,6 +189,8 @@ function normalizePublication(row) {
     createdAt: row.created_at,
     copyText: row.copy_text,
     imageUrl: row.media_url,
+    sourceUrl: row.source_url || '',
+    sourcePlatform: row.source_platform || '',
     imageGradient: 'from-[#1A237E] to-[#5C1800]',
   };
 }
@@ -451,9 +453,27 @@ async function getRankingRows(client, params = {}) {
 }
 
 async function getPublications(client, params = {}) {
-  let query = client
-    .from('publications')
-    .select(`
+  const publicationSelectWithSource = `
+      id,
+      title,
+      description,
+      category,
+      format,
+      featured,
+      xp_reward,
+      shares_count,
+      likes_count,
+      copy_text,
+      media_url,
+      source_url,
+      source_platform,
+      created_at,
+      coordination_id,
+      active,
+      is_official,
+      coordinations:coordinations(id, name, icon, color)
+    `;
+  const publicationSelectBase = `
       id,
       title,
       description,
@@ -470,20 +490,34 @@ async function getPublications(client, params = {}) {
       active,
       is_official,
       coordinations:coordinations(id, name, icon, color)
-    `)
-    .eq('active', true);
+    `;
 
-  if (params.format && params.format !== 'Todos') query = query.eq('format', params.format);
-  if (params.coordination) query = query.eq('coordination_id', params.coordination);
-  if (params.q) query = query.or(`title.ilike.%${params.q}%,description.ilike.%${params.q}%`);
+  const buildQuery = (selectFields) => {
+    let query = client
+      .from('publications')
+      .select(selectFields)
+      .eq('active', true);
 
-  const sort = params.sort || 'Recientes';
-  if (sort === 'Populares') query = query.order('shares_count', { ascending: false });
-  else if (sort === 'Destacados') query = query.order('featured', { ascending: false }).order('created_at', { ascending: false });
-  else query = query.order('created_at', { ascending: false });
+    if (params.format && params.format !== 'Todos') query = query.eq('format', params.format);
+    if (params.coordination) query = query.eq('coordination_id', params.coordination);
+    if (params.q) query = query.or(`title.ilike.%${params.q}%,description.ilike.%${params.q}%`);
 
-  if (params.limit) query = query.limit(params.limit);
-  const rows = unwrap(await query, 'No se pudo cargar el contenido');
+    const sort = params.sort || 'Recientes';
+    if (sort === 'Populares') query = query.order('shares_count', { ascending: false });
+    else if (sort === 'Destacados') query = query.order('featured', { ascending: false }).order('created_at', { ascending: false });
+    else query = query.order('created_at', { ascending: false });
+
+    if (params.limit) query = query.limit(params.limit);
+    return query;
+  };
+
+  const result = await buildQuery(publicationSelectWithSource);
+  if (result.error?.code === '42703') {
+    const fallbackRows = unwrap(await buildQuery(publicationSelectBase), 'No se pudo cargar el contenido');
+    return fallbackRows.map(normalizePublication);
+  }
+
+  const rows = unwrap(result, 'No se pudo cargar el contenido');
   return rows.map(normalizePublication);
 }
 
@@ -807,24 +841,27 @@ export function createSupabaseApi() {
           throw new ApiError('Solo los perfiles Pastor/Directivo pueden crear publicaciones oficiales.', 403);
         }
 
-        const row = unwrap(
-          await client
-            .from('publications')
-            .insert({
-              author_profile_id: sessionBundle?.user?.id || null,
-              coordination_id: payload.coordination_id,
-              title: payload.title,
-              description: payload.description,
-              category: payload.category,
-              format: payload.format || 'texto',
-              featured: Boolean(payload.featured),
-              xp_reward: payload.xp_reward || 50,
-              copy_text: payload.copy_text || payload.description,
-              media_url: payload.media_url || null,
-              active: true,
-              is_official: true,
-            })
-            .select(`
+        const publicationSelectWithSource = `
+              id,
+              title,
+              description,
+              category,
+              format,
+              featured,
+              xp_reward,
+              shares_count,
+              likes_count,
+              copy_text,
+              media_url,
+              source_url,
+              source_platform,
+              created_at,
+              coordination_id,
+              active,
+              is_official,
+              coordinations:coordinations(id, name, icon, color)
+            `;
+        const publicationSelectBase = `
               id,
               title,
               description,
@@ -841,10 +878,42 @@ export function createSupabaseApi() {
               active,
               is_official,
               coordinations:coordinations(id, name, icon, color)
-            `)
-            .single(),
-          'No se pudo crear la publicación'
-        );
+            `;
+        const basePayload = {
+          author_profile_id: sessionBundle?.user?.id || null,
+          coordination_id: payload.coordination_id,
+          title: payload.title,
+          description: payload.description,
+          category: payload.category,
+          format: payload.format || 'texto',
+          featured: Boolean(payload.featured),
+          xp_reward: payload.xp_reward || 50,
+          copy_text: payload.copy_text || payload.description,
+          media_url: payload.media_url || null,
+          active: true,
+          is_official: true,
+        };
+        const socialPayload = {
+          ...basePayload,
+          source_url: payload.source_url || null,
+          source_platform: payload.source_platform || 'manual',
+        };
+
+        let insertResult = await client
+          .from('publications')
+          .insert(socialPayload)
+          .select(publicationSelectWithSource)
+          .single();
+
+        if (insertResult.error?.code === '42703') {
+          insertResult = await client
+            .from('publications')
+            .insert(basePayload)
+            .select(publicationSelectBase)
+            .single();
+        }
+
+        const row = unwrap(insertResult, 'No se pudo crear la publicación');
         return normalizePublication(row);
       },
     },

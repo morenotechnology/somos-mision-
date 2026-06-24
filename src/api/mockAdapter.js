@@ -173,9 +173,52 @@ export function createMockApi() {
     publicaciones: {
       list: (params) => resolve(searchRows(state.publicaciones, params)),
       create: (payload) => {
-        const item = { id: state.publicaciones.length + 1, ...payload, created_at: new Date().toISOString() };
-        state.publicaciones.unshift(item);
-        return resolve(item);
+        const createdAt = new Date().toISOString();
+        const id = `cnt${state.contentItems.length + 1}`;
+        const coordination = coordinations.find((item) => item.id === payload.coordination_id);
+        const contentItem = {
+          id,
+          title: payload.title,
+          description: payload.description,
+          category: payload.category || 'Link social',
+          coordination: payload.coordination_id || '',
+          coordinationName: coordination?.name || '',
+          format: payload.format || 'imagen',
+          featured: Boolean(payload.featured),
+          xpReward: payload.xp_reward || 50,
+          shares: 0,
+          likes: 0,
+          createdAt,
+          copyText: payload.copy_text || `${payload.title}\n\n${payload.source_url || ''}`.trim(),
+          imageUrl: payload.media_url || '/hero-map.png',
+          sourceUrl: payload.source_url || '',
+          sourcePlatform: payload.source_platform || 'manual',
+          imageGradient: 'from-[#1A237E] to-[#5C1800]',
+        };
+        const publication = {
+          id: state.publicaciones.length + 1,
+          author_profile_id: null,
+          coordination_id: payload.coordination_id || null,
+          title: contentItem.title,
+          description: contentItem.description,
+          category: contentItem.category,
+          format: contentItem.format,
+          featured: contentItem.featured,
+          xp_reward: contentItem.xpReward,
+          shares_count: 0,
+          likes_count: 0,
+          copy_text: contentItem.copyText,
+          media_url: contentItem.imageUrl,
+          source_url: contentItem.sourceUrl,
+          source_platform: contentItem.sourcePlatform,
+          active: true,
+          is_official: true,
+          created_at: createdAt,
+          published_at: createdAt,
+        };
+        state.contentItems.unshift(contentItem);
+        state.publicaciones.unshift(publication);
+        return resolve(contentItem);
       },
     },
 
