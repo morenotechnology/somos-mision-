@@ -30,7 +30,8 @@ import regionCaribe from '../assets/regiones/CARIBE_1.png';
 import regionOrinoquia from '../assets/regiones/ORINOQUIA_1.png';
 import regionPacifica from '../assets/regiones/PACIFICA_1.png';
 import heroBrandLogo from '../assets/logos/logosinfondo.png';
-import amigosLogo from '../assets/logos/LOGO 5000 AMIGOS.svg';
+import amigosLogo from '../assets/logos/5.000 Amigos.png';
+import unanimesLogo from '../assets/logos/1.png';
 
 /* ─── Animation variants ─────────────────────────────────────────────── */
 const fadeUp = (delay = 0, distance = 28) => ({
@@ -108,6 +109,49 @@ const mobileMenuItems = [
   { label: 'Coordinaciones', target: 'coordinaciones' },
   { label: 'Ranking', target: 'ranking' },
 ];
+
+const coordinationDetails = {
+  c1: {
+    brief: 'Conecta campus, colegios y universidades con contenidos listos para compartir.',
+    action: 'Rutas estudiantiles, piezas devocionales y activaciones por temporada.',
+    metric: 'Campus en misión',
+  },
+  c2: {
+    brief: 'Acompaña hospitales con esperanza, oración y mensajes sensibles para cada contexto.',
+    action: 'Guías de visita, campañas de cuidado y testimonios de restauración.',
+    metric: 'Fe que sana',
+  },
+  c3: {
+    brief: 'Coordina alcance carcelario con materiales claros, seguros y pastorales.',
+    action: 'Devocionales, seguimiento espiritual y mensajes de libertad en Cristo.',
+    metric: 'Sin muros',
+  },
+  c4: {
+    brief: 'Impulsa el evangelio en comunidades étnicas con respeto cultural y presencia territorial.',
+    action: 'Historias locales, traducción de esfuerzos y acompañamiento misionero.',
+    metric: 'Pueblos conectados',
+  },
+  c5: {
+    brief: 'Sirve a grupos especiales con contenido pertinente, cercano y accionable.',
+    action: 'Campañas de inclusión, cuidado familiar y rutas de acompañamiento.',
+    metric: 'Cuidado integral',
+  },
+  c6: {
+    brief: 'Ordena la voz digital del movimiento para comunicar con unidad y excelencia.',
+    action: 'Publicaciones oficiales, lineamientos visuales y distribución multicanal.',
+    metric: 'Señal nacional',
+  },
+  c7: {
+    brief: 'Forma a la niñez con recursos creativos, bíblicos y fáciles de replicar.',
+    action: 'Retos infantiles, historias bíblicas y dinámicas para iglesias locales.',
+    metric: 'Nueva generación',
+  },
+  c8: {
+    brief: 'Moviliza jóvenes como embajadores activos de la misión en cada región.',
+    action: 'Retos virales, campañas juveniles y testimonio público de fe.',
+    metric: 'Juventud en acción',
+  },
+};
 
 /* ─── Nav ─────────────────────────────────────────────────────────────── */
 function Nav({ onLogin, onRegister }) {
@@ -461,28 +505,82 @@ function StepsSection() {
 
 /* ─── Coordinations ───────────────────────────────────────────────────── */
 function CoordinationsSection({ coordinations }) {
+  const totalMembers = coordinations.reduce((sum, item) => sum + (item.members_count || item.members || 0), 0);
+
   return (
-    <section className="ln-section" id="coordinaciones">
-      <div className="ln-container">
-        <motion.div {...fadeUp(0)} className="ln-band-header">
-          <p className="ln-eyebrow"><Globe size={13} strokeWidth={2.5} /> Coordinaciones</p>
-          <h2>Coordinaciones nacionales</h2>
-          <p className="ln-band-desc">Cada coordinación comparte el mismo sistema de contenido, actividad y medición.</p>
+    <section className="ln-section ln-coord-section" id="coordinaciones">
+      <div className="ln-coord-bg" aria-hidden="true" />
+      <div className="ln-container ln-coord-wrap">
+        <motion.div {...fadeUp(0)} className="ln-coord-showcase">
+          <div className="ln-coord-showcase-copy">
+            <p className="ln-eyebrow is-light"><Globe size={13} strokeWidth={2.5} /> Coordinaciones nacionales</p>
+            <h2>Un solo movimiento, múltiples frentes de misión</h2>
+            <p>
+              Cada coordinación opera con identidad propia, pero conectada a la misma visión: contenido oficial,
+              acción territorial y seguimiento medible para anunciar el evangelio en cada región.
+            </p>
+            <div className="ln-coord-proof">
+              <span><strong>{coordinations.length || 8}</strong> coordinaciones</span>
+              <span><strong>{formatNumber(totalMembers || 3967)}</strong> miembros activos</span>
+              <span><strong>5</strong> regiones conectadas</span>
+            </div>
+          </div>
+          <div className="ln-coord-showcase-brand" aria-hidden="true">
+            <span>aliados de visión</span>
+            <img src={unanimesLogo} alt="" />
+          </div>
         </motion.div>
+
         <div className="ln-coord-grid">
-          {coordinations.map((item, i) => (
-            <motion.article key={item.id} {...fadeUp(i * 0.06)} className="ln-coord-card">
-              <div className="ln-coord-icon" style={{ background: `${item.color}15`, color: item.color }}>
-                <LucideIcon name={item.icon} size={22} />
-              </div>
-              <div className="ln-coord-body">
-                <h3>{item.name}</h3>
-                <p>{(item.members_count || 0).toLocaleString()} miembros</p>
-              </div>
-              <div className="ln-coord-accent" style={{ background: item.color }} />
-            </motion.article>
-          ))}
+          {coordinations.map((item, i) => {
+            const detail = coordinationDetails[item.id] || {
+              brief: 'Equipo nacional conectado a contenido, acción y medición.',
+              action: 'Campañas, recursos y seguimiento para la iglesia local.',
+              metric: 'Misión activa',
+            };
+            const members = item.members_count || item.members || 0;
+
+            return (
+              <motion.article
+                key={item.id}
+                {...fadeUp(i * 0.06)}
+                className="ln-coord-card"
+                style={{ '--coord-color': item.color || '#0B5D91' }}
+              >
+                <div className="ln-coord-card-top">
+                  <div className="ln-coord-icon">
+                    <LucideIcon name={item.icon} size={24} />
+                  </div>
+                  <span className="ln-coord-number">{String(i + 1).padStart(2, '0')}</span>
+                </div>
+
+                <div className="ln-coord-body">
+                  <span className="ln-coord-label">{detail.metric}</span>
+                  <h3>{item.name}</h3>
+                  <p>{detail.brief}</p>
+                </div>
+
+                <div className="ln-coord-action">
+                  <span>Acción clave</span>
+                  <strong>{detail.action}</strong>
+                </div>
+
+                <div className="ln-coord-footer">
+                  <span><Users size={14} /> {(members || 0).toLocaleString()} miembros</span>
+                  <span><Radio size={14} /> Nacional</span>
+                </div>
+              </motion.article>
+            );
+          })}
         </div>
+
+        <motion.div {...fadeUp(0.12)} className="ln-coord-ribbon">
+          <div>
+            <span>Una misión compartida</span>
+            <strong>Coordinaciones, iglesias y creyentes avanzando bajo una misma señal nacional.</strong>
+          </div>
+          <img src={unanimesLogo} alt="Unánimes en la misión" />
+        </motion.div>
       </div>
     </section>
   );
