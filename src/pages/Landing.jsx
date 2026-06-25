@@ -34,6 +34,19 @@ import amigosLogo from '../assets/logos/5.000 Amigos.png';
 import amigosOldLogo from '../assets/logos/LOGO 5000 AMIGOS.svg';
 import unanimesLogo from '../assets/logos/1.png';
 import posterFinal from '../assets/logos/POSTER FINAL.png';
+import coordinationsConcept from '../assets/logos/DISEÑO CONCEPTO COORDINACIONES.png';
+import coordCapacitacion from '../assets/coordinaciones/CAPACITACIÓN MISIONERA.png';
+import coordCarcelaria from '../assets/coordinaciones/CARCELARIA.png';
+import coordEstadisticas from '../assets/coordinaciones/ESTADISTICAS.png';
+import coordEtnicos from '../assets/coordinaciones/ETNICOS.png';
+import coordEvangelismo from '../assets/coordinaciones/EVANGELISMO.png';
+import coordHospitalaria from '../assets/coordinaciones/HOSPITALARIA.png';
+import coordInstituciones from '../assets/coordinaciones/INSTITUCIONES PUBLICAS.png';
+import coordMedios from '../assets/coordinaciones/MEDIOS DE COMUNICACIÓN.png';
+import coordJuvenil from '../assets/coordinaciones/MISIÓN JUVENIL.png';
+import coordVulnerable from '../assets/coordinaciones/POBLACION VULNERABLE ESPECIALES.png';
+import coordSorda from '../assets/coordinaciones/POBLACIÓN SORDA.png';
+import coordRestauracion from '../assets/coordinaciones/RESTAURACIÓN.png';
 
 /* ─── Animation variants ─────────────────────────────────────────────── */
 const fadeUp = (delay = 0, distance = 28) => ({
@@ -115,14 +128,14 @@ const mobileMenuItems = [
 const canonicalCoordinations = [
   {
     id: 'c1',
-    name: 'Evangelismo Estudiantil',
-    icon: 'GraduationCap',
+    name: 'Evangelismo',
+    icon: 'Megaphone',
     color: '#1A237E',
     members_count: 842,
-    brief: 'Alcanza estudiantes de colegios, institutos y universidades con presencia espiritual en campus.',
-    action: 'Grupos de oración, estudios bíblicos, actividades académicas y evangelismo en campus.',
-    metric: 'Campus en misión',
-    image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=900&q=80',
+    brief: 'Coordina campañas, estrategias y recursos para anunciar el evangelio en ciudades, barrios y nuevos campos.',
+    action: 'Campañas evangelísticas, apertura de obras, seguimiento de contactos y movilización territorial.',
+    metric: 'Señal evangelística',
+    image: coordEvangelismo,
   },
   {
     id: 'c2',
@@ -133,7 +146,7 @@ const canonicalCoordinations = [
     brief: 'Evangeliza y acompaña espiritualmente en hospitales, clínicas y centros de atención médica.',
     action: 'Oración por pacientes, visitas, apoyo a familiares, literatura bíblica y consejería.',
     metric: 'Fe que sana',
-    image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=900&q=80',
+    image: coordHospitalaria,
   },
   {
     id: 'c3',
@@ -144,7 +157,7 @@ const canonicalCoordinations = [
     brief: 'Lleva esperanza y restauración espiritual a personas privadas de la libertad.',
     action: 'Cultos, estudios bíblicos, consejería, restauración familiar y discipulado.',
     metric: 'Sin muros',
-    image: 'https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?w=900&q=80',
+    image: coordCarcelaria,
   },
   {
     id: 'c4',
@@ -155,18 +168,18 @@ const canonicalCoordinations = [
     brief: 'Lleva el evangelio a comunidades indígenas, afrocolombianas, raizales, palenqueras y pueblo Rom.',
     action: 'Trabajo culturalmente respetuoso entre Wayúu, Arhuacos, Nasa, Misak, Embera, Tikunas y más.',
     metric: 'Pueblos alcanzados',
-    image: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=900&q=80',
+    image: coordEtnicos,
   },
   {
     id: 'c5',
-    name: 'Grupos Especiales',
+    name: 'Población Vulnerable y Especiales',
     icon: 'Heart',
     color: '#6A1B9A',
     members_count: 267,
     brief: 'Alcanza poblaciones que requieren estrategias específicas de evangelización y cuidado.',
     action: 'Acompañamiento a habitantes de calle, personas vulnerables y comunidades de difícil acceso.',
     metric: 'Cuidado integral',
-    image: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=900&q=80',
+    image: coordVulnerable,
   },
   {
     id: 'c6',
@@ -177,7 +190,7 @@ const canonicalCoordinations = [
     brief: 'Usa medios digitales y tradicionales para difundir el evangelio con unidad y alcance nacional.',
     action: 'Redes sociales, radio, televisión, streaming, producción audiovisual y publicidad evangelística.',
     metric: 'Señal nacional',
-    image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=900&q=80',
+    image: coordMedios,
   },
   {
     id: 'c7',
@@ -188,7 +201,7 @@ const canonicalCoordinations = [
     brief: 'Recolecta y analiza información de la obra misionera nacional para tomar mejores decisiones.',
     action: 'Seguimiento de iglesias, crecimiento, conversos, bautismos, presencia regional e informes.',
     metric: 'Datos para avanzar',
-    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=900&q=80',
+    image: coordEstadisticas,
   },
   {
     id: 'c8',
@@ -199,18 +212,18 @@ const canonicalCoordinations = [
     brief: 'Forma obreros y líderes para el trabajo misionero urbano, rural y transcultural.',
     action: 'Evangelismo, plantación de iglesias, interculturalidad, liderazgo, discipulado y estrategia.',
     metric: 'Obreros formados',
-    image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=900&q=80',
+    image: coordCapacitacion,
   },
   {
     id: 'c9',
-    name: 'Evangelismo Nacional',
-    icon: 'Map',
+    name: 'Misión Juvenil',
+    icon: 'Flame',
     color: '#0B5D91',
     members_count: 760,
-    brief: 'Coordina la expansión del evangelio en zonas urbanas y rurales de Colombia.',
-    action: 'Apertura de nuevas obras, campañas evangelísticas, plantación de iglesias y apoyo misionero.',
-    metric: 'Nuevas obras',
-    image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=900&q=80',
+    brief: 'Moviliza nuevas generaciones para servir, compartir contenido y activar proyectos misioneros.',
+    action: 'Brigadas juveniles, retos digitales, testimonios, mentoría y campañas de alcance generacional.',
+    metric: 'Juventud en misión',
+    image: coordJuvenil,
   },
   {
     id: 'c10',
@@ -221,7 +234,7 @@ const canonicalCoordinations = [
     brief: 'Lleva el evangelio a entidades gubernamentales, estatales y fuerza pública.',
     action: 'Estudios bíblicos, consejería, capellanías y eventos institucionales.',
     metric: 'Puertas abiertas',
-    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=900&q=80',
+    image: coordInstituciones,
   },
   {
     id: 'c11',
@@ -232,7 +245,7 @@ const canonicalCoordinations = [
     brief: 'Busca y restaura personas alejadas de Dios o de la congregación.',
     action: 'Seguimiento, visitas, consejería, reintegración y discipulado para recuperar vidas.',
     metric: 'Vidas restauradas',
-    image: 'https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a?w=900&q=80',
+    image: coordRestauracion,
   },
   {
     id: 'c12',
@@ -243,7 +256,7 @@ const canonicalCoordinations = [
     brief: 'Garantiza que personas con discapacidad auditiva o visual reciban el evangelio sin barreras.',
     action: 'Interpretación en lengua de señas, formación de intérpretes, material adaptado y cultos inclusivos.',
     metric: 'Misión inclusiva',
-    image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=900&q=80',
+    image: coordSorda,
   },
 ];
 
@@ -508,7 +521,7 @@ function PosterFeature({ onRegister }) {
             whileHover={{ y: -6, rotate: -0.4 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           >
-            <img src={posterFinal} alt="Poster oficial Somos Misión Colombia" loading="lazy" decoding="async" />
+            <img src={coordinationsConcept} alt="Concepto visual de las 12 coordinaciones nacionales" loading="lazy" decoding="async" />
           </motion.figure>
         </div>
       </div>
@@ -579,6 +592,18 @@ function TerritorySection() {
               <span className="ln-territory-atmosphere" aria-hidden="true" />
               <img src={story.image} alt="" className="ln-territory-backdrop" loading="lazy" decoding="async" />
               <span className="ln-territory-glow" aria-hidden="true" />
+              <motion.img
+                src={amigosOldLogo}
+                alt=""
+                className="ln-territory-5000-logo"
+                loading="lazy"
+                decoding="async"
+                aria-hidden="true"
+                initial={{ opacity: 0, scale: 0.82, y: -8 }}
+                whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                viewport={{ once: true, margin: '-80px' }}
+                transition={{ delay: 0.22 + index * 0.045, duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+              />
               <motion.img
                 src={story.image}
                 alt=""
@@ -675,8 +700,8 @@ function CoordinationsSection({ coordinations }) {
             </div>
           </div>
           <div className="ln-coord-showcase-brand" aria-hidden="true">
-            <span>aliados de visión</span>
-            <img src={unanimesLogo} alt="" />
+            <span>12 coordinaciones · 5 regiones</span>
+            <img src={posterFinal} alt="" />
           </div>
         </motion.div>
 

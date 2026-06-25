@@ -13,6 +13,37 @@ const formatTone = {
   carrusel: '#D4AF37',
 };
 
+function waitForShareSignal() {
+  const startedAt = Date.now();
+
+  return new Promise((resolve) => {
+    let settled = false;
+    let timer;
+
+    const cleanup = () => {
+      window.removeEventListener('focus', finishFromReturn);
+      document.removeEventListener('visibilitychange', finishFromVisibility);
+      window.clearTimeout(timer);
+    };
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(Date.now() - startedAt > 1800 ? 'verified' : 'opened');
+    };
+
+    const finishFromReturn = () => finish();
+    const finishFromVisibility = () => {
+      if (document.visibilityState === 'visible') finish();
+    };
+
+    window.addEventListener('focus', finishFromReturn);
+    document.addEventListener('visibilitychange', finishFromVisibility);
+    timer = window.setTimeout(finish, 6500);
+  });
+}
+
 function WhatsAppIcon(props) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
@@ -43,6 +74,11 @@ export default function ContentCard({ item, delay = 0 }) {
   const alreadyShared = sharedContent.includes(String(item.id));
   const accent = formatTone[item.format] || '#1A237E';
   const networkNames = { whatsapp: 'WhatsApp', facebook: 'Facebook', instagram: 'Instagram' };
+  const fallbackUrl = `${window.location.origin}/dashboard?contenido=${encodeURIComponent(item.id)}`;
+  const originalLinks = [
+    item.facebookUrl ? { network: 'facebook', label: 'Facebook', url: item.facebookUrl } : null,
+    item.instagramUrl ? { network: 'instagram', label: 'Instagram', url: item.instagramUrl } : null,
+  ].filter(Boolean);
 
   const handleCopy = () => {
     navigator.clipboard?.writeText(item.copyText)
@@ -50,36 +86,50 @@ export default function ContentCard({ item, delay = 0 }) {
       .catch(() => toast.error('No se pudo copiar'));
   };
 
+  const getNetworkUrl = (network) => {
+    if (network === 'facebook') return item.facebookUrl || item.sourceUrl || item.instagramUrl || fallbackUrl;
+    if (network === 'instagram') return item.instagramUrl || item.sourceUrl || item.facebookUrl || fallbackUrl;
+    return item.facebookUrl || item.instagramUrl || item.sourceUrl || fallbackUrl;
+  };
+
   const getShareMessage = () => {
     const base = item.copyText || item.description || item.title;
-    return base.toLowerCase().includes(item.title.toLowerCase()) ? base : `${base}\n\n${item.title}`;
+    const message = base.toLowerCase().includes(item.title.toLowerCase()) ? base : `${base}\n\n${item.title}`;
+    const links = [
+      item.facebookUrl && !message.includes(item.facebookUrl) ? `Facebook: ${item.facebookUrl}` : '',
+      item.instagramUrl && !message.includes(item.instagramUrl) ? `Instagram: ${item.instagramUrl}` : '',
+    ].filter(Boolean);
+    return links.length ? `${message}\n\n${links.join('\n')}` : message;
   };
 
   const openNetworkShare = async (network) => {
-    const shareUrl = item.sourceUrl || `${window.location.origin}/dashboard?contenido=${encodeURIComponent(item.id)}`;
+    const shareUrl = getNetworkUrl(network);
     const message = getShareMessage();
     const shareText = message.includes(shareUrl) ? message : `${message}\n${shareUrl}`;
     if (network === 'instagram') {
       await navigator.clipboard?.writeText(shareText).catch(() => {});
       window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer');
-      return;
+      return shareUrl;
     }
 
     const url = network === 'facebook'
       ? `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(message)}`
       : `https://wa.me/?text=${encodeURIComponent(shareText)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
+    return shareUrl;
   };
 
   const handleShare = async (network) => {
-    await openNetworkShare(network);
-    if (alreadyShared) {
-      toast.success(network === 'instagram' ? 'Texto copiado. Abriendo Instagram' : `Abriendo ${networkNames[network]}`);
-      return;
-    }
+    const shareUrl = await openNetworkShare(network);
     try {
-      await shareContent(item.id, item.xpReward, network);
-      toast.success(`+${item.xpReward} XP ganados`);
+      const verificationStatus = await waitForShareSignal();
+      const payload = await shareContent(item.id, item.xpReward, network, {
+        share_url: shareUrl,
+        verification_status: verificationStatus,
+      });
+      const xp = Number(payload.share?.xp_ganado || 0);
+      const statusText = verificationStatus === 'verified' ? 'verificado' : 'registrado';
+      toast.success(xp > 0 ? `Compartido ${statusText}. +${xp} XP` : `Compartido ${statusText} en ${networkNames[network]}`);
     } catch (error) {
       toast.error(error.message || 'No se pudo registrar el compartido');
     }
@@ -138,11 +188,20 @@ export default function ContentCard({ item, delay = 0 }) {
           <span><MessageCircle size={12} />Oficial</span>
         </div>
 
-        {item.sourceUrl && (
-          <a className="content-original-link" href={item.sourceUrl} target="_blank" rel="noreferrer">
-            <ExternalLink size={13} />
-            Ver publicación original
-          </a>
+        {(originalLinks.length > 0 || item.sourceUrl) && (
+          <div className="content-original-links">
+            {originalLinks.length > 0 ? originalLinks.map((link) => (
+              <a key={link.network} className="content-original-link" href={link.url} target="_blank" rel="noreferrer">
+                <ExternalLink size={13} />
+                Ver en {link.label}
+              </a>
+            )) : (
+              <a className="content-original-link" href={item.sourceUrl} target="_blank" rel="noreferrer">
+                <ExternalLink size={13} />
+                Ver publicación original
+              </a>
+            )}
+          </div>
         )}
 
         <div className="content-actions-pro">

@@ -189,7 +189,9 @@ function normalizePublication(row) {
     createdAt: row.created_at,
     copyText: row.copy_text,
     imageUrl: row.media_url,
-    sourceUrl: row.source_url || '',
+    sourceUrl: row.source_url || row.facebook_url || row.instagram_url || '',
+    facebookUrl: row.facebook_url || '',
+    instagramUrl: row.instagram_url || '',
     sourcePlatform: row.source_platform || '',
     imageGradient: 'from-[#1A237E] to-[#5C1800]',
   };
@@ -466,6 +468,8 @@ async function getPublications(client, params = {}) {
       copy_text,
       media_url,
       source_url,
+      facebook_url,
+      instagram_url,
       source_platform,
       created_at,
       coordination_id,
@@ -474,6 +478,26 @@ async function getPublications(client, params = {}) {
       coordinations:coordinations(id, name, icon, color)
     `;
   const publicationSelectBase = `
+      id,
+      title,
+      description,
+      category,
+      format,
+      featured,
+      xp_reward,
+      shares_count,
+      likes_count,
+      copy_text,
+      media_url,
+      source_url,
+      source_platform,
+      created_at,
+      coordination_id,
+      active,
+      is_official,
+      coordinations:coordinations(id, name, icon, color)
+    `;
+  const publicationSelectLegacy = `
       id,
       title,
       description,
@@ -513,7 +537,12 @@ async function getPublications(client, params = {}) {
 
   const result = await buildQuery(publicationSelectWithSource);
   if (result.error?.code === '42703') {
-    const fallbackRows = unwrap(await buildQuery(publicationSelectBase), 'No se pudo cargar el contenido');
+    const fallbackResult = await buildQuery(publicationSelectBase);
+    if (fallbackResult.error?.code === '42703') {
+      const legacyRows = unwrap(await buildQuery(publicationSelectLegacy), 'No se pudo cargar el contenido');
+      return legacyRows.map(normalizePublication);
+    }
+    const fallbackRows = unwrap(fallbackResult, 'No se pudo cargar el contenido');
     return fallbackRows.map(normalizePublication);
   }
 
@@ -622,7 +651,7 @@ export function createSupabaseApi() {
         return {
           ...bundle,
           session: result.session || null,
-          needsEmailConfirmation: false,
+          needsEmailConfirmation: !result.session,
           betaPosition,
           betaTotal: 500,
         };
@@ -710,10 +739,49 @@ export function createSupabaseApi() {
       },
 
       async get(id) {
-        const row = unwrap(
-          await client
-            .from('publications')
-            .select(`
+        const selectWithSocial = `
+              id,
+              title,
+              description,
+              category,
+              format,
+              featured,
+              xp_reward,
+              shares_count,
+              likes_count,
+              copy_text,
+              media_url,
+              source_url,
+              facebook_url,
+              instagram_url,
+              source_platform,
+              created_at,
+              coordination_id,
+              active,
+              is_official,
+              coordinations:coordinations(id, name, icon, color)
+            `;
+        const selectWithSource = `
+              id,
+              title,
+              description,
+              category,
+              format,
+              featured,
+              xp_reward,
+              shares_count,
+              likes_count,
+              copy_text,
+              media_url,
+              source_url,
+              source_platform,
+              created_at,
+              coordination_id,
+              active,
+              is_official,
+              coordinations:coordinations(id, name, icon, color)
+            `;
+        const selectLegacy = `
               id,
               title,
               description,
@@ -730,22 +798,40 @@ export function createSupabaseApi() {
               active,
               is_official,
               coordinations:coordinations(id, name, icon, color)
-            `)
+            `;
+        let result = await client
+            .from('publications')
+            .select(selectWithSocial)
             .eq('id', id)
-            .single(),
-          'No se pudo cargar la publicación'
-        );
+            .single();
+
+        if (result.error?.code === '42703') {
+          result = await client.from('publications').select(selectWithSource).eq('id', id).single();
+        }
+        if (result.error?.code === '42703') {
+          result = await client.from('publications').select(selectLegacy).eq('id', id).single();
+        }
+
+        const row = unwrap(result, 'No se pudo cargar la publicación');
         return normalizePublication(row);
       },
 
       async share(id, payload = {}) {
-        const share = unwrap(
-          await client.rpc('share_publication', {
+        let shareResult = await client.rpc('share_publication', {
+          p_publication_id: Number(id),
+          p_red_social: payload.red_social || 'whatsapp',
+          p_share_url: payload.share_url || null,
+          p_verification_status: payload.verification_status || 'opened',
+        });
+
+        if (shareResult.error?.code === 'PGRST202' || shareResult.error?.message?.includes('Could not find')) {
+          shareResult = await client.rpc('share_publication', {
             p_publication_id: Number(id),
             p_red_social: payload.red_social || 'whatsapp',
-          }),
-          'No se pudo registrar el compartido'
-        );
+          });
+        }
+
+        const share = unwrap(shareResult, 'No se pudo registrar el compartido');
         const updatedContent = await this.get(id);
         const sessionBundle = await fetchCurrentSessionBundle(client);
         return {
@@ -854,6 +940,8 @@ export function createSupabaseApi() {
               copy_text,
               media_url,
               source_url,
+              facebook_url,
+              instagram_url,
               source_platform,
               created_at,
               coordination_id,
@@ -862,6 +950,26 @@ export function createSupabaseApi() {
               coordinations:coordinations(id, name, icon, color)
             `;
         const publicationSelectBase = `
+              id,
+              title,
+              description,
+              category,
+              format,
+              featured,
+              xp_reward,
+              shares_count,
+              likes_count,
+              copy_text,
+              media_url,
+              source_url,
+              source_platform,
+              created_at,
+              coordination_id,
+              active,
+              is_official,
+              coordinations:coordinations(id, name, icon, color)
+            `;
+        const publicationSelectLegacy = `
               id,
               title,
               description,
@@ -896,6 +1004,13 @@ export function createSupabaseApi() {
         const socialPayload = {
           ...basePayload,
           source_url: payload.source_url || null,
+          facebook_url: payload.facebook_url || null,
+          instagram_url: payload.instagram_url || null,
+          source_platform: payload.source_platform || 'manual',
+        };
+        const sourcePayload = {
+          ...basePayload,
+          source_url: payload.source_url || null,
           source_platform: payload.source_platform || 'manual',
         };
 
@@ -908,8 +1023,16 @@ export function createSupabaseApi() {
         if (insertResult.error?.code === '42703') {
           insertResult = await client
             .from('publications')
-            .insert(basePayload)
+            .insert(sourcePayload)
             .select(publicationSelectBase)
+            .single();
+        }
+
+        if (insertResult.error?.code === '42703') {
+          insertResult = await client
+            .from('publications')
+            .insert(basePayload)
+            .select(publicationSelectLegacy)
             .single();
         }
 

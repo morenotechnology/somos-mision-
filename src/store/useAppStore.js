@@ -68,10 +68,9 @@ export const useAppStore = create(
       mobileSidebarOpen: false,
       setMobileSidebar: (value) => set({ mobileSidebarOpen: value }),
 
-      shareContent: async (contentId, xpReward = 50, socialNetwork = 'whatsapp') => {
+      shareContent: async (contentId, xpReward = 50, socialNetwork = 'whatsapp', evidence = {}) => {
         const { sharedContent, showXP } = get();
-        if (sharedContent.includes(String(contentId))) return { alreadyShared: true };
-        const payload = await api.content.share(contentId, { red_social: socialNetwork });
+        const payload = await api.content.share(contentId, { red_social: socialNetwork, ...evidence });
         set({
           currentUser: payload.user,
           isAuthenticated: Boolean(payload.user),

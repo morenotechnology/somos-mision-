@@ -146,15 +146,15 @@ const congregationByName = Object.fromEntries(congregaciones.map((c) => [c.nombr
 
 // ─── COORDINACIONES ────────────────────────────────────────────────────────
 export const coordinations = [
-  { id: 'c1', name: 'Evangelismo Estudiantil', icon: 'GraduationCap', color: '#1A237E', members: 842 },
+  { id: 'c1', name: 'Evangelismo', icon: 'Megaphone', color: '#1A237E', members: 842 },
   { id: 'c2', name: 'Hospitalaria', icon: 'HeartPulse', color: '#5C1800', members: 315 },
   { id: 'c3', name: 'Evangelismo Carcelario', icon: 'Scale', color: '#283593', members: 228 },
   { id: 'c4', name: 'Asuntos Étnicos', icon: 'Leaf', color: '#2E7D32', members: 520 },
-  { id: 'c5', name: 'Grupos Especiales', icon: 'Heart', color: '#6A1B9A', members: 267 },
+  { id: 'c5', name: 'Población Vulnerable y Especiales', icon: 'Heart', color: '#6A1B9A', members: 267 },
   { id: 'c6', name: 'Evangelismo en Medios de Comunicación', icon: 'Radio', color: '#E65100', members: 531 },
   { id: 'c7', name: 'Estadísticas', icon: 'BarChart3', color: '#00838F', members: 184 },
   { id: 'c8', name: 'Capacitación Misionera', icon: 'BookOpenCheck', color: '#AD1457', members: 412 },
-  { id: 'c9', name: 'Evangelismo Nacional', icon: 'Map', color: '#0B5D91', members: 760 },
+  { id: 'c9', name: 'Misión Juvenil', icon: 'Flame', color: '#0B5D91', members: 760 },
   { id: 'c10', name: 'Instituciones Públicas', icon: 'Landmark', color: '#8B5CF6', members: 236 },
   { id: 'c11', name: 'Restauración Espiritual', icon: 'RefreshCw', color: '#16A34A', members: 305 },
   { id: 'c12', name: 'Población Sorda, Ciega y Sordociega', icon: 'HandHeart', color: '#C2410C', members: 148 },

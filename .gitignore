@@ -27,3 +27,9 @@ dist-ssr
 .env.*
 .env*.local
 !.env.example
+
+# Design/source references kept local, not needed by the deployed app.
+*.ai
+*.docx
+src/assets/logos/MANUAL CORPORATIVO*
+src/assets/logos/Jairo*

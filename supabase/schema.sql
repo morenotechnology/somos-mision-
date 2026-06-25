@@ -129,6 +129,8 @@ create table if not exists public.publications (
   copy_text text not null,
   media_url text,
   source_url text,
+  facebook_url text,
+  instagram_url text,
   source_platform text not null default 'manual' check (source_platform in ('facebook', 'instagram', 'manual')),
   active boolean not null default true,
   is_official boolean not null default true,
@@ -137,6 +139,8 @@ create table if not exists public.publications (
 );
 
 alter table public.publications add column if not exists source_url text;
+alter table public.publications add column if not exists facebook_url text;
+alter table public.publications add column if not exists instagram_url text;
 alter table public.publications add column if not exists source_platform text not null default 'manual';
 
 do $$
@@ -158,9 +162,46 @@ create table if not exists public.shares (
   publication_id bigint not null references public.publications(id) on delete cascade,
   user_id uuid not null references public.profiles(id) on delete cascade,
   social_network text not null default 'whatsapp',
+  share_url text,
+  verification_status text not null default 'pending' check (verification_status in ('pending', 'opened', 'verified')),
+  verification_method text not null default 'client_open_return',
+  opened_at timestamptz,
+  verified_at timestamptz,
   created_at timestamptz not null default now(),
-  unique (publication_id, user_id)
+  unique (publication_id, user_id, social_network)
 );
+
+alter table public.shares add column if not exists share_url text;
+alter table public.shares add column if not exists verification_status text not null default 'pending';
+alter table public.shares add column if not exists verification_method text not null default 'client_open_return';
+alter table public.shares add column if not exists opened_at timestamptz;
+alter table public.shares add column if not exists verified_at timestamptz;
+
+do $$
+begin
+  alter table public.shares drop constraint if exists shares_publication_id_user_id_key;
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'shares_publication_id_user_id_social_network_key'
+      and conrelid = 'public.shares'::regclass
+  ) then
+    alter table public.shares
+      add constraint shares_publication_id_user_id_social_network_key
+      unique (publication_id, user_id, social_network);
+  end if;
+
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'shares_verification_status_check'
+      and conrelid = 'public.shares'::regclass
+  ) then
+    alter table public.shares
+      add constraint shares_verification_status_check
+      check (verification_status in ('pending', 'opened', 'verified'));
+  end if;
+end $$;
 
 create table if not exists public.reactions (
   id uuid primary key default gen_random_uuid(),
@@ -257,11 +298,22 @@ set search_path = public
 as $$
 declare
   meta jsonb := coalesce(new.raw_user_meta_data, '{}'::jsonb);
-  full_name text := coalesce(meta ->> 'nombre_completo', meta ->> 'name', split_part(new.email, '@', 1));
+  user_email text := coalesce(new.email, meta ->> 'email', new.id::text || '@pendiente.local');
+  full_name text := coalesce(nullif(meta ->> 'nombre_completo', ''), nullif(meta ->> 'name', ''), split_part(user_email, '@', 1), 'Usuario');
   assigned_role public.app_role := 'multiplicador';
+  v_region_id text := nullif(meta ->> 'region_id', '');
+  v_district_id text := nullif(meta ->> 'district_id', '');
 begin
   if meta ->> 'rol' = 'pastor' and meta ->> 'pastor_access_key' = 'IPUC2026MISION' then
     assigned_role := 'pastor';
+  end if;
+
+  if v_region_id is not null and not exists (select 1 from public.regions where id = v_region_id) then
+    v_region_id := null;
+  end if;
+
+  if v_district_id is not null and not exists (select 1 from public.districts where id = v_district_id) then
+    v_district_id := null;
   end if;
 
   insert into public.profiles (
@@ -284,10 +336,10 @@ begin
     new.id,
     coalesce(meta ->> 'nombre', split_part(full_name, ' ', 1)),
     full_name,
-    new.email,
+    user_email,
     assigned_role,
-    nullif(meta ->> 'region_id', ''),
-    nullif(meta ->> 'district_id', ''),
+    v_region_id,
+    v_district_id,
     nullif(meta ->> 'congregacion', ''),
     nullif(meta ->> 'cargo', ''),
     nullif(meta ->> 'celular', ''),
@@ -308,9 +360,11 @@ begin
         celular = excluded.celular,
         whatsapp = excluded.whatsapp;
 
-  insert into public.profile_badges (profile_id, badge_id)
-  values (new.id, 'b1')
-  on conflict do nothing;
+  if exists (select 1 from public.badges where id = 'b1') then
+    insert into public.profile_badges (profile_id, badge_id)
+    values (new.id, 'b1')
+    on conflict do nothing;
+  end if;
 
   return new;
 end;
@@ -387,8 +441,15 @@ begin
 end;
 $$;
 
-create or replace function public.share_publication(p_publication_id bigint, p_red_social text default 'whatsapp')
-returns table(shared_id uuid, xp_ganado integer, publication_shares integer, profile_xp integer)
+drop function if exists public.share_publication(bigint, text);
+
+create or replace function public.share_publication(
+  p_publication_id bigint,
+  p_red_social text default 'whatsapp',
+  p_share_url text default null,
+  p_verification_status text default 'opened'
+)
+returns table(shared_id uuid, xp_ganado integer, publication_shares integer, profile_xp integer, verification_status text)
 language plpgsql
 security definer
 set search_path = public
@@ -397,18 +458,50 @@ declare
   v_user uuid := auth.uid();
   v_exists uuid;
   v_xp integer;
+  v_status text := case
+    when p_verification_status in ('pending', 'opened', 'verified') then p_verification_status
+    else 'opened'
+  end;
+  v_network text := coalesce(nullif(p_red_social, ''), 'whatsapp');
+  v_has_publication_share boolean := false;
 begin
   if v_user is null then
     raise exception 'No authenticated user';
   end if;
 
+  select exists (
+    select 1
+    from public.shares
+    where publication_id = p_publication_id and user_id = v_user
+  ) into v_has_publication_share;
+
   select id into v_exists
   from public.shares
-  where publication_id = p_publication_id and user_id = v_user;
+  where publication_id = p_publication_id
+    and user_id = v_user
+    and social_network = v_network;
 
   if v_exists is null then
-    insert into public.shares (publication_id, user_id, social_network)
-    values (p_publication_id, v_user, coalesce(p_red_social, 'whatsapp'))
+    insert into public.shares (
+      publication_id,
+      user_id,
+      social_network,
+      share_url,
+      verification_status,
+      verification_method,
+      opened_at,
+      verified_at
+    )
+    values (
+      p_publication_id,
+      v_user,
+      v_network,
+      p_share_url,
+      v_status,
+      'client_open_return',
+      now(),
+      case when v_status = 'verified' then now() else null end
+    )
     returning id into v_exists;
 
     update public.publications
@@ -416,10 +509,28 @@ begin
     where id = p_publication_id
     returning xp_reward into v_xp;
 
-    perform public.apply_xp(v_user, coalesce(v_xp, 0), 'contenido_compartido', 'publication', p_publication_id::text);
-    perform public.refresh_profile_badges(v_user);
+    if not v_has_publication_share then
+      perform public.apply_xp(v_user, coalesce(v_xp, 0), 'contenido_compartido', 'publication', p_publication_id::text);
+      perform public.refresh_profile_badges(v_user);
+    else
+      v_xp := 0;
+    end if;
   else
-    select xp_reward into v_xp from public.publications where id = p_publication_id;
+    update public.shares as existing_share
+    set
+      share_url = coalesce(p_share_url, existing_share.share_url),
+      verification_status = case
+        when existing_share.verification_status = 'verified' then 'verified'
+        when v_status = 'verified' then 'verified'
+        else v_status
+      end,
+      opened_at = coalesce(existing_share.opened_at, now()),
+      verified_at = case
+        when existing_share.verification_status = 'verified' or v_status = 'verified' then coalesce(existing_share.verified_at, now())
+        else existing_share.verified_at
+      end
+    where existing_share.id = v_exists;
+
     v_xp := 0;
   end if;
 
@@ -428,7 +539,8 @@ begin
     v_exists,
     coalesce(v_xp, 0),
     (select shares_count from public.publications where id = p_publication_id),
-    (select xp from public.profiles where id = v_user);
+    (select xp from public.profiles where id = v_user),
+    (select s.verification_status from public.shares s where s.id = v_exists);
 end;
 $$;
 
@@ -699,7 +811,7 @@ grant execute on function public.get_weekly_activity() to anon, authenticated;
 grant execute on function public.get_region_activity() to anon, authenticated;
 grant execute on function public.get_public_ranking(integer) to anon, authenticated;
 grant execute on function public.get_my_activity() to authenticated;
-grant execute on function public.share_publication(bigint, text) to authenticated;
+grant execute on function public.share_publication(bigint, text, text, text) to authenticated;
 grant execute on function public.complete_mission_action(uuid) to authenticated;
 
 insert into public.regions (id, name, color) values
@@ -751,15 +863,15 @@ on conflict (id) do update set region_id = excluded.region_id, name = excluded.n
 delete from public.regions where id = 'r6' and name = 'Insular';
 
 insert into public.coordinations (id, name, icon, color, members_count, active) values
-  ('c1', 'Evangelismo Estudiantil', 'GraduationCap', '#1A237E', 842, true),
+  ('c1', 'Evangelismo', 'Megaphone', '#1A237E', 842, true),
   ('c2', 'Hospitalaria', 'HeartPulse', '#5C1800', 315, true),
   ('c3', 'Evangelismo Carcelario', 'Scale', '#283593', 228, true),
   ('c4', 'Asuntos Étnicos', 'Leaf', '#2E7D32', 520, true),
-  ('c5', 'Grupos Especiales', 'Heart', '#6A1B9A', 267, true),
+  ('c5', 'Población Vulnerable y Especiales', 'Heart', '#6A1B9A', 267, true),
   ('c6', 'Evangelismo en Medios de Comunicación', 'Radio', '#E65100', 531, true),
   ('c7', 'Estadísticas', 'BarChart3', '#00838F', 184, true),
   ('c8', 'Capacitación Misionera', 'BookOpenCheck', '#AD1457', 412, true),
-  ('c9', 'Evangelismo Nacional', 'Map', '#0B5D91', 760, true),
+  ('c9', 'Misión Juvenil', 'Flame', '#0B5D91', 760, true),
   ('c10', 'Instituciones Públicas', 'Landmark', '#8B5CF6', 236, true),
   ('c11', 'Restauración Espiritual', 'RefreshCw', '#16A34A', 305, true),
   ('c12', 'Población Sorda, Ciega y Sordociega', 'HandHeart', '#C2410C', 148, true)

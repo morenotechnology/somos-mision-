@@ -143,10 +143,21 @@ export function createMockApi() {
           post_id: id,
           usuario_id: payload.usuario_id || payload.userId,
           red_social: payload.red_social || 'whatsapp',
+          share_url: payload.share_url || content?.sourceUrl || '',
+          verification_status: payload.verification_status || 'opened',
+          verification_method: 'client_open_return',
+          opened_at: new Date().toISOString(),
+          verified_at: payload.verification_status === 'verified' ? new Date().toISOString() : null,
           created_at: new Date().toISOString(),
         };
         state.compartidos.unshift(compartido);
-        return resolve({ content, compartido });
+        return resolve({
+          content,
+          compartido,
+          share: { shared_id: compartido.id, xp_ganado: 50, verification_status: compartido.verification_status },
+          sharedContentIds: state.compartidos.map((item) => String(item.post_id)),
+          completedMissionIds: [],
+        });
       },
     },
 
@@ -192,6 +203,8 @@ export function createMockApi() {
           copyText: payload.copy_text || `${payload.title}\n\n${payload.source_url || ''}`.trim(),
           imageUrl: payload.media_url || '/hero-map.png',
           sourceUrl: payload.source_url || '',
+          facebookUrl: payload.facebook_url || '',
+          instagramUrl: payload.instagram_url || '',
           sourcePlatform: payload.source_platform || 'manual',
           imageGradient: 'from-[#1A237E] to-[#5C1800]',
         };
@@ -210,6 +223,8 @@ export function createMockApi() {
           copy_text: contentItem.copyText,
           media_url: contentItem.imageUrl,
           source_url: contentItem.sourceUrl,
+          facebook_url: contentItem.facebookUrl,
+          instagram_url: contentItem.instagramUrl,
           source_platform: contentItem.sourcePlatform,
           active: true,
           is_official: true,

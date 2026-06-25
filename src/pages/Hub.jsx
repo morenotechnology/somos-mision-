@@ -35,7 +35,8 @@ const sorts = ['Recientes', 'Populares', 'Destacados'];
 const FALLBACK_IMAGE = '/hero-map.png';
 
 const publisherInitialState = {
-  sourceUrl: '',
+  facebookUrl: '',
+  instagramUrl: '',
   title: '',
   description: '',
   imageUrl: '',
@@ -68,6 +69,15 @@ function detectSocialPlatform(url = '') {
   return { id: 'manual', label: 'Link social', tone: '#1A237E' };
 }
 
+function isFacebookUrl(url = '') {
+  const clean = normalizePostUrl(url).toLowerCase();
+  return clean.includes('facebook.com') || clean.includes('fb.watch') || clean.includes('fb.com');
+}
+
+function isInstagramUrl(url = '') {
+  return normalizePostUrl(url).toLowerCase().includes('instagram.com');
+}
+
 async function fetchSocialPreview(sourceUrl) {
   const endpoint = `https://api.microlink.io/?url=${encodeURIComponent(sourceUrl)}&screenshot=false&video=false&audio=false`;
   const response = await fetch(endpoint);
@@ -87,26 +97,38 @@ function PastorPublicationComposer({ currentUser, coordinations, onCreated }) {
   const [preview, setPreview] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const normalizedUrl = normalizePostUrl(form.sourceUrl);
-  const platform = detectSocialPlatform(normalizedUrl);
+  const facebookUrl = normalizePostUrl(form.facebookUrl);
+  const instagramUrl = normalizePostUrl(form.instagramUrl);
+  const primaryUrl = facebookUrl || instagramUrl;
+  const platform = detectSocialPlatform(primaryUrl);
   const imagePreview = form.imageUrl.trim() || preview?.imageUrl || FALLBACK_IMAGE;
   const previewTitle = form.title.trim() || preview?.title || 'Nueva publicación oficial';
-  const previewDescription = form.description.trim() || preview?.description || 'Pega un enlace de Facebook o Instagram para crear una pieza lista para compartir.';
+  const previewDescription = form.description.trim() || preview?.description || 'Pega enlaces de Facebook e Instagram para crear una pieza lista para compartir.';
 
   const setField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
-  const loadPreview = async () => {
-    if (!isValidHttpUrl(form.sourceUrl)) {
-      toast.error('Pega un enlace válido de Facebook o Instagram');
-      return;
+  const validateSocialLinks = () => {
+    const hasFacebook = Boolean(form.facebookUrl.trim());
+    const hasInstagram = Boolean(form.instagramUrl.trim());
+    if (!hasFacebook && !hasInstagram) return 'Agrega al menos un enlace de Facebook o Instagram';
+    if (hasFacebook && (!isValidHttpUrl(form.facebookUrl) || !isFacebookUrl(form.facebookUrl))) {
+      return 'El enlace de Facebook debe ser válido y pertenecer a Facebook';
     }
-    if (platform.id === 'manual') {
-      toast.error('Por ahora usa enlaces de Facebook o Instagram');
+    if (hasInstagram && (!isValidHttpUrl(form.instagramUrl) || !isInstagramUrl(form.instagramUrl))) {
+      return 'El enlace de Instagram debe ser válido y pertenecer a Instagram';
+    }
+    return '';
+  };
+
+  const loadPreview = async () => {
+    const validationError = validateSocialLinks();
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
     setPreviewLoading(true);
     try {
-      const nextPreview = await fetchSocialPreview(normalizedUrl);
+      const nextPreview = await fetchSocialPreview(primaryUrl);
       setPreview(nextPreview);
       setForm((current) => ({
         ...current,
@@ -130,12 +152,9 @@ function PastorPublicationComposer({ currentUser, coordinations, onCreated }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!isValidHttpUrl(form.sourceUrl)) {
-      toast.error('El enlace de la publicación es obligatorio');
-      return;
-    }
-    if (platform.id === 'manual') {
-      toast.error('Solo se permiten enlaces de Facebook o Instagram');
+    const validationError = validateSocialLinks();
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
     if (!form.title.trim() && !preview?.title) {
@@ -145,18 +164,24 @@ function PastorPublicationComposer({ currentUser, coordinations, onCreated }) {
 
     setSaving(true);
     try {
+      const socialLinks = [
+        facebookUrl ? `Facebook: ${facebookUrl}` : '',
+        instagramUrl ? `Instagram: ${instagramUrl}` : '',
+      ].filter(Boolean).join('\n');
       const created = await api.publicaciones.create({
         title: previewTitle,
         description: previewDescription,
-        category: platform.label,
+        category: facebookUrl && instagramUrl ? 'Facebook + Instagram' : platform.label,
         format: form.format,
         coordination_id: form.coordinationId || null,
         featured: form.featured,
         xp_reward: 50,
-        copy_text: `${previewTitle}\n\n${normalizedUrl}`,
+        copy_text: `${previewTitle}\n\n${socialLinks}`,
         media_url: imagePreview,
-        source_url: normalizedUrl,
-        source_platform: platform.id,
+        source_url: primaryUrl,
+        source_platform: facebookUrl ? 'facebook' : 'instagram',
+        facebook_url: facebookUrl || null,
+        instagram_url: instagramUrl || null,
       });
       onCreated(created);
       toast.success('Publicación creada en el Hub');
@@ -198,27 +223,45 @@ function PastorPublicationComposer({ currentUser, coordinations, onCreated }) {
           onSubmit={handleSubmit}
         >
           <div className="publisher-fields">
-            <label className="publisher-field is-wide">
-              <span><Link2 size={14} /> Link del post</span>
-              <div className="publisher-link-row">
-                <input
-                  value={form.sourceUrl}
-                  onChange={(event) => {
-                    setField('sourceUrl', event.target.value);
-                    setPreview(null);
-                  }}
-                  onBlur={() => {
-                    if (form.sourceUrl && !preview && !form.title) loadPreview();
-                  }}
-                  placeholder="https://www.instagram.com/p/... o https://www.facebook.com/..."
-                  inputMode="url"
-                />
-                <button type="button" onClick={loadPreview} disabled={previewLoading || !form.sourceUrl}>
-                  {previewLoading ? <Loader2 size={16} className="spin" /> : <WandSparkles size={16} />}
-                  Preview
-                </button>
-              </div>
+            <label className="publisher-field">
+              <span><Link2 size={14} /> Link de Facebook</span>
+              <input
+                value={form.facebookUrl}
+                onChange={(event) => {
+                  setField('facebookUrl', event.target.value);
+                  setPreview(null);
+                }}
+                onBlur={() => {
+                  if (form.facebookUrl && !preview && !form.title) loadPreview();
+                }}
+                placeholder="https://www.facebook.com/..."
+                inputMode="url"
+              />
             </label>
+
+            <label className="publisher-field">
+              <span><Link2 size={14} /> Link de Instagram</span>
+              <input
+                value={form.instagramUrl}
+                onChange={(event) => {
+                  setField('instagramUrl', event.target.value);
+                  setPreview(null);
+                }}
+                onBlur={() => {
+                  if (!form.facebookUrl && form.instagramUrl && !preview && !form.title) loadPreview();
+                }}
+                placeholder="https://www.instagram.com/p/..."
+                inputMode="url"
+              />
+            </label>
+
+            <div className="publisher-fetch-row is-wide">
+              <span>El preview se toma del primer enlace disponible. Si la red bloquea la imagen, puedes cargar una portada manual.</span>
+              <button type="button" onClick={loadPreview} disabled={previewLoading || (!form.facebookUrl && !form.instagramUrl)}>
+                {previewLoading ? <Loader2 size={16} className="spin" /> : <WandSparkles size={16} />}
+                Obtener preview
+              </button>
+            </div>
 
             <label className="publisher-field">
               <span>Título</span>
@@ -264,7 +307,7 @@ function PastorPublicationComposer({ currentUser, coordinations, onCreated }) {
             <div className="publisher-preview-body">
               <strong>{previewTitle}</strong>
               <p>{previewDescription}</p>
-              <a href={normalizedUrl || '#'} target="_blank" rel="noreferrer" onClick={(event) => !normalizedUrl && event.preventDefault()}>
+              <a href={primaryUrl || '#'} target="_blank" rel="noreferrer" onClick={(event) => !primaryUrl && event.preventDefault()}>
                 Ver publicación original <ExternalLink size={13} />
               </a>
             </div>
