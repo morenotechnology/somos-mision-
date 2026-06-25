@@ -5082,7 +5082,7 @@ body {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 0.82fr) minmax(340px, 0.9fr);
+  grid-template-columns: minmax(0, 0.82fr) minmax(380px, 1fr);
   align-items: center;
   gap: clamp(26px, 5vw, 72px);
   padding: clamp(24px, 4vw, 46px);
@@ -5151,6 +5151,9 @@ body {
 .ln-poster-frame {
   position: relative;
   margin: 0;
+  min-height: clamp(360px, 48vw, 760px);
+  display: grid;
+  place-items: center;
   padding: clamp(10px, 1.4vw, 16px);
   border-radius: clamp(26px, 4vw, 40px);
   background:
@@ -5178,6 +5181,7 @@ body {
   width: 100%;
   max-height: min(78vh, 760px);
   object-fit: contain;
+  object-position: center;
   border-radius: clamp(18px, 3vw, 30px);
   box-shadow: 0 12px 30px rgba(7,17,43,0.12);
 }
@@ -5707,10 +5711,10 @@ body {
 
 .ln-coord-showcase {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.72fr);
-  gap: 26px;
+  grid-template-columns: minmax(0, 0.95fr) minmax(360px, 0.9fr);
+  gap: clamp(22px, 3vw, 42px);
   align-items: stretch;
-  margin-bottom: 26px;
+  margin-bottom: clamp(24px, 4vw, 42px);
 }
 
 .ln-coord-showcase-copy,
@@ -5747,8 +5751,8 @@ body {
   position: relative;
   max-width: 760px;
   margin: 14px 0 18px;
-  font-size: clamp(2.35rem, 5vw, 5.4rem);
-  line-height: 0.93;
+  font-size: clamp(2.35rem, 4.35vw, 4.85rem);
+  line-height: 0.94;
   letter-spacing: -0.065em;
   font-weight: 950;
 }
@@ -5790,14 +5794,15 @@ body {
 }
 
 .ln-coord-showcase-brand {
-  min-height: 320px;
-  padding: 28px;
+  min-height: clamp(360px, 43vw, 640px);
+  padding: clamp(26px, 3vw, 42px);
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
   background:
     radial-gradient(circle at 24% 22%, rgba(247, 166, 28, 0.30), transparent 28%),
+    radial-gradient(circle at 68% 62%, rgba(255,255,255,0.12), transparent 34%),
     linear-gradient(145deg, rgba(2, 73, 118, 0.92), rgba(5, 12, 35, 0.96));
 }
 
@@ -5814,7 +5819,7 @@ body {
   z-index: 2;
   width: max-content;
   max-width: 100%;
-  margin-bottom: -8px;
+  margin-bottom: 14px;
   padding: 8px 12px;
   border-radius: 999px;
   background: rgba(255,255,255,0.15);
@@ -5830,28 +5835,28 @@ body {
 .ln-coord-showcase-brand img {
   position: relative;
   z-index: 1;
-  width: min(100%, 520px);
-  max-height: 420px;
+  width: min(100%, 660px);
+  max-height: clamp(300px, 38vw, 540px);
   object-fit: contain;
+  object-position: center;
   filter: drop-shadow(0 26px 44px rgba(0,0,0,0.38));
-  transform: translateY(14px);
 }
 
 .ln-coord-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(18px, 2vw, 26px);
 }
 
 .ln-coord-card {
   --coord-color: #0b5d91;
   position: relative;
-  min-height: 468px;
+  min-height: 540px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 18px;
-  border-radius: 30px;
+  gap: 18px;
+  padding: clamp(18px, 1.6vw, 22px);
+  border-radius: 34px;
   overflow: hidden;
   border: 1px solid rgba(15,23,42,0.06);
   background:
@@ -5898,14 +5903,21 @@ body {
 .ln-coord-card-media {
   position: relative;
   z-index: 1;
-  height: 136px;
-  min-height: 136px;
+  min-height: 0;
+  aspect-ratio: 16 / 10.5;
+  display: grid;
+  place-items: center;
+  padding: clamp(8px, 1vw, 12px);
   overflow: hidden;
-  border-radius: 24px;
+  border-radius: 28px;
   background:
-    radial-gradient(circle at 80% 14%, color-mix(in srgb, var(--coord-color) 34%, transparent), transparent 32%),
-    linear-gradient(135deg, #07142f, var(--coord-color));
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.28), 0 18px 32px rgba(7,17,43,0.12);
+    radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--coord-color) 38%, transparent), transparent 34%),
+    radial-gradient(circle at 16% 88%, rgba(246,178,26,0.22), transparent 38%),
+    linear-gradient(135deg, #06102E 0%, color-mix(in srgb, var(--coord-color) 72%, #07142f) 58%, #07142f 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.26),
+    inset 0 0 0 10px rgba(255,255,255,0.035),
+    0 18px 36px rgba(7,17,43,0.14);
 }
 
 .ln-coord-card-media::after {
@@ -5913,37 +5925,41 @@ body {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(7, 20, 47, 0.06), rgba(7, 20, 47, 0.58)),
-    radial-gradient(circle at 90% 0%, color-mix(in srgb, var(--coord-color) 38%, transparent), transparent 34%);
+    linear-gradient(180deg, transparent 18%, rgba(7, 20, 47, 0.22) 100%),
+    radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--coord-color) 24%, transparent), transparent 34%);
+  pointer-events: none;
 }
 
 .ln-coord-card-media img {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
-  min-height: inherit;
-  object-fit: cover;
-  transform: scale(1.04);
-  filter: saturate(1.08) contrast(1.03);
+  min-height: 0;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 22px;
+  filter: saturate(1.06) contrast(1.02) drop-shadow(0 18px 28px rgba(0,0,0,0.20));
   transition: transform 0.55s ease, filter 0.55s ease;
 }
 
 .ln-coord-card:hover .ln-coord-card-media img {
-  transform: scale(1.1);
-  filter: saturate(1.16) contrast(1.06);
+  transform: scale(1.025);
+  filter: saturate(1.12) contrast(1.04) drop-shadow(0 22px 34px rgba(0,0,0,0.24));
 }
 
 .ln-coord-card-media span {
   position: absolute;
-  left: 12px;
-  bottom: 12px;
-  z-index: 1;
+  left: 14px;
+  bottom: 14px;
+  z-index: 2;
   max-width: calc(100% - 24px);
   min-height: 28px;
   display: inline-flex;
   align-items: center;
   padding: 0 10px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.92);
+  background: rgba(255,255,255,0.94);
   color: var(--coord-color);
   font-size: 0.66rem;
   font-weight: 950;
@@ -6574,7 +6590,12 @@ body {
   }
 
   .ln-coord-showcase-brand {
-    min-height: 230px;
+    min-height: 320px;
+  }
+
+  .ln-coord-showcase-brand img {
+    width: min(100%, 520px);
+    max-height: 380px;
   }
 
   .ln-metrics-shell {
@@ -6722,13 +6743,14 @@ body {
   }
 
   .ln-coord-showcase-brand {
-    min-height: 184px;
-    padding: 22px;
+    min-height: 300px;
+    padding: 20px;
     border-radius: 28px;
   }
 
   .ln-coord-showcase-brand img {
-    width: min(100%, 280px);
+    width: min(100%, 340px);
+    max-height: 270px;
   }
 
   .ln-coord-card {
@@ -6738,8 +6760,10 @@ body {
   }
 
   .ln-coord-card-media {
-    height: 154px;
-    min-height: 154px;
+    height: auto;
+    min-height: 0;
+    aspect-ratio: 1.24 / 1;
+    padding: 8px;
     border-radius: 22px;
   }
 
