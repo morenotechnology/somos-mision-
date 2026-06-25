@@ -50,6 +50,19 @@ function unwrap(result, fallbackMessage = 'Error de Supabase') {
   return result.data;
 }
 
+function isPublicationSchemaDrift(error) {
+  if (!error) return false;
+  const message = [error.message, error.details, error.hint].filter(Boolean).join(' ').toLowerCase();
+  const publicationLinkColumns = ['source_url', 'facebook_url', 'instagram_url', 'source_platform'];
+
+  return (
+    error.code === '42703' ||
+    error.code === 'PGRST204' ||
+    (message.includes('schema cache') && publicationLinkColumns.some((column) => message.includes(column))) ||
+    (message.includes('could not find') && publicationLinkColumns.some((column) => message.includes(column)))
+  );
+}
+
 function initials(name = '') {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return 'SM';
@@ -605,9 +618,9 @@ async function getPublications(client, params = {}) {
   };
 
   const result = await buildQuery(publicationSelectWithSource);
-  if (result.error?.code === '42703') {
+  if (isPublicationSchemaDrift(result.error)) {
     const fallbackResult = await buildQuery(publicationSelectBase);
-    if (fallbackResult.error?.code === '42703') {
+    if (isPublicationSchemaDrift(fallbackResult.error)) {
       const legacyRows = unwrap(await buildQuery(publicationSelectLegacy), 'No se pudo cargar el contenido');
       return legacyRows.map(normalizePublication);
     }
@@ -890,10 +903,10 @@ export function createSupabaseApi() {
             .eq('id', id)
             .single();
 
-        if (result.error?.code === '42703') {
+        if (isPublicationSchemaDrift(result.error)) {
           result = await client.from('publications').select(selectWithSource).eq('id', id).single();
         }
-        if (result.error?.code === '42703') {
+        if (isPublicationSchemaDrift(result.error)) {
           result = await client.from('publications').select(selectLegacy).eq('id', id).single();
         }
 
@@ -1105,7 +1118,7 @@ export function createSupabaseApi() {
           .select(publicationSelectWithSource)
           .single();
 
-        if (insertResult.error?.code === '42703') {
+        if (isPublicationSchemaDrift(insertResult.error)) {
           insertResult = await client
             .from('publications')
             .insert(sourcePayload)
@@ -1113,7 +1126,7 @@ export function createSupabaseApi() {
             .single();
         }
 
-        if (insertResult.error?.code === '42703') {
+        if (isPublicationSchemaDrift(insertResult.error)) {
           insertResult = await client
             .from('publications')
             .insert(basePayload)
@@ -1122,7 +1135,14 @@ export function createSupabaseApi() {
         }
 
         const row = unwrap(insertResult, 'No se pudo crear la publicación');
-        return normalizePublication(row);
+        const normalized = normalizePublication(row);
+        return {
+          ...normalized,
+          sourceUrl: normalized.sourceUrl || payload.source_url || payload.facebook_url || payload.instagram_url || '',
+          facebookUrl: normalized.facebookUrl || payload.facebook_url || '',
+          instagramUrl: normalized.instagramUrl || payload.instagram_url || '',
+          sourcePlatform: normalized.sourcePlatform || payload.source_platform || 'manual',
+        };
       },
     },
 
