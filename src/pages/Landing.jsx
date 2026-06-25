@@ -501,7 +501,12 @@ function PosterFeature({ onRegister }) {
         <div className="ln-poster-shell">
           <motion.div {...fadeUp(0)} className="ln-poster-copy">
             <p className="ln-eyebrow is-light"><Star size={13} strokeWidth={2.5} /> Imagen oficial</p>
-            <h2>Somos 12 coordinaciones, 5 regiones y una sola misión</h2>
+            <h2>
+              <span>Somos <strong>12</strong></span>
+              <span>coordinaciones,</span>
+              <span><strong>5 regiones</strong> y</span>
+              <span>una sola <em>misión</em></span>
+            </h2>
             <p>
               Una pieza visual para presentar la visión de Somos Misión Colombia: iglesias, distritos,
               misioneros nacionales y creyentes unidos para anunciar el evangelio en cada región del país.
