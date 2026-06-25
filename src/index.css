@@ -5845,45 +5845,53 @@ body {
 .ln-coord-card {
   --coord-color: #0b5d91;
   position: relative;
-  min-height: 540px;
+  min-height: 560px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: clamp(18px, 1.6vw, 22px);
-  border-radius: 34px;
+  gap: 0;
+  padding: 0;
+  border-radius: 36px;
   overflow: hidden;
-  border: 1px solid rgba(15,23,42,0.06);
+  border: 1px solid color-mix(in srgb, var(--coord-color) 20%, rgba(255,255,255,0.72));
   background:
-    radial-gradient(circle at 78% 10%, color-mix(in srgb, var(--coord-color) 22%, transparent), transparent 34%),
-    linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.84));
-  box-shadow: 0 18px 48px rgba(7, 17, 43, 0.08);
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--coord-color) 28%, transparent), transparent 28%),
+    radial-gradient(circle at 88% 30%, rgba(246,178,26,0.18), transparent 32%),
+    linear-gradient(180deg, #101842 0%, #151f54 34%, rgba(236,238,244,0.96) 72%, rgba(255,255,255,0.98) 100%);
+  box-shadow:
+    0 22px 62px rgba(7, 17, 43, 0.14),
+    inset 0 1px 0 rgba(255,255,255,0.62);
   transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease, border-color 0.35s ease;
 }
 
 .ln-coord-card::before {
   content: "";
   position: absolute;
-  inset: auto 20px 0;
-  height: 5px;
-  border-radius: 999px 999px 0 0;
-  background: linear-gradient(90deg, var(--coord-color), #f6b21a);
+  inset: 0 0 auto;
+  height: 58%;
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.08), transparent 38%),
+    radial-gradient(circle at 78% 24%, color-mix(in srgb, var(--coord-color) 24%, transparent), transparent 34%),
+    linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0.38));
+  opacity: 0.82;
+  pointer-events: none;
 }
 
 .ln-coord-card::after {
   content: "";
   position: absolute;
-  right: -58px;
-  top: -58px;
-  width: 150px;
-  height: 150px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--coord-color) 22%, transparent);
+  inset: auto 24px 0;
+  height: 5px;
+  border-radius: 999px 999px 0 0;
+  background: linear-gradient(90deg, var(--coord-color), #f6b21a);
 }
 
 .ln-coord-card:hover {
   transform: translateY(-8px);
   border-color: color-mix(in srgb, var(--coord-color) 32%, #ffffff);
-  box-shadow: 0 26px 62px rgba(7, 17, 43, 0.14);
+  box-shadow:
+    0 32px 76px rgba(7, 17, 43, 0.18),
+    inset 0 1px 0 rgba(255,255,255,0.72);
 }
 
 .ln-coord-card-top,
@@ -5894,33 +5902,39 @@ body {
   gap: 12px;
 }
 
+.ln-coord-card-top {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  right: 18px;
+  z-index: 4;
+  pointer-events: none;
+}
+
 .ln-coord-card-media {
   position: relative;
   z-index: 1;
+  width: auto;
+  margin: clamp(18px, 1.6vw, 24px) clamp(18px, 1.6vw, 24px) 0;
   min-height: 0;
-  aspect-ratio: 16 / 10.8;
+  aspect-ratio: 16 / 9.4;
   display: grid;
   place-items: center;
-  padding: clamp(8px, 1vw, 12px);
+  padding: 0;
   overflow: hidden;
   border-radius: 28px;
-  background:
-    radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--coord-color) 38%, transparent), transparent 34%),
-    radial-gradient(circle at 16% 88%, rgba(246,178,26,0.22), transparent 38%),
-    linear-gradient(135deg, #06102E 0%, color-mix(in srgb, var(--coord-color) 72%, #07142f) 58%, #07142f 100%);
+  background: transparent;
   box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,0.26),
-    inset 0 0 0 10px rgba(255,255,255,0.035),
-    0 18px 36px rgba(7,17,43,0.14);
+    0 24px 46px rgba(7,17,43,0.18),
+    0 1px 0 rgba(255,255,255,0.34);
 }
 
 .ln-coord-card-media::after {
   content: "";
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(180deg, rgba(7, 20, 47, 0.05) 0%, rgba(7, 20, 47, 0.22) 100%),
-    radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--coord-color) 24%, transparent), transparent 34%);
+  z-index: 2;
+  background: linear-gradient(180deg, transparent 46%, rgba(7, 20, 47, 0.46) 100%);
   pointer-events: none;
 }
 
@@ -5931,30 +5945,22 @@ body {
 }
 
 .ln-coord-card-media-backdrop {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: scale(1.08);
-  opacity: 0.34;
-  filter: blur(12px) saturate(1.18) contrast(1.08);
+  display: none;
 }
 
 .ln-coord-card-media-main {
   position: relative;
   z-index: 1;
-  width: calc(100% - 8px);
-  height: calc(100% - 8px);
-  object-fit: contain;
-  border-radius: 22px;
-  filter: saturate(1.06) contrast(1.02) drop-shadow(0 18px 28px rgba(0,0,0,0.20));
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  filter: saturate(1.06) contrast(1.02);
 }
 
 .ln-coord-card:hover .ln-coord-card-media-backdrop {
-  transform: scale(1.12);
-  filter: blur(14px) saturate(1.25) contrast(1.1);
+  transform: none;
+  filter: none;
 }
 
 .ln-coord-card:hover .ln-coord-card-media img {
@@ -5969,16 +5975,16 @@ body {
   position: absolute;
   left: 14px;
   bottom: 14px;
-  z-index: 2;
+  z-index: 3;
   max-width: calc(100% - 24px);
-  min-height: 28px;
+  min-height: 34px;
   display: inline-flex;
   align-items: center;
-  padding: 0 10px;
+  padding: 0 14px;
   border-radius: 999px;
   background: rgba(255,255,255,0.94);
   color: var(--coord-color);
-  font-size: 0.66rem;
+  font-size: 0.72rem;
   font-weight: 950;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -5988,21 +5994,26 @@ body {
 }
 
 .ln-coord-icon {
-  width: 62px;
-  height: 62px;
-  border-radius: 21px;
+  width: 58px;
+  height: 58px;
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   color: white;
-  background: linear-gradient(145deg, var(--coord-color), #07142f);
-  box-shadow: 0 14px 30px color-mix(in srgb, var(--coord-color) 22%, transparent);
+  background:
+    linear-gradient(145deg, rgba(255,255,255,0.12), transparent),
+    linear-gradient(145deg, var(--coord-color), #07142f);
+  border: 1px solid rgba(255,255,255,0.22);
+  box-shadow:
+    0 16px 32px color-mix(in srgb, var(--coord-color) 22%, transparent),
+    inset 0 1px 0 rgba(255,255,255,0.28);
 }
 
 .ln-coord-number {
-  color: rgba(15,23,42,0.16);
-  font-size: 2.8rem;
+  color: rgba(255,255,255,0.20);
+  font-size: 3rem;
   line-height: 1;
   font-weight: 950;
   letter-spacing: -0.08em;
@@ -6011,6 +6022,7 @@ body {
 .ln-coord-body {
   position: relative;
   z-index: 1;
+  padding: 24px clamp(22px, 1.8vw, 28px) 0;
 }
 
 .ln-coord-label {
@@ -6043,12 +6055,14 @@ body {
 }
 
 .ln-coord-action {
-  margin-top: auto;
-  padding: 16px;
+  margin: 22px clamp(22px, 1.8vw, 28px) 0;
+  padding: 18px;
   border-radius: 22px;
   background:
-    linear-gradient(135deg, rgba(7,20,47,0.045), rgba(246,178,26,0.08));
-  border: 1px solid rgba(15,23,42,0.055);
+    radial-gradient(circle at 94% 12%, rgba(246,178,26,0.16), transparent 34%),
+    linear-gradient(135deg, rgba(7,20,47,0.045), rgba(246,178,26,0.10));
+  border: 1px solid rgba(15,23,42,0.07);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.74);
 }
 
 .ln-coord-action span {
@@ -6076,6 +6090,13 @@ body {
   color: #64748b;
   font-size: 0.76rem;
   font-weight: 850;
+}
+
+.ln-coord-footer {
+  position: relative;
+  z-index: 1;
+  margin: auto clamp(22px, 1.8vw, 28px) 28px;
+  padding-top: 22px;
 }
 
 .ln-coord-footer svg {
