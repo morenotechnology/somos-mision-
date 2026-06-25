@@ -507,15 +507,10 @@ function PosterFeature({ onRegister }) {
               <span><strong>5 regiones</strong> y</span>
               <span>una sola <em>misión</em></span>
             </h2>
-            <p>
-              Una pieza visual para presentar la visión de Somos Misión Colombia: iglesias, distritos,
-              misioneros nacionales y creyentes unidos para anunciar el evangelio en cada región del país.
-            </p>
             <div className="ln-poster-actions">
               <button type="button" onClick={onRegister} className="ln-btn-primary ln-btn-lg">
                 Unirme a la red <ArrowRight size={18} strokeWidth={2.3} />
               </button>
-              <span>Poster oficial de campaña</span>
             </div>
           </motion.div>
 
