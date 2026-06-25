@@ -5070,16 +5070,20 @@ body {
   mask-image: linear-gradient(180deg, transparent, black 18%, black 82%, transparent);
 }
 
+.ln-poster-section .ln-container {
+  width: min(1120px, calc(100% - 72px));
+}
+
 .ln-poster-shell {
   position: relative;
   z-index: 1;
   isolation: isolate;
   display: grid;
-  grid-template-columns: minmax(330px, 0.72fr) minmax(460px, 1.18fr);
+  grid-template-columns: minmax(300px, 0.82fr) minmax(390px, 1fr);
   align-items: center;
-  gap: clamp(18px, 3.8vw, 68px);
-  min-height: clamp(560px, 50vw, 820px);
-  padding: clamp(30px, 5vw, 72px);
+  gap: clamp(20px, 3.2vw, 44px);
+  min-height: clamp(470px, 42vw, 620px);
+  padding: clamp(28px, 3.4vw, 46px);
   border: 1px solid rgba(255,255,255,0.70);
   border-radius: clamp(34px, 5vw, 58px);
   overflow: hidden;
@@ -5104,10 +5108,10 @@ body {
 
 .ln-poster-shell::before {
   top: 4%;
-  right: -6%;
-  width: min(62vw, 940px);
-  height: min(24vw, 360px);
-  opacity: 0.76;
+  right: -10%;
+  width: min(56vw, 760px);
+  height: min(20vw, 250px);
+  opacity: 0.62;
   filter: blur(0.2px);
   background:
     radial-gradient(ellipse at 13% 58%, rgba(255,255,255,0.92) 0 18%, transparent 19%),
@@ -5130,17 +5134,17 @@ body {
   position: relative;
   z-index: 2;
   color: #07142f;
-  padding: clamp(10px, 2vw, 22px) 0 clamp(10px, 2vw, 22px) clamp(2px, 1vw, 18px);
+  padding: clamp(8px, 1.4vw, 14px) 0 clamp(8px, 1.4vw, 14px) clamp(2px, 1vw, 10px);
 }
 
 .ln-poster-copy h2 {
-  margin: 10px 0 20px;
-  max-width: 680px;
+  margin: 8px 0 18px;
+  max-width: 480px;
   color: #07142f;
-  font-size: clamp(3.2rem, 5.1vw, 7.1rem);
+  font-size: clamp(2.8rem, 4vw, 4.95rem);
   font-weight: 950;
-  line-height: 0.88;
-  letter-spacing: -0.075em;
+  line-height: 0.96;
+  letter-spacing: -0.064em;
   text-wrap: balance;
 }
 
@@ -5148,9 +5152,19 @@ body {
   display: block;
 }
 
+.ln-poster-copy h2 span:nth-child(2) {
+  font-size: 0.82em;
+  letter-spacing: -0.074em;
+}
+
+.ln-poster-copy h2 span:nth-child(4) {
+  font-size: 0.9em;
+}
+
 .ln-poster-copy h2 strong,
 .ln-poster-copy h2 em {
   font-style: normal;
+  white-space: nowrap;
   color: transparent;
   background: linear-gradient(135deg, #1a73ff 0%, #5447ff 54%, #0d1554 100%);
   -webkit-background-clip: text;
@@ -5162,13 +5176,13 @@ body {
   display: block;
   width: 58px;
   height: 3px;
-  margin-top: 22px;
+  margin-top: 18px;
   border-radius: 99px;
   background: linear-gradient(90deg, #1a73ff, rgba(26,115,255,0));
 }
 
 .ln-poster-copy p:not(.ln-eyebrow) {
-  max-width: 520px;
+  max-width: 430px;
   color: #4c5b73;
   font-size: clamp(0.98rem, 1.18vw, 1.16rem);
   line-height: 1.58;
@@ -5180,7 +5194,7 @@ body {
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-  margin-top: 26px;
+  margin-top: 24px;
 }
 
 .ln-poster-actions .ln-btn-primary {
@@ -5201,7 +5215,7 @@ body {
   position: relative;
   z-index: 1;
   margin: 0;
-  min-height: clamp(380px, 43vw, 720px);
+  min-height: clamp(330px, 32vw, 500px);
   display: grid;
   place-items: center;
   padding: 0;
@@ -5214,8 +5228,8 @@ body {
   position: absolute;
   left: 7%;
   right: 2%;
-  bottom: 10%;
-  height: 23%;
+  bottom: 8%;
+  height: 20%;
   z-index: 0;
   border-radius: 50%;
   background:
@@ -5228,10 +5242,10 @@ body {
   position: absolute;
   top: 12%;
   left: 4%;
-  width: min(32vw, 430px);
-  height: min(12vw, 180px);
+  width: min(24vw, 330px);
+  height: min(9vw, 124px);
   z-index: 0;
-  opacity: 0.78;
+  opacity: 0.66;
   background:
     radial-gradient(ellipse at 18% 62%, rgba(255,255,255,0.9) 0 18%, transparent 19%),
     radial-gradient(ellipse at 42% 44%, rgba(255,255,255,0.82) 0 24%, transparent 25%),
@@ -5243,14 +5257,14 @@ body {
   position: relative;
   z-index: 1;
   display: block;
-  width: min(106%, 960px);
-  max-height: min(74vh, 720px);
+  width: min(104%, 640px);
+  max-height: min(58vh, 520px);
   object-fit: contain;
   object-position: center;
   border-radius: 0;
   box-shadow: none;
-  filter: drop-shadow(0 36px 54px rgba(7,17,43,0.18));
-  transform: translateX(2%);
+  filter: drop-shadow(0 28px 42px rgba(7,17,43,0.16));
+  transform: translateX(1%);
 }
 
 @keyframes ln-cloud-drift {
@@ -6825,6 +6839,10 @@ body {
 
 @media (max-width: 640px) {
   .ln-container {
+    width: min(100% - 32px, 1200px);
+  }
+
+  .ln-poster-section .ln-container {
     width: min(100% - 32px, 1200px);
   }
 

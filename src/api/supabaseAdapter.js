@@ -31,6 +31,7 @@ const profileSelect = `
 `;
 
 const PASTOR_ACCESS_KEY = 'IPUC2026MISION';
+const DEFAULT_PUBLIC_SITE_URL = 'https://somosmisioncolombia.com';
 
 function ensureClient() {
   if (!hasSupabaseEnv || !supabase) {
@@ -114,7 +115,7 @@ function getAuthRedirectUrl(path = '/login') {
     import.meta.env.VITE_PUBLIC_SITE_URL ||
     import.meta.env.VITE_SITE_URL;
   const runtimeUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const baseUrl = normalizeSiteUrl(configuredUrl || runtimeUrl);
+  const baseUrl = normalizeSiteUrl(configuredUrl || DEFAULT_PUBLIC_SITE_URL || runtimeUrl);
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return baseUrl ? `${baseUrl}${normalizedPath}` : undefined;
 }
@@ -694,6 +695,7 @@ export function createSupabaseApi() {
             email: payload.email,
             password: payload.password,
             options: {
+              emailRedirectTo: getAuthRedirectUrl('/login'),
               data: {
                 nombre_completo: payload.name,
                 nombre: payload.name?.split(' ')?.[0] || payload.name,
