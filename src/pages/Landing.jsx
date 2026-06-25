@@ -34,19 +34,19 @@ import amigosLogo from '../assets/logos/5.000 Amigos.png';
 import amigosOldLogo from '../assets/logos/LOGO 5000 AMIGOS.svg';
 import unanimesLogo from '../assets/logos/1.png';
 import posterFinal from '../assets/logos/POSTER FINAL.png';
-import coordinationsConcept from '../assets/logos/DISEÑO CONCEPTO COORDINACIONES.png';
-import coordCapacitacion from '../assets/coordinaciones/CAPACITACIÓN MISIONERA.png';
+import coordinationsConcept from '../assets/logos/diseno-concepto-coordinaciones.png';
+import coordCapacitacion from '../assets/coordinaciones/capacitacion-misionera.png';
 import coordCarcelaria from '../assets/coordinaciones/CARCELARIA.png';
 import coordEstadisticas from '../assets/coordinaciones/ESTADISTICAS.png';
 import coordEtnicos from '../assets/coordinaciones/ETNICOS.png';
 import coordEvangelismo from '../assets/coordinaciones/EVANGELISMO.png';
 import coordHospitalaria from '../assets/coordinaciones/HOSPITALARIA.png';
 import coordInstituciones from '../assets/coordinaciones/INSTITUCIONES PUBLICAS.png';
-import coordMedios from '../assets/coordinaciones/MEDIOS DE COMUNICACIÓN.png';
-import coordJuvenil from '../assets/coordinaciones/MISIÓN JUVENIL.png';
+import coordMedios from '../assets/coordinaciones/medios-comunicacion.png';
+import coordJuvenil from '../assets/coordinaciones/mision-juvenil.png';
 import coordVulnerable from '../assets/coordinaciones/POBLACION VULNERABLE ESPECIALES.png';
-import coordSorda from '../assets/coordinaciones/POBLACIÓN SORDA.png';
-import coordRestauracion from '../assets/coordinaciones/RESTAURACIÓN.png';
+import coordSorda from '../assets/coordinaciones/poblacion-sorda.png';
+import coordRestauracion from '../assets/coordinaciones/restauracion.png';
 
 /* ─── Animation variants ─────────────────────────────────────────────── */
 const fadeUp = (delay = 0, distance = 28) => ({
@@ -440,7 +440,6 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
       >
         <img src="/hero-map.png" alt="" className="ln-hero-map" />
         <img src={amigosLogo} alt="" className="ln-hero-polaroid is-one is-amigos-logo" />
-        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=700&q=80" alt="" className="ln-hero-polaroid is-two" />
       </motion.div>
 
       <motion.div className="ln-container ln-hero-inner">
@@ -725,7 +724,8 @@ function CoordinationsSection({ coordinations }) {
                 </div>
 
                 <div className="ln-coord-card-media" aria-hidden="true">
-                  <img src={detail.image} alt="" loading="lazy" decoding="async" />
+                  <img className="ln-coord-card-media-backdrop" src={detail.image} alt="" loading="lazy" decoding="async" />
+                  <img className="ln-coord-card-media-main" src={detail.image} alt="" loading="lazy" decoding="async" />
                   <span>{detail.metric}</span>
                 </div>
 

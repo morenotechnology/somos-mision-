@@ -200,6 +200,35 @@ function normalizeProfile(row, stats = {}) {
   };
 }
 
+function normalizePublicRankingRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    schemaId: row.id,
+    name: row.nombre_completo,
+    email: '',
+    role: row.rol,
+    region: row.region_id,
+    regionName: row.region_name || row.region_id || 'Sin región',
+    district: row.district_id,
+    districtName: row.district_name || row.district_id || 'Sin distrito',
+    congregation: '',
+    congregationId: null,
+    position: '',
+    phone: '',
+    xp: Number(row.xp || 0),
+    level: Number(row.level || 1),
+    streak: 0,
+    shared: 0,
+    missionsCompleted: 0,
+    badges: [],
+    avatar: row.avatar || initials(row.nombre_completo),
+    avatarColor: row.avatar_color || '#1A237E',
+    joinedAt: new Date().toISOString().slice(0, 10),
+    active: true,
+  };
+}
+
 function normalizePublication(row) {
   return {
     id: String(row.id),
@@ -440,12 +469,17 @@ async function getReferenceData(client) {
 }
 
 async function getMetrics(client) {
-  const [globalMetricsRows, schemaMetricsRows, weeklyActivity, regionActivity] = await Promise.all([
-    unwrap(await client.rpc('get_global_metrics'), 'No se pudieron cargar las métricas globales'),
-    unwrap(await client.rpc('get_schema_metrics'), 'No se pudieron cargar las métricas del schema'),
-    unwrap(await client.rpc('get_weekly_activity'), 'No se pudo cargar la actividad semanal'),
-    unwrap(await client.rpc('get_region_activity'), 'No se pudo cargar la actividad regional'),
+  const [globalMetricsResult, schemaMetricsResult, weeklyActivityResult, regionActivityResult] = await Promise.all([
+    client.rpc('get_global_metrics'),
+    client.rpc('get_schema_metrics'),
+    client.rpc('get_weekly_activity'),
+    client.rpc('get_region_activity'),
   ]);
+
+  const globalMetricsRows = globalMetricsResult.error ? [] : globalMetricsResult.data;
+  const schemaMetricsRows = schemaMetricsResult.error ? [] : schemaMetricsResult.data;
+  const weeklyActivity = weeklyActivityResult.error ? [] : weeklyActivityResult.data;
+  const regionActivity = regionActivityResult.error ? [] : regionActivityResult.data;
 
   return {
     globalMetrics: normalizeGlobalMetrics(globalMetricsRows?.[0]),
@@ -464,6 +498,13 @@ async function getMetrics(client) {
 }
 
 async function getRankingRows(client, params = {}) {
+  if (!params.region && !params.q) {
+    const publicRanking = await client.rpc('get_public_ranking', { limit_count: params.limit || 10 });
+    if (!publicRanking.error) {
+      return (publicRanking.data || []).map(normalizePublicRankingRow).filter(Boolean);
+    }
+  }
+
   let query = client
     .from('profiles')
     .select(profileSelect)
@@ -603,10 +644,15 @@ export function createSupabaseApi() {
 
     bootstrap: async () => {
       const [references, metrics, topUsers, featuredContent] = await Promise.all([
-        getReferenceData(client),
-        getMetrics(client),
-        getRankingRows(client, { limit: 3 }),
-        getPublications(client, { limit: 6 }),
+        getReferenceData(client).catch(() => ({ regions: [], districts: [], coordinations: [], badges: [] })),
+        getMetrics(client).catch(() => ({
+          globalMetrics: emptyMetrics(),
+          schemaMetrics: emptySchemaMetrics(),
+          weeklyActivity: [],
+          regionActivity: [],
+        })),
+        getRankingRows(client, { limit: 3 }).catch(() => []),
+        getPublications(client, { limit: 6 }).catch(() => []),
       ]);
 
       return {
