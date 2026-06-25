@@ -65,6 +65,33 @@ function emptyProfileStats() {
   };
 }
 
+function emptyMetrics() {
+  return {
+    totalEmbajadores: 0,
+    embajadoresActivos: 0,
+    contenidosPublicados: 0,
+    contenidosCompartidos: 0,
+    regionesConectadas: 0,
+    distritosImpactados: 0,
+    xpGenerado: 0,
+    misionesCompletadas: 0,
+  };
+}
+
+function emptySchemaMetrics() {
+  return {
+    perfilesActivos: 0,
+    publicaciones: 0,
+    comunicadosActivos: 0,
+    congregaciones: 0,
+    puntosBlancos: 0,
+    compartidos: 0,
+    reacciones: 0,
+    comentarios: 0,
+    xpRegistrado: 0,
+  };
+}
+
 function roleFromMetadata(meta = {}) {
   if (meta.rol === 'pastor' && meta.pastor_access_key === PASTOR_ACCESS_KEY) return 'pastor';
   return 'multiplicador';
@@ -689,11 +716,20 @@ export function createSupabaseApi() {
         const sessionBundle = await fetchCurrentSessionBundle(client);
         if (!sessionBundle?.user) throw new ApiError('Sesión no encontrada', 401);
 
-        const [metrics, ranking, missions, badges] = await Promise.all([
-          getMetrics(client),
-          getRankingRows(client, { limit: 6 }),
-          unwrap(await client.from('missions').select('*').eq('active', true).order('order_index'), 'No se pudieron cargar las misiones'),
-          unwrap(await client.from('badges').select('*').order('xp'), 'No se pudieron cargar las insignias'),
+        const isPastor = sessionBundle.user.role === 'pastor';
+        const regionId = sessionBundle.user.region;
+
+        const [metrics, ranking, regionalRanking, missions, badges] = await Promise.all([
+          getMetrics(client).catch(() => ({
+            globalMetrics: emptyMetrics(),
+            schemaMetrics: emptySchemaMetrics(),
+            weeklyActivity: [],
+            regionActivity: [],
+          })),
+          getRankingRows(client, { limit: 6 }).catch(() => []),
+          isPastor && regionId ? getRankingRows(client, { region: regionId, limit: 30 }).catch(() => []) : Promise.resolve([]),
+          client.from('missions').select('*').eq('active', true).order('order_index').then((result) => (result.error ? [] : result.data || [])),
+          client.from('badges').select('*').order('xp').then((result) => (result.error ? [] : result.data || [])),
         ]);
 
         return {
@@ -704,6 +740,7 @@ export function createSupabaseApi() {
           regionActivity: metrics.regionActivity,
           missions: missions.map((mission) => normalizeMission(mission, sessionBundle.completedMissionIds)),
           topUsers: ranking,
+          regionalUsers: regionalRanking,
           badges: badges.filter((badge) => sessionBundle.user.badges.includes(badge.id)),
           sharedContentIds: sessionBundle.sharedContentIds,
           completedMissionIds: sessionBundle.completedMissionIds,

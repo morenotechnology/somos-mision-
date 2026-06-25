@@ -592,17 +592,13 @@ function TerritorySection() {
               <span className="ln-territory-atmosphere" aria-hidden="true" />
               <img src={story.image} alt="" className="ln-territory-backdrop" loading="lazy" decoding="async" />
               <span className="ln-territory-glow" aria-hidden="true" />
-              <motion.img
+              <img
                 src={amigosOldLogo}
                 alt=""
                 className="ln-territory-5000-logo"
                 loading="lazy"
                 decoding="async"
                 aria-hidden="true"
-                initial={{ opacity: 0, scale: 0.82, y: -8 }}
-                whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                viewport={{ once: true, margin: '-80px' }}
-                transition={{ delay: 0.22 + index * 0.045, duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
               />
               <motion.img
                 src={story.image}

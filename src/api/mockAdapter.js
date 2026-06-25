@@ -117,8 +117,10 @@ export function createMockApi() {
           metrics: globalMetrics,
           schemaMetrics,
           weeklyActivity,
+          regionActivity,
           missions: missions.filter((mission) => mission.type === 'daily'),
           topUsers: [...state.users].sort((a, b) => b.xp - a.xp),
+          regionalUsers: [...state.users].filter((item) => item.region === user.region).sort((a, b) => b.xp - a.xp),
           badges: badges.filter((badge) => user.badges?.includes(badge.id)),
         });
       },

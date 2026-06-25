@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Users, Share2, Zap, Target, BookOpen, Trophy, Flame, LayoutDashboard, Shield, Star, ArrowRight } from 'lucide-react';
+import { Users, Share2, Zap, Target, BookOpen, Trophy, Flame, LayoutDashboard, Shield, Star, ArrowRight, MapPin, RefreshCw } from 'lucide-react';
 import { api } from '../api';
 import { useAppStore } from '../store/useAppStore';
 import StatCard from '../components/common/StatCard';
@@ -18,7 +18,7 @@ const greet = () => {
   return 'Buenas noches';
 };
 
-function MultiplicadorDash({ user, weeklyActivity, missions, topUsers, badges }) {
+function MultiplicadorDash({ user, weeklyActivity = [], missions = [], topUsers = [], badges = [] }) {
   const navigate = useNavigate();
   const progress = xpProgress(user.xp, user.level);
   const dailyMissions = missions.filter((mission) => mission.type === 'daily').slice(0, 3);
@@ -99,34 +99,58 @@ function MultiplicadorDash({ user, weeklyActivity, missions, topUsers, badges })
   );
 }
 
-function PastorDash({ user, weeklyActivity, topUsers }) {
-  const regionUsers = topUsers.filter((row) => row.region === user.region);
-  const topRegion = regionUsers.slice(0, 3);
-  const totalXp = regionUsers.reduce((sum, row) => sum + row.xp, 0);
-  const totalShared = regionUsers.reduce((sum, row) => sum + row.shared, 0);
-  const totalMissions = regionUsers.reduce((sum, row) => sum + row.missionsCompleted, 0);
+function PastorDash({ user, weeklyActivity = [], topUsers = [], regionalUsers = [], regionActivity = [] }) {
+  const fallbackUsers = topUsers.filter((row) => row.region === user.region);
+  const regionUsers = (regionalUsers.length ? regionalUsers : fallbackUsers).filter(Boolean);
+  const displayUsers = regionUsers.length ? regionUsers : [user];
+  const topRegion = [...displayUsers].sort((a, b) => (b.xp || 0) - (a.xp || 0)).slice(0, 4);
+  const totalXp = displayUsers.reduce((sum, row) => sum + (row.xp || 0), 0);
+  const totalShared = displayUsers.reduce((sum, row) => sum + (row.shared || 0), 0);
+  const totalMissions = displayUsers.reduce((sum, row) => sum + (row.missionsCompleted || 0), 0);
+  const regionName = user.regionName || 'tu región';
+  const regionMetric = regionActivity.find((row) => row.name?.toLowerCase() === regionName.toLowerCase());
+  const activeRegionUsers = regionMetric?.embajadores || displayUsers.length;
+  const activeShares = regionMetric?.compartidos ?? totalShared;
 
   return (
-    <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center gap-2 mb-1"><Shield size={20} className="text-[#1A237E]" /><h2 className="text-2xl font-black text-[#0F172A]">Panel Pastor/Directivo</h2></div>
-        <p className="text-[#475569] text-sm">Monitorea tu región y equipo.</p>
+    <div className="dashboard-page pastor-dashboard">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="pastor-hero-card">
+        <div className="pastor-hero-map" aria-hidden="true" />
+        <div className="pastor-hero-copy">
+          <span><Shield size={16} /> Pastor/Directivo</span>
+          <h2>Panel regional de {regionName}</h2>
+          <p>Monitorea multiplicadores, contenidos compartidos y avance misionero de tu territorio desde una vista clara.</p>
+        </div>
+        <div className="pastor-hero-region">
+          <MapPin size={18} />
+          <strong>{regionName}</strong>
+          <small>{user.districtName || 'Distrito no asignado'} · {user.congregation || 'Congregación no asignada'}</small>
+        </div>
       </motion.div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard icon={Users} label="Multiplicadores" value={regionUsers.length} color="#1A237E" delay={0.05} />
+      <div className="dashboard-stat-grid">
+        <StatCard icon={Users} label="Multiplicadores" value={activeRegionUsers} color="#1A237E" delay={0.05} />
         <StatCard icon={Zap} label="XP Regional" value={formatNumber(totalXp)} color="#D4AF37" delay={0.10} />
-        <StatCard icon={Share2} label="Compartidos" value={totalShared} color="#5C1800" delay={0.15} />
+        <StatCard icon={Share2} label="Compartidos" value={formatNumber(activeShares)} color="#5C1800" delay={0.15} />
         <StatCard icon={Target} label="Misiones" value={totalMissions} color="#2E7D32" delay={0.20} />
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="card p-5">
-          <h3 className="font-bold text-[#0F172A] mb-4">Top de tu región</h3>
-          <div className="space-y-2">{topRegion.map((rankingUser, index) => <RankingCard key={rankingUser.id} user={rankingUser} position={index + 1} delay={index * 0.08} />)}</div>
+      <div className="dashboard-content-grid">
+        <div className="pastor-panel-card">
+          <div className="dashboard-section-header">
+            <div><p>Hall regional</p><h3>Top de {regionName}</h3></div>
+          </div>
+          <div className="dashboard-list is-compact">
+            {topRegion.map((rankingUser, index) => <RankingCard key={rankingUser.id} user={rankingUser} position={index + 1} delay={index * 0.08} />)}
+          </div>
+          {!regionUsers.length && (
+            <p className="pastor-empty-note">Cuando más multiplicadores de tu región se registren, este ranking se actualizará automáticamente.</p>
+          )}
         </div>
-        <div className="card p-5">
-          <h3 className="font-bold text-[#0F172A] mb-4">Actividad semanal</h3>
+        <div className="pastor-panel-card">
+          <div className="dashboard-section-header">
+            <div><p>Actividad</p><h3>Señal semanal</h3></div>
+          </div>
           <ResponsiveContainer width="100%" height={180}>
             <AreaChart data={weeklyActivity}>
               <defs><linearGradient id="pshareGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#1A237E" stopOpacity={0.15} /><stop offset="95%" stopColor="#1A237E" stopOpacity={0} /></linearGradient></defs>
@@ -142,7 +166,7 @@ function PastorDash({ user, weeklyActivity, topUsers }) {
   );
 }
 
-function AdminDash({ metrics, weeklyActivity, regionActivity, topUsers }) {
+function AdminDash({ metrics = {}, weeklyActivity = [], regionActivity = [], topUsers = [] }) {
   return (
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
@@ -194,25 +218,56 @@ function AdminDash({ metrics, weeklyActivity, regionActivity, topUsers }) {
 export default function Dashboard() {
   const { currentUser, loginFromApi } = useAppStore();
   const [payload, setPayload] = useState(null);
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let active = true;
+    setError('');
     api.dashboard.get().then((data) => {
       if (!active) return;
       setPayload(data);
       loginFromApi({ user: data.user, sharedContentIds: data.sharedContentIds, completedMissionIds: data.completedMissionIds });
-    }).catch(() => {
+    }).catch((err) => {
       if (!active) return;
+      setError(err?.message || 'No se pudo cargar el dashboard');
       setPayload(null);
     });
     return () => { active = false; };
-  }, [loginFromApi]);
+  }, [loginFromApi, reloadKey]);
 
   if (!currentUser || !payload) {
+    if (error) {
+      return (
+        <div className="dashboard-error-card">
+          <div>
+            <span><RefreshCw size={16} /> Dashboard</span>
+            <h2>No pudimos cargar esta vista</h2>
+            <p>{error}</p>
+          </div>
+          <button type="button" onClick={() => setReloadKey((key) => key + 1)}>
+            Reintentar <RefreshCw size={15} />
+          </button>
+        </div>
+      );
+    }
     return <div className="card p-8 text-sm text-[#475569]">Cargando dashboard...</div>;
   }
 
-  if (currentUser.role === 'multiplicador') return <MultiplicadorDash user={currentUser} weeklyActivity={payload.weeklyActivity} missions={payload.missions} topUsers={payload.topUsers} badges={payload.badges} />;
-  if (currentUser.role === 'pastor') return <PastorDash user={currentUser} weeklyActivity={payload.weeklyActivity} topUsers={payload.topUsers} />;
+  const dashboardUser = payload.user || currentUser;
+  const role = String(dashboardUser.role || '').toLowerCase();
+
+  if (role === 'multiplicador') return <MultiplicadorDash user={dashboardUser} weeklyActivity={payload.weeklyActivity} missions={payload.missions} topUsers={payload.topUsers} badges={payload.badges} />;
+  if (role.includes('pastor') || role.includes('directivo')) {
+    return (
+      <PastorDash
+        user={dashboardUser}
+        weeklyActivity={payload.weeklyActivity}
+        topUsers={payload.topUsers}
+        regionalUsers={payload.regionalUsers}
+        regionActivity={payload.regionActivity}
+      />
+    );
+  }
   return <AdminDash metrics={payload.metrics} weeklyActivity={payload.weeklyActivity} regionActivity={payload.regionActivity} topUsers={payload.topUsers} />;
 }
