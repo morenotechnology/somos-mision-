@@ -1,26 +1,5 @@
--- Fix incremental para producción:
--- 1) Registro robusto aunque falten badges/regiones/distritos.
--- 2) Publicaciones con links separados de Facebook e Instagram.
--- 3) Compartidos por red con estado opened/verified, bonos de XP y racha diaria.
-
-alter table public.publications add column if not exists source_url text;
-alter table public.publications add column if not exists facebook_url text;
-alter table public.publications add column if not exists instagram_url text;
-alter table public.publications add column if not exists source_platform text not null default 'manual';
-
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_constraint
-    where conname = 'publications_source_platform_check'
-      and conrelid = 'public.publications'::regclass
-  ) then
-    alter table public.publications
-      add constraint publications_source_platform_check
-      check (source_platform in ('facebook', 'instagram', 'manual'));
-  end if;
-end $$;
+-- Patch de puntos, racha y coordinaciones oficiales.
+-- Ejecutar en Supabase SQL Editor sobre una base existente.
 
 alter table public.shares add column if not exists share_url text;
 alter table public.shares add column if not exists verification_status text not null default 'pending';
@@ -77,92 +56,6 @@ on conflict (id) do update set
   color = excluded.color,
   members_count = excluded.members_count,
   active = excluded.active;
-
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  meta jsonb := coalesce(new.raw_user_meta_data, '{}'::jsonb);
-  user_email text := coalesce(new.email, meta ->> 'email', new.id::text || '@pendiente.local');
-  full_name text := coalesce(nullif(meta ->> 'nombre_completo', ''), nullif(meta ->> 'name', ''), split_part(user_email, '@', 1), 'Usuario');
-  assigned_role public.app_role := 'multiplicador';
-  v_region_id text := nullif(meta ->> 'region_id', '');
-  v_district_id text := nullif(meta ->> 'district_id', '');
-begin
-  if meta ->> 'rol' = 'pastor' and meta ->> 'pastor_access_key' = 'IPUC2026MISION' then
-    assigned_role := 'pastor';
-  end if;
-
-  if v_region_id is not null and not exists (select 1 from public.regions where id = v_region_id) then
-    v_region_id := null;
-  end if;
-
-  if v_district_id is not null and not exists (select 1 from public.districts where id = v_district_id) then
-    v_district_id := null;
-  end if;
-
-  insert into public.profiles (
-    id,
-    nombre,
-    nombre_completo,
-    email,
-    rol,
-    region_id,
-    district_id,
-    congregacion,
-    cargo,
-    celular,
-    whatsapp,
-    avatar,
-    avatar_color,
-    cuenta_activa
-  )
-  values (
-    new.id,
-    coalesce(meta ->> 'nombre', split_part(full_name, ' ', 1)),
-    full_name,
-    user_email,
-    assigned_role,
-    v_region_id,
-    v_district_id,
-    nullif(meta ->> 'congregacion', ''),
-    nullif(meta ->> 'cargo', ''),
-    nullif(meta ->> 'celular', ''),
-    nullif(meta ->> 'whatsapp', ''),
-    public.initials_from_name(full_name),
-    coalesce(nullif(meta ->> 'avatar_color', ''), '#1A237E'),
-    true
-  )
-  on conflict (id) do update
-    set email = excluded.email,
-        nombre = excluded.nombre,
-        nombre_completo = excluded.nombre_completo,
-        rol = excluded.rol,
-        region_id = excluded.region_id,
-        district_id = excluded.district_id,
-        congregacion = excluded.congregacion,
-        cargo = excluded.cargo,
-        celular = excluded.celular,
-        whatsapp = excluded.whatsapp;
-
-  if exists (select 1 from public.badges where id = 'b1') then
-    insert into public.profile_badges (profile_id, badge_id)
-    values (new.id, 'b1')
-    on conflict do nothing;
-  end if;
-
-  return new;
-end;
-$$;
-
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-after insert on auth.users
-for each row
-execute function public.handle_new_user();
 
 create or replace function public.apply_xp(p_profile_id uuid, p_points integer, p_action text, p_reference_type text default null, p_reference_id text default null)
 returns void
@@ -256,6 +149,8 @@ begin
     and social_network = v_network;
 
   if v_exists is null then
+    v_xp := v_base_xp + v_featured_bonus + v_speed_bonus + v_verified_bonus;
+
     insert into public.shares (
       publication_id,
       user_id,
@@ -278,7 +173,7 @@ begin
       now(),
       case when v_status = 'verified' then now() else null end,
       p_share_latency_ms,
-      v_base_xp + v_featured_bonus + v_speed_bonus + v_verified_bonus
+      v_xp
     )
     returning id into v_exists;
 
@@ -286,8 +181,7 @@ begin
     set shares_count = shares_count + 1
     where id = p_publication_id;
 
-    v_xp := v_base_xp + v_featured_bonus + v_speed_bonus + v_verified_bonus;
-    perform public.apply_xp(v_user, coalesce(v_xp, 0), 'contenido_compartido', 'publication', p_publication_id::text);
+    perform public.apply_xp(v_user, v_xp, 'contenido_compartido', 'publication', p_publication_id::text);
     perform public.refresh_profile_badges(v_user);
   else
     update public.shares as existing_share
@@ -305,8 +199,6 @@ begin
         else existing_share.verified_at
       end
     where existing_share.id = v_exists;
-
-    v_xp := 0;
   end if;
 
   return query
@@ -319,16 +211,5 @@ begin
     (select p.streak from public.profiles p where p.id = v_user);
 end;
 $$;
-
-drop policy if exists "pastors create publications" on public.publications;
-create policy "pastors create publications" on public.publications for insert to authenticated with check (
-  author_profile_id = auth.uid()
-  and exists (
-    select 1
-    from public.profiles
-    where id = auth.uid()
-      and rol in ('admin', 'pastor')
-  )
-);
 
 grant execute on function public.share_publication(bigint, text, text, text, integer) to authenticated;

@@ -30,7 +30,11 @@ function waitForShareSignal() {
       if (settled) return;
       settled = true;
       cleanup();
-      resolve(Date.now() - startedAt > 1800 ? 'verified' : 'opened');
+      const elapsedMs = Date.now() - startedAt;
+      resolve({
+        status: elapsedMs > 1800 ? 'verified' : 'opened',
+        elapsedMs,
+      });
     };
 
     const finishFromReturn = () => finish();
@@ -40,7 +44,15 @@ function waitForShareSignal() {
 
     window.addEventListener('focus', finishFromReturn);
     document.addEventListener('visibilitychange', finishFromVisibility);
-    timer = window.setTimeout(finish, 6500);
+    timer = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve({
+        status: 'opened',
+        elapsedMs: null,
+      });
+    }, 6500);
   });
 }
 
@@ -122,13 +134,14 @@ export default function ContentCard({ item, delay = 0 }) {
   const handleShare = async (network) => {
     const shareUrl = await openNetworkShare(network);
     try {
-      const verificationStatus = await waitForShareSignal();
+      const shareSignal = await waitForShareSignal();
       const payload = await shareContent(item.id, item.xpReward, network, {
         share_url: shareUrl,
-        verification_status: verificationStatus,
+        verification_status: shareSignal.status,
+        share_latency_ms: shareSignal.elapsedMs,
       });
       const xp = Number(payload.share?.xp_ganado || 0);
-      const statusText = verificationStatus === 'verified' ? 'verificado' : 'registrado';
+      const statusText = shareSignal.status === 'verified' ? 'verificado' : 'registrado';
       toast.success(xp > 0 ? `Compartido ${statusText}. +${xp} XP` : `Compartido ${statusText} en ${networkNames[network]}`);
     } catch (error) {
       toast.error(error.message || 'No se pudo registrar el compartido');

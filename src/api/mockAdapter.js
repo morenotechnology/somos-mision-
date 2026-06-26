@@ -28,6 +28,7 @@ const state = {
   comentarios: clone(comentarios),
   compartidos: clone(compartidos),
   contentItems: clone(contentItems),
+  currentUser: null,
   perfiles: clone(perfiles),
   publicaciones: clone(publicaciones),
   reacciones: clone(reacciones),
@@ -65,6 +66,32 @@ function resolveRegisterRole(payload = {}) {
   return 'multiplicador';
 }
 
+function updateMockStreak(user) {
+  if (!user) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const lastDate = user.lastStreakDate;
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+  if (lastDate === today) return;
+  user.streak = lastDate === yesterday ? Number(user.streak || 0) + 1 : 1;
+  user.lastStreakDate = today;
+}
+
+function calculateMockShareXp(content, payload = {}) {
+  const base = Number(content?.xpReward || 50);
+  const featuredBonus = content?.featured ? Math.ceil(base * 0.35) : 0;
+  const latency = Number(payload.share_latency_ms || 0);
+  const speedBonus = latency > 0 && latency <= 5000
+    ? 25
+    : latency > 0 && latency <= 15000
+      ? 15
+      : latency > 0 && latency <= 30000
+        ? 8
+        : 0;
+  const verifiedBonus = payload.verification_status === 'verified' ? 10 : 0;
+  return Math.max(base + featuredBonus + speedBonus + verifiedBonus, 0);
+}
+
 async function resolve(data) {
   await wait();
   return clone(data);
@@ -79,6 +106,7 @@ export function createMockApi() {
     auth: {
       login: async (payload) => {
         const user = getUser(payload);
+        state.currentUser = user;
         const profile = state.perfiles.find((item) => item.id === user.schemaId || item.email === user.email);
         return resolve({ user, profile, session: { access_token: `local-mock-${user.role}`, token_type: 'Bearer' } });
       },
@@ -105,6 +133,7 @@ export function createMockApi() {
           active: true,
         };
         state.users.push(user);
+        state.currentUser = user;
         return resolve({ user, session: { access_token: `local-mock-${user.role}`, token_type: 'Bearer' }, needsEmailConfirmation: false, betaPosition: state.users.length, betaTotal: 500 });
       },
     },
@@ -139,24 +168,45 @@ export function createMockApi() {
       get: (id) => resolve(state.contentItems.find((item) => item.id === id)),
       share: (id, payload = {}) => {
         const content = state.contentItems.find((item) => item.id === id);
-        if (content) content.shares += 1;
+        const user = state.currentUser || getUser(payload);
+        const network = payload.red_social || 'whatsapp';
+        const existingShare = state.compartidos.find((item) => (
+          String(item.post_id) === String(id)
+          && String(item.usuario_id || item.user_id || '') === String(user?.schemaId || user?.id || '')
+          && item.red_social === network
+        ));
+        const xp = existingShare ? 0 : calculateMockShareXp(content, payload);
+        if (content && !existingShare) content.shares += 1;
+        if (user && xp > 0) {
+          user.xp = Number(user.xp || 0) + xp;
+          user.level = Math.min(Math.floor(Number(user.xp || 0) / 500) + 1, 10);
+          user.shared = Number(user.shared || 0) + 1;
+          updateMockStreak(user);
+        }
         const compartido = {
-          id: crypto.randomUUID(),
+          id: existingShare?.id || crypto.randomUUID(),
           post_id: id,
-          usuario_id: payload.usuario_id || payload.userId,
-          red_social: payload.red_social || 'whatsapp',
+          usuario_id: user?.schemaId || user?.id || payload.usuario_id || payload.userId,
+          red_social: network,
           share_url: payload.share_url || content?.sourceUrl || '',
           verification_status: payload.verification_status || 'opened',
           verification_method: 'client_open_return',
           opened_at: new Date().toISOString(),
           verified_at: payload.verification_status === 'verified' ? new Date().toISOString() : null,
+          share_latency_ms: payload.share_latency_ms || null,
+          xp_awarded: xp,
           created_at: new Date().toISOString(),
         };
-        state.compartidos.unshift(compartido);
+        if (existingShare) {
+          Object.assign(existingShare, compartido);
+        } else {
+          state.compartidos.unshift(compartido);
+        }
         return resolve({
           content,
           compartido,
-          share: { shared_id: compartido.id, xp_ganado: 50, verification_status: compartido.verification_status },
+          user,
+          share: { shared_id: compartido.id, xp_ganado: xp, verification_status: compartido.verification_status, streak_dias: user?.streak || 0 },
           sharedContentIds: state.compartidos.map((item) => String(item.post_id)),
           completedMissionIds: [],
         });

@@ -63,6 +63,11 @@ function isPublicationSchemaDrift(error) {
   );
 }
 
+function isRpcSignatureMissing(error) {
+  const message = [error?.message, error?.details, error?.hint].filter(Boolean).join(' ');
+  return error?.code === 'PGRST202' || message.includes('Could not find the function') || message.includes('Could not find');
+}
+
 function initials(name = '') {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return 'SM';
@@ -920,9 +925,19 @@ export function createSupabaseApi() {
           p_red_social: payload.red_social || 'whatsapp',
           p_share_url: payload.share_url || null,
           p_verification_status: payload.verification_status || 'opened',
+          p_share_latency_ms: payload.share_latency_ms != null && Number.isFinite(Number(payload.share_latency_ms)) ? Number(payload.share_latency_ms) : null,
         });
 
-        if (shareResult.error?.code === 'PGRST202' || shareResult.error?.message?.includes('Could not find')) {
+        if (isRpcSignatureMissing(shareResult.error)) {
+          shareResult = await client.rpc('share_publication', {
+            p_publication_id: Number(id),
+            p_red_social: payload.red_social || 'whatsapp',
+            p_share_url: payload.share_url || null,
+            p_verification_status: payload.verification_status || 'opened',
+          });
+        }
+
+        if (isRpcSignatureMissing(shareResult.error)) {
           shareResult = await client.rpc('share_publication', {
             p_publication_id: Number(id),
             p_red_social: payload.red_social || 'whatsapp',

@@ -33,6 +33,20 @@ import toast from 'react-hot-toast';
 const formats = ['Todos', 'imagen', 'video', 'texto', 'carrusel'];
 const sorts = ['Recientes', 'Populares', 'Destacados'];
 const FALLBACK_IMAGE = '/hero-map.png';
+const CANONICAL_COORDINATIONS = [
+  { id: 'c1', name: 'Evangelismo', icon: 'Megaphone', color: '#1A237E', members_count: 842 },
+  { id: 'c2', name: 'Hospitalaria', icon: 'HeartPulse', color: '#5C1800', members_count: 315 },
+  { id: 'c3', name: 'Evangelismo Carcelario', icon: 'Scale', color: '#283593', members_count: 228 },
+  { id: 'c4', name: 'Asuntos Étnicos', icon: 'Leaf', color: '#2E7D32', members_count: 520 },
+  { id: 'c5', name: 'Población Vulnerable y Especiales', icon: 'Heart', color: '#6A1B9A', members_count: 267 },
+  { id: 'c6', name: 'Evangelismo en Medios de Comunicación', icon: 'Radio', color: '#E65100', members_count: 531 },
+  { id: 'c7', name: 'Estadísticas', icon: 'BarChart3', color: '#00838F', members_count: 184 },
+  { id: 'c8', name: 'Capacitación Misionera', icon: 'BookOpenCheck', color: '#AD1457', members_count: 412 },
+  { id: 'c9', name: 'Misión Juvenil', icon: 'Flame', color: '#0B5D91', members_count: 760 },
+  { id: 'c10', name: 'Instituciones Públicas', icon: 'Landmark', color: '#8B5CF6', members_count: 236 },
+  { id: 'c11', name: 'Restauración Espiritual', icon: 'RefreshCw', color: '#16A34A', members_count: 305 },
+  { id: 'c12', name: 'Población Sorda, Ciega y Sordociega', icon: 'HandHeart', color: '#C2410C', members_count: 148 },
+];
 
 const publisherInitialState = {
   facebookUrl: '',
@@ -67,6 +81,18 @@ function detectSocialPlatform(url = '') {
     return { id: 'facebook', label: 'Facebook', tone: '#1877F2' };
   }
   return { id: 'manual', label: 'Link social', tone: '#1A237E' };
+}
+
+function getCanonicalCoordinations(coordinations = []) {
+  const incomingById = new Map((coordinations || []).map((item) => [item.id, item]));
+  return CANONICAL_COORDINATIONS.map((base) => ({
+    ...base,
+    ...(incomingById.get(base.id) || {}),
+    name: base.name,
+    icon: base.icon,
+    color: base.color,
+    members_count: incomingById.get(base.id)?.members_count || incomingById.get(base.id)?.members || base.members_count,
+  }));
 }
 
 function isFacebookUrl(url = '') {
@@ -104,6 +130,7 @@ function PastorPublicationComposer({ currentUser, coordinations, onCreated }) {
   const imagePreview = form.imageUrl.trim() || preview?.imageUrl || FALLBACK_IMAGE;
   const previewTitle = form.title.trim() || preview?.title || 'Nueva publicación oficial';
   const previewDescription = form.description.trim() || preview?.description || 'Pega enlaces de Facebook e Instagram para crear una pieza lista para compartir.';
+  const composerCoordinations = getCanonicalCoordinations(coordinations);
 
   const setField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
@@ -272,7 +299,7 @@ function PastorPublicationComposer({ currentUser, coordinations, onCreated }) {
               <span>Coordinación</span>
               <select value={form.coordinationId} onChange={(event) => setField('coordinationId', event.target.value)}>
                 <option value="">Sin coordinación específica</option>
-                {coordinations.map((coordination) => (
+                {composerCoordinations.map((coordination) => (
                   <option key={coordination.id} value={coordination.id}>{coordination.name}</option>
                 ))}
               </select>
@@ -368,6 +395,7 @@ export default function Hub() {
   ];
   const featuredCount = data.items.filter((item) => item.featured).length;
   const xpAvailable = data.items.reduce((sum, item) => sum + Number(item.xpReward || 0), 0);
+  const filterCoordinations = getCanonicalCoordinations(data.coordinations);
 
   const handlePublicationCreated = (item) => {
     setSort('Recientes');
@@ -437,7 +465,7 @@ export default function Hub() {
             <Filter size={16} />
             <select value={coord} onChange={(e) => setCoord(e.target.value)}>
               <option value="">Todas las coordinaciones</option>
-              {data.coordinations.map((coordination) => <option key={coordination.id} value={coordination.id}>{coordination.name}</option>)}
+              {filterCoordinations.map((coordination) => <option key={coordination.id} value={coordination.id}>{coordination.name}</option>)}
             </select>
           </label>
         </div>

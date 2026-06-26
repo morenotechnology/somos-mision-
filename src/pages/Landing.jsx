@@ -842,36 +842,48 @@ function FinalCTA({ onRegister }) {
       </div>
       <div className="ln-container">
         <motion.div {...fadeUp(0)} className="ln-final-inner">
-          <div className="ln-final-brand-row">
-            <div className="ln-final-badge">
-              <BrandLogo decorative />
+          <div className="ln-final-copy">
+            <div className="ln-final-brand-row">
+              <div className="ln-final-badge">
+                <BrandLogo decorative />
+              </div>
+              <div>
+                <span>Misiones Nacionales</span>
+                <strong>Somos una misión</strong>
+              </div>
             </div>
-            <div>
-              <span>Misiones Nacionales</span>
-              <strong>Somos una misión</strong>
+            <div className="ln-final-logo-lockup" aria-hidden="true">
+              <img src={heroBrandLogo} alt="" />
+            </div>
+            <h2>Activa tu iglesia en la red nacional</h2>
+            <p>Comparte contenido oficial, conecta coordinaciones y registra el avance misionero con una experiencia clara, móvil y medible.</p>
+            <div className="ln-final-actions">
+              <motion.button
+                {...fadeUp(0.18)}
+                id="final-register"
+                type="button"
+                onClick={onRegister}
+                className="ln-btn-primary ln-btn-xl"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                Unirme ahora <ArrowRight size={20} strokeWidth={2.3} />
+              </motion.button>
             </div>
           </div>
-          <div className="ln-final-logo-lockup" aria-hidden="true">
-            <img src={heroBrandLogo} alt="" />
-          </div>
-          <h2>Activa tu iglesia en la red nacional</h2>
-          <p>Comparte contenido oficial, conecta coordinaciones y registra el avance misionero con una experiencia clara, móvil y medible.</p>
-          <div className="ln-final-actions">
-            <motion.button
-              {...fadeUp(0.18)}
-              id="final-register"
-              type="button"
-              onClick={onRegister}
-              className="ln-btn-primary ln-btn-xl"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              Unirme ahora <ArrowRight size={20} strokeWidth={2.3} />
-            </motion.button>
+
+          <div className="ln-final-visual" aria-hidden="true">
+            <img className="ln-final-map" src="/hero-map.png" alt="" />
             <div className="ln-final-amigos" aria-hidden="true">
               <img src={amigosLogo} alt="" />
               <span>Red nacional activa</span>
             </div>
+          </div>
+
+          <div className="ln-final-feature-strip" aria-label="Beneficios de la red">
+            <span><Share2 size={18} /> <strong>Comparte</strong><small>Contenido oficial actualizado</small></span>
+            <span><Users size={18} /> <strong>Conecta</strong><small>Iglesias y coordinaciones</small></span>
+            <span><TrendingUp size={18} /> <strong>Registra</strong><small>Puntos, racha y avance</small></span>
           </div>
         </motion.div>
       </div>
