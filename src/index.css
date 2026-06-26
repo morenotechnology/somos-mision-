@@ -5522,16 +5522,11 @@ body {
   min-height: 0;
   border-radius: 28px;
   overflow: hidden;
-  overflow: clip;
-  clip-path: inset(0 round 28px);
-  contain: paint;
   background:
     radial-gradient(circle at 78% 18%, color-mix(in srgb, var(--story-color) 34%, transparent), transparent 34%),
     linear-gradient(135deg, color-mix(in srgb, var(--story-color) 34%, #050816), #050816 68%);
-  box-shadow: 0 22px 60px rgba(10,15,82,0.14);
+  box-shadow: 0 22px 60px rgba(10,15,82,0.12);
   isolation: isolate;
-  border: 0;
-  transform: translateZ(0);
 }
 
 .ln-territory-card.is-featured {
@@ -5543,46 +5538,84 @@ body {
   position: absolute;
   inset: 0;
   z-index: 0;
-  display: none;
+  background:
+    radial-gradient(circle at 14% 16%, rgba(255,255,255,0.18), transparent 24%),
+    radial-gradient(circle at 82% 10%, color-mix(in srgb, var(--story-color) 28%, transparent), transparent 34%),
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.08));
 }
 
 .ln-territory-backdrop {
   position: absolute;
-  inset: 0;
+  inset: -12%;
   z-index: 1;
-  width: 100%;
-  height: 100%;
+  width: 124%;
+  height: 124%;
   object-fit: cover;
-  opacity: 1;
-  filter: none;
-  transform: scale(1.002);
-  transition: transform 0.7s ease, filter 0.7s ease;
+  opacity: 0.34;
+  filter: blur(12px) saturate(1.18) contrast(1.04);
+  transform: scale(1.1);
   pointer-events: none;
 }
 
 .ln-territory-art {
-  display: none;
+  position: absolute;
+  top: 8%;
+  right: -7%;
+  z-index: 2;
+  width: 88%;
+  height: 74%;
+  object-fit: contain;
+  object-position: center;
+  filter: drop-shadow(0 26px 46px rgba(0,0,0,0.34)) saturate(1.08);
+  transform: rotate(var(--art-rotate));
+  animation: territory-art-drift 6s ease-in-out infinite;
+  pointer-events: none;
 }
 
-.ln-territory-card:hover .ln-territory-backdrop {
-  transform: scale(1.035);
-  filter: saturate(1.08) contrast(1.02);
+.ln-territory-card:hover .ln-territory-art {
+  animation-duration: 3.8s;
 }
 
 .ln-territory-glow {
-  display: none;
+  position: absolute;
+  inset: auto -18% -22% auto;
+  z-index: 2;
+  width: 54%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--story-color) 48%, transparent), transparent 66%);
+  filter: blur(6px);
+  opacity: 0.92;
+  pointer-events: none;
 }
 
 .ln-territory-5000-logo {
-  display: none;
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 5;
+  width: clamp(72px, 20vw, 116px);
+  height: auto;
+  opacity: 0.92;
+  filter: brightness(0) invert(1) drop-shadow(0 12px 18px rgba(0,0,0,0.34));
+  animation: region-logo-float 4.8s ease-in-out infinite;
+  pointer-events: none;
 }
 
-.ln-territory-card.is-featured .ln-territory-5000-logo {
-  display: none;
+.ln-territory-card:nth-child(even) .ln-territory-5000-logo {
+  animation-delay: 0.7s;
+}
+
+@keyframes region-logo-float {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-6px) rotate(1.2deg); }
 }
 
 .ln-territory-card.is-featured .ln-territory-art {
-  display: none;
+  top: 6%;
+  right: -9%;
+  width: 96%;
+  height: 78%;
 }
 
 @keyframes territory-art-drift {
@@ -5591,11 +5624,21 @@ body {
 }
 
 .ln-territory-shade {
-  display: none;
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(10,15,82,0.05), rgba(10,15,82,0.72)),
+    linear-gradient(90deg, color-mix(in srgb, var(--story-color) 38%, transparent), transparent 62%);
+  z-index: 3;
 }
 
 .ln-territory-content {
-  display: none;
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  bottom: 22px;
+  z-index: 4;
+  color: white;
 }
 
 .ln-territory-content span {
@@ -8755,22 +8798,6 @@ select.auth-input {
 }
 
 @media (max-width: 640px) {
-  .ln-territory-backdrop {
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 1;
-    filter: none;
-    transform: scale(1.002);
-  }
-
-  .ln-territory-card,
-  .ln-territory-card.is-featured {
-    min-height: 310px;
-    border-radius: 26px;
-    clip-path: inset(0 round 26px);
-  }
-
   .ln-final-cta {
     padding: 76px 0 64px;
   }
