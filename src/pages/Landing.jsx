@@ -591,12 +591,9 @@ function TerritorySection() {
               <span className="ln-territory-atmosphere" aria-hidden="true" />
               <img src={story.image} alt="" className="ln-territory-backdrop" loading="lazy" decoding="async" />
               <span className="ln-territory-glow" aria-hidden="true" />
-              <img
-                src={amigosOldLogo}
-                alt=""
+              <span
                 className="ln-territory-5000-logo"
-                loading="lazy"
-                decoding="async"
+                style={{ '--logo-url': `url(${amigosOldLogo})` }}
                 aria-hidden="true"
               />
               <motion.img
