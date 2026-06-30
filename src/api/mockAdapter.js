@@ -27,6 +27,7 @@ const wait = () => new Promise((resolve) => setTimeout(resolve, delay));
 const state = {
   comentarios: clone(comentarios),
   compartidos: clone(compartidos),
+  congregaciones: clone(congregaciones),
   contentItems: clone(contentItems),
   currentUser: null,
   perfiles: clone(perfiles),
@@ -62,8 +63,12 @@ function getUser(payload = {}) {
 }
 
 function resolveRegisterRole(payload = {}) {
-  if (payload.role === 'pastor' && payload.accessKey === 'IPUC2026MISION') return 'pastor';
+  if (payload.role === 'pastor') return 'pastor';
   return 'multiplicador';
+}
+
+function resolveCanPublish(payload = {}) {
+  return payload.role === 'admin' || payload.canPublish === true || payload.accessKey === 'ADMIN2026MISION';
 }
 
 function updateMockStreak(user) {
@@ -118,6 +123,7 @@ export function createMockApi() {
           name: payload.name || payload.nombre_completo || 'Nuevo Multiplicador',
           email: payload.email,
           role,
+          canPublish: resolveCanPublish({ ...payload, role }),
           region: payload.region || 'r3',
           district: payload.district || 'd5',
           congregation: payload.congregation || 'Misiones Nacionales',
@@ -133,6 +139,19 @@ export function createMockApi() {
           active: true,
         };
         state.users.push(user);
+        if (payload.congregation && !state.congregaciones.some((item) => item.nombre?.toLowerCase() === payload.congregation.toLowerCase())) {
+          state.congregaciones.push({
+            id: state.congregaciones.length + 101,
+            region_id: payload.region || 'r3',
+            district_id: payload.district || 'd5',
+            nombre: payload.congregation,
+            direccion: '',
+            descripcion: 'Congregación registrada desde la beta.',
+            redes_sociales: {},
+            es_punto_blanco: false,
+            portada_url: '/hero-map.png',
+          });
+        }
         state.currentUser = user;
         return resolve({ user, session: { access_token: `local-mock-${user.role}`, token_type: 'Bearer' }, needsEmailConfirmation: false, betaPosition: state.users.length, betaTotal: 500 });
       },
@@ -229,13 +248,17 @@ export function createMockApi() {
     },
 
     congregaciones: {
-      list: (params) => resolve(searchRows(congregaciones, params)),
-      get: (id) => resolve(congregaciones.find((item) => String(item.id) === String(id))),
+      list: (params) => resolve(searchRows(state.congregaciones, params)),
+      get: (id) => resolve(state.congregaciones.find((item) => String(item.id) === String(id))),
     },
 
     publicaciones: {
       list: (params) => resolve(searchRows(state.publicaciones, params)),
       create: (payload) => {
+        const currentUser = state.currentUser || state.users.find((user) => user.role === 'admin');
+        if (!(currentUser?.canPublish || currentUser?.role === 'admin')) {
+          throw new ApiError('Solo los Pastor/Directivo con llave editorial pueden crear publicaciones oficiales.', 403);
+        }
         const createdAt = new Date().toISOString();
         const id = `cnt${state.contentItems.length + 1}`;
         const coordination = coordinations.find((item) => item.id === payload.coordination_id);

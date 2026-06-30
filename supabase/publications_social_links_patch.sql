@@ -7,6 +7,7 @@ alter table public.publications add column if not exists source_url text;
 alter table public.publications add column if not exists facebook_url text;
 alter table public.publications add column if not exists instagram_url text;
 alter table public.publications add column if not exists source_platform text not null default 'manual';
+alter table public.profiles add column if not exists can_publish boolean not null default false;
 
 do $$
 begin
@@ -33,7 +34,7 @@ with check (
     select 1
     from public.profiles
     where id = auth.uid()
-      and rol in ('admin', 'pastor')
+      and (rol = 'admin' or can_publish = true)
   )
 );
 

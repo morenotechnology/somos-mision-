@@ -30,7 +30,7 @@ const profileSelect = `
   congregations:congregations(id, nombre, portada_url)
 `;
 
-const PASTOR_ACCESS_KEY = 'IPUC2026MISION';
+const PUBLISHER_ACCESS_KEY = 'ADMIN2026MISION';
 const DEFAULT_PUBLIC_SITE_URL = 'https://somosmisioncolombia.com';
 
 function ensureClient() {
@@ -66,6 +66,12 @@ function isPublicationSchemaDrift(error) {
 function isRpcSignatureMissing(error) {
   const message = [error?.message, error?.details, error?.hint].filter(Boolean).join(' ');
   return error?.code === 'PGRST202' || message.includes('Could not find the function') || message.includes('Could not find');
+}
+
+function isProfilePermissionSchemaDrift(error) {
+  if (!error) return false;
+  const message = [error.message, error.details, error.hint].filter(Boolean).join(' ').toLowerCase();
+  return error.code === '42703' || error.code === 'PGRST204' || message.includes('can_publish');
 }
 
 function initials(name = '') {
@@ -112,8 +118,12 @@ function emptySchemaMetrics() {
 }
 
 function roleFromMetadata(meta = {}) {
-  if (meta.rol === 'pastor' && meta.pastor_access_key === PASTOR_ACCESS_KEY) return 'pastor';
+  if (meta.rol === 'pastor') return 'pastor';
   return 'multiplicador';
+}
+
+function canPublishFromMetadata(meta = {}) {
+  return meta.rol === 'admin' || meta.publisher_access_key === PUBLISHER_ACCESS_KEY || meta.can_publish === true;
 }
 
 function cleanOptional(value) {
@@ -158,6 +168,7 @@ function profilePayloadFromAuthUser(authUser = {}) {
     whatsapp: cleanOptional(meta.whatsapp || meta.celular),
     avatar: initials(fullName),
     avatar_color: cleanOptional(meta.avatar_color) || '#1A237E',
+    can_publish: canPublishFromMetadata(meta),
     cuenta_activa: true,
   };
 }
@@ -209,6 +220,7 @@ function normalizeProfile(row, stats = {}) {
     xp: row.xp || 0,
     level: row.level || Math.min(Math.floor((row.xp || 0) / 500) + 1, 10),
     streak: row.streak || 0,
+    canPublish: row.can_publish === true || row.rol === 'admin',
     shared: stats.sharedCount || 0,
     missionsCompleted: stats.missionsCompleted || 0,
     badges: stats.badgeIds || [],
@@ -467,6 +479,20 @@ async function getProfileBundle(client, profileId, authUser = null) {
   }
   if (!row) throw new ApiError('Perfil no encontrado para esta cuenta', 404);
 
+  const permissionResult = await client
+    .from('profiles')
+    .select('can_publish')
+    .eq('id', profileId)
+    .maybeSingle();
+  if (!permissionResult.error) {
+    row.can_publish = permissionResult.data?.can_publish === true;
+  } else if (!isProfilePermissionSchemaDrift(permissionResult.error)) {
+    row.can_publish = false;
+  }
+  if (authUser) {
+    row.can_publish = row.can_publish || canPublishFromMetadata(authUser.user_metadata || authUser.raw_user_meta_data || {});
+  }
+
   const stats = await getProfileStats(client, profileId);
   return {
     user: normalizeProfile(row, stats),
@@ -718,9 +744,11 @@ export function createSupabaseApi() {
                 nombre_completo: payload.name,
                 nombre: payload.name?.split(' ')?.[0] || payload.name,
                 rol: payload.role,
-                pastor_access_key: payload.role === 'pastor' ? payload.accessKey : null,
+                publisher_access_key: payload.role === 'pastor' ? payload.accessKey : null,
+                can_publish: Boolean(payload.canPublish),
                 region_id: payload.region,
                 district_id: payload.district,
+                congregacion_id: payload.congregationId || null,
                 congregacion: payload.congregation,
                 celular: payload.phone,
                 whatsapp: payload.phone,
@@ -1018,7 +1046,10 @@ export function createSupabaseApi() {
 
     congregaciones: {
       async list(params = {}) {
-        let query = client.from('congregations').select('*').order('nombre');
+        let query = client
+          .from('congregations')
+          .select('*, regions:regions(id, name), districts:districts(id, name, region_id)')
+          .order('nombre');
         if (params.q) query = query.ilike('nombre', `%${params.q}%`);
         if (params.district_id) query = query.eq('district_id', params.district_id);
         return unwrap(await query, 'No se pudieron cargar las congregaciones');
@@ -1036,8 +1067,8 @@ export function createSupabaseApi() {
 
       async create(payload) {
         const sessionBundle = await fetchCurrentSessionBundle(client);
-        if (!['admin', 'pastor'].includes(sessionBundle?.user?.role)) {
-          throw new ApiError('Solo los perfiles Pastor/Directivo pueden crear publicaciones oficiales.', 403);
+        if (!(sessionBundle?.user?.canPublish || sessionBundle?.user?.role === 'admin')) {
+          throw new ApiError('Solo los Pastor/Directivo con llave editorial pueden crear publicaciones oficiales.', 403);
         }
 
         const publicationSelectWithSource = `

@@ -344,7 +344,7 @@ export const seguidores = [
 
 export const codigos_roles = [
   { id: 1, codigo: 'MISION-ADMIN-2026', rol_asignado: 'admin', descripcion: 'Acceso equipo nacional', activo: true },
-  { id: 2, codigo: 'IPUC2026MISION', rol_asignado: 'pastor', descripcion: 'Acceso Pastor/Directivo temporal', activo: true },
+  { id: 2, codigo: 'ADMIN2026MISION', rol_asignado: 'pastor', descripcion: 'Llave editorial para Pastor/Directivo publicador', activo: true },
   { id: 3, codigo: 'MISION-MULT-2026', rol_asignado: 'multiplicador', descripcion: 'Registro de multiplicadores digitales', activo: true },
 ];
 

@@ -30,6 +30,7 @@ alter table public.shares add column if not exists verified_at timestamptz;
 alter table public.shares add column if not exists share_latency_ms integer;
 alter table public.shares add column if not exists xp_awarded integer not null default 0;
 alter table public.profiles add column if not exists last_streak_date date;
+alter table public.profiles add column if not exists can_publish boolean not null default false;
 
 do $$
 begin
@@ -91,10 +92,21 @@ declare
   assigned_role public.app_role := 'multiplicador';
   v_region_id text := nullif(meta ->> 'region_id', '');
   v_district_id text := nullif(meta ->> 'district_id', '');
+  v_congregation_id bigint := null;
+  v_congregation_name text := nullif(trim(coalesce(meta ->> 'congregacion', '')), '');
+  v_can_publish boolean := false;
 begin
-  if meta ->> 'rol' = 'pastor' and meta ->> 'pastor_access_key' = 'IPUC2026MISION' then
+  if meta ->> 'rol' = 'pastor' then
     assigned_role := 'pastor';
   end if;
+
+  if meta ->> 'rol' = 'admin' then
+    assigned_role := 'admin';
+  end if;
+
+  v_can_publish := assigned_role = 'admin'
+    or meta ->> 'publisher_access_key' = 'ADMIN2026MISION'
+    or lower(coalesce(meta ->> 'can_publish', 'false')) in ('true', '1', 'yes');
 
   if v_region_id is not null and not exists (select 1 from public.regions where id = v_region_id) then
     v_region_id := null;
@@ -102,6 +114,27 @@ begin
 
   if v_district_id is not null and not exists (select 1 from public.districts where id = v_district_id) then
     v_district_id := null;
+  end if;
+
+  if coalesce(meta ->> 'congregacion_id', '') ~ '^[0-9]+$' then
+    select id into v_congregation_id
+    from public.congregations
+    where id = (meta ->> 'congregacion_id')::bigint;
+  end if;
+
+  if v_congregation_id is null and v_congregation_name is not null then
+    select id into v_congregation_id
+    from public.congregations
+    where lower(regexp_replace(trim(nombre), '\s+', ' ', 'g')) = lower(regexp_replace(v_congregation_name, '\s+', ' ', 'g'))
+      and (v_district_id is null or district_id = v_district_id)
+    order by case when district_id = v_district_id then 0 else 1 end, id
+    limit 1;
+  end if;
+
+  if v_congregation_id is null and v_congregation_name is not null then
+    insert into public.congregations (region_id, district_id, nombre, descripcion, redes_sociales, es_punto_blanco)
+    values (v_region_id, v_district_id, v_congregation_name, 'Congregación registrada desde la beta.', '{}'::jsonb, false)
+    returning id into v_congregation_id;
   end if;
 
   insert into public.profiles (
@@ -112,12 +145,14 @@ begin
     rol,
     region_id,
     district_id,
+    congregacion_id,
     congregacion,
     cargo,
     celular,
     whatsapp,
     avatar,
     avatar_color,
+    can_publish,
     cuenta_activa
   )
   values (
@@ -128,12 +163,14 @@ begin
     assigned_role,
     v_region_id,
     v_district_id,
-    nullif(meta ->> 'congregacion', ''),
+    v_congregation_id,
+    v_congregation_name,
     nullif(meta ->> 'cargo', ''),
     nullif(meta ->> 'celular', ''),
     nullif(meta ->> 'whatsapp', ''),
     public.initials_from_name(full_name),
     coalesce(nullif(meta ->> 'avatar_color', ''), '#1A237E'),
+    v_can_publish,
     true
   )
   on conflict (id) do update
@@ -143,10 +180,12 @@ begin
         rol = excluded.rol,
         region_id = excluded.region_id,
         district_id = excluded.district_id,
+        congregacion_id = excluded.congregacion_id,
         congregacion = excluded.congregacion,
         cargo = excluded.cargo,
         celular = excluded.celular,
-        whatsapp = excluded.whatsapp;
+        whatsapp = excluded.whatsapp,
+        can_publish = excluded.can_publish;
 
   if exists (select 1 from public.badges where id = 'b1') then
     insert into public.profile_badges (profile_id, badge_id)
@@ -163,6 +202,16 @@ create trigger on_auth_user_created
 after insert on auth.users
 for each row
 execute function public.handle_new_user();
+
+update public.profiles p
+set can_publish = true
+from auth.users u
+where u.id = p.id
+  and (
+    p.rol = 'admin'
+    or u.raw_user_meta_data ->> 'publisher_access_key' = 'ADMIN2026MISION'
+    or lower(coalesce(u.raw_user_meta_data ->> 'can_publish', 'false')) in ('true', '1', 'yes')
+  );
 
 create or replace function public.apply_xp(p_profile_id uuid, p_points integer, p_action text, p_reference_type text default null, p_reference_id text default null)
 returns void
@@ -327,7 +376,7 @@ create policy "pastors create publications" on public.publications for insert to
     select 1
     from public.profiles
     where id = auth.uid()
-      and rol in ('admin', 'pastor')
+      and (rol = 'admin' or can_publish = true)
   )
 );
 

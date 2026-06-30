@@ -220,7 +220,7 @@ function PastorPublicationComposer({ currentUser, coordinations, onCreated }) {
     }
   };
 
-  if (!['admin', 'pastor'].includes(currentUser?.role)) return null;
+  if (!(currentUser?.canPublish || currentUser?.role === 'admin')) return null;
 
   return (
     <motion.section

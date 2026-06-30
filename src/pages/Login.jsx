@@ -18,7 +18,7 @@ import { useAppStore } from '../store/useAppStore';
 
 const roleHints = [
   { label: 'Multiplicador', desc: 'Lee contenido oficial y comparte avance.', Icon: Users },
-  { label: 'Pastor/Directivo', desc: 'Publica contenido y revisa métricas.', Icon: ShieldCheck },
+  { label: 'Pastor/Directivo', desc: 'Insignia pastoral; publicación solo con llave editorial.', Icon: ShieldCheck },
   { label: 'Misiones Nacionales', desc: 'Una señal nacional para coordinar misión.', brand: true },
 ];
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -41,7 +41,58 @@ const DISTRICTS = Array.from({ length: 35 }, (_, index) => ({
 }));
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASTOR_ACCESS_KEY = 'IPUC2026MISION';
+const PUBLISHER_ACCESS_KEY = 'ADMIN2026MISION';
+
+function normalizeChurchName(value = '') {
+  return String(value)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\b(ipuc|iglesia|congregacion|mision|misiones|nacional|nacionales)\b/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function bigrams(value = '') {
+  const normalized = normalizeChurchName(value).replace(/\s/g, '');
+  if (normalized.length < 2) return normalized ? [normalized] : [];
+  return Array.from({ length: normalized.length - 1 }, (_, index) => normalized.slice(index, index + 2));
+}
+
+function churchSimilarity(a = '', b = '') {
+  const left = normalizeChurchName(a);
+  const right = normalizeChurchName(b);
+  if (!left || !right) return 0;
+  if (left === right) return 1;
+  if (left.includes(right) || right.includes(left)) {
+    return Math.min(left.length, right.length) / Math.max(left.length, right.length) + 0.22;
+  }
+
+  const leftTokens = new Set(left.split(' ').filter(Boolean));
+  const rightTokens = new Set(right.split(' ').filter(Boolean));
+  const tokenMatches = [...leftTokens].filter((token) => rightTokens.has(token)).length;
+  const tokenScore = tokenMatches / Math.max(leftTokens.size, rightTokens.size, 1);
+
+  const leftBigrams = new Set(bigrams(left));
+  const rightBigrams = new Set(bigrams(right));
+  const bigramMatches = [...leftBigrams].filter((item) => rightBigrams.has(item)).length;
+  const bigramScore = bigramMatches / Math.max(new Set([...leftBigrams, ...rightBigrams]).size, 1);
+
+  return Math.max(tokenScore, bigramScore);
+}
+
+function getCongregationSuggestions(query, congregations = []) {
+  if (normalizeChurchName(query).length < 4) return [];
+  return congregations
+    .map((congregation) => ({
+      ...congregation,
+      matchScore: churchSimilarity(query, congregation.nombre || congregation.name),
+    }))
+    .filter((congregation) => congregation.matchScore >= 0.48)
+    .sort((a, b) => b.matchScore - a.matchScore)
+    .slice(0, 3);
+}
 
 function RegisterBrandPanel() {
   return (
@@ -88,6 +139,8 @@ export default function Register() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [betaModal, setBetaModal] = useState(null);
+  const [congregations, setCongregations] = useState([]);
+  const [congregationDecision, setCongregationDecision] = useState(null);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -100,7 +153,39 @@ export default function Register() {
     congregation: '',
   });
 
-  const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const congregationSuggestions = getCongregationSuggestions(form.congregation, congregations);
+  const selectedCongregation = congregationDecision?.mode === 'existing'
+    ? congregations.find((item) => String(item.id) === String(congregationDecision.id))
+    : null;
+
+  useEffect(() => {
+    let mounted = true;
+    api.congregaciones.list()
+      .then((rows) => {
+        if (mounted) setCongregations(Array.isArray(rows) ? rows : []);
+      })
+      .catch(() => {
+        if (mounted) setCongregations([]);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const set = (key, value) => {
+    if (key === 'congregation') setCongregationDecision(null);
+    setForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const congregationLocationLabel = (congregation) => {
+    const districtName = congregation?.districts?.name
+      || DISTRICTS.find((district) => district.id === congregation?.district_id)?.name
+      || 'Distrito no asignado';
+    const regionName = congregation?.regions?.name
+      || REGIONS.find((region) => region.id === congregation?.region_id)?.name
+      || 'Región no asignada';
+    return `${districtName} · ${regionName}`;
+  };
 
   const validateStep = (stepToValidate = step) => {
     if (stepToValidate === 0 && (!form.name || !form.email || !form.phone || !form.password)) {
@@ -119,12 +204,16 @@ export default function Register() {
       toast.error('Selecciona rol, región y distrito');
       return false;
     }
-    if (stepToValidate === 1 && form.role === 'pastor' && form.accessKey.trim() !== PASTOR_ACCESS_KEY) {
-      toast.error('La llave especial para Pastor/Directivo no es válida');
+    if (stepToValidate === 1 && form.role === 'pastor' && form.accessKey.trim() && form.accessKey.trim() !== PUBLISHER_ACCESS_KEY) {
+      toast.error('La llave editorial no es válida. Puedes dejarla vacía si solo eres Pastor/Directivo.');
       return false;
     }
     if (stepToValidate === 2 && !form.congregation) {
       toast.error('Escribe el nombre de tu congregación');
+      return false;
+    }
+    if (stepToValidate === 2 && congregationSuggestions.length > 0 && !congregationDecision) {
+      toast.error('Confirma si tu congregación ya existe o créala como nueva');
       return false;
     }
     return true;
@@ -150,7 +239,13 @@ export default function Register() {
     if (!validateRegistration()) return;
     setLoading(true);
     try {
-      const result = await api.auth.register(form);
+      const finalCongregation = selectedCongregation?.nombre || form.congregation.trim();
+      const result = await api.auth.register({
+        ...form,
+        congregation: finalCongregation,
+        congregationId: selectedCongregation?.id || null,
+        canPublish: form.role === 'pastor' && form.accessKey.trim() === PUBLISHER_ACCESS_KEY,
+      });
       loginFromApi(result);
       setBetaModal({
         betaPosition: result.betaPosition || 1,
@@ -237,16 +332,16 @@ export default function Register() {
                     </AuthInput>
                   </FieldGroup>
                   {form.role === 'pastor' && (
-                    <FieldGroup label="Llave especial Pastor/Directivo">
+                    <FieldGroup label="Llave editorial para publicar">
                       <AuthInput
                         icon={KeyRound}
                         type="password"
                         value={form.accessKey}
                         onChange={(event) => set('accessKey', event.target.value)}
-                        placeholder="Ingresa la llave de acceso"
+                        placeholder="Opcional: ADMIN2026MISION"
                         autoComplete="off"
                       />
-                      <small className="auth-key-hint">Este rol puede crear publicaciones oficiales dentro de la plataforma.</small>
+                      <small className="auth-key-hint">Sin esta llave quedas como Pastor/Directivo con insignia especial. Con la llave, también puedes crear publicaciones oficiales.</small>
                     </FieldGroup>
                   )}
                   <FieldGroup label="Región">
@@ -273,6 +368,54 @@ export default function Register() {
                   <FieldGroup label="Nombre de tu congregación">
                     <AuthInput icon={Building2} value={form.congregation} onChange={(event) => set('congregation', event.target.value)} placeholder="Nombre de tu iglesia local" />
                   </FieldGroup>
+                  {selectedCongregation && (
+                    <div className="auth-congregation-confirmed">
+                      <CheckCircle size={18} />
+                      <div>
+                        <strong>{selectedCongregation.nombre}</strong>
+                        <span>{congregationLocationLabel(selectedCongregation)}</span>
+                      </div>
+                      <button type="button" onClick={() => setCongregationDecision(null)}>Cambiar</button>
+                    </div>
+                  )}
+                  {!selectedCongregation && congregationSuggestions.length > 0 && (
+                    <div className="auth-congregation-matches">
+                      <div className="auth-congregation-matches-head">
+                        <CircleAlert size={17} />
+                        <div>
+                          <strong>Encontramos iglesias parecidas</strong>
+                          <span>Para evitar duplicados, confirma si alguna de estas es tu congregación.</span>
+                        </div>
+                      </div>
+                      <div className="auth-congregation-options">
+                        {congregationSuggestions.map((congregation) => (
+                          <button
+                            key={congregation.id}
+                            type="button"
+                            onClick={() => setCongregationDecision({ mode: 'existing', id: congregation.id })}
+                            className="auth-congregation-option"
+                          >
+                            <span>¿Es esta?</span>
+                            <strong>{congregation.nombre}</strong>
+                            <small>{congregationLocationLabel(congregation)}</small>
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        className={`auth-create-congregation ${congregationDecision?.mode === 'new' ? 'is-selected' : ''}`}
+                        onClick={() => setCongregationDecision({ mode: 'new' })}
+                      >
+                        No, crear "{form.congregation.trim()}" como iglesia nueva
+                      </button>
+                    </div>
+                  )}
+                  {!selectedCongregation && congregationDecision?.mode === 'new' && (
+                    <div className="auth-congregation-new-note">
+                      <Building2 size={17} />
+                      <span>Se creará una nueva congregación asociada a tu región y distrito.</span>
+                    </div>
+                  )}
                   <div className="auth-bonus-card">
                     <span><Zap size={17} fill="currentColor" /></span>
                     <div>
