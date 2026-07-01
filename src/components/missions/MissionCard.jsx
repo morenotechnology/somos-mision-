@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, CheckCircle, Lock, Clock } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { Zap, CheckCircle, Lock, Clock, Activity } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { LucideIcon } from '../common/LucideIcon';
+import EmailVerificationGateModal from '../common/EmailVerificationGateModal';
 
 const statusConfig = {
   completed:   { label: 'Completada',  tone: 'is-completed', Icon: CheckCircle },
@@ -16,21 +17,14 @@ const typeTone = { daily: 'is-daily', weekly: 'is-weekly', special: 'is-special'
 const typeAccent = { daily: '#1A237E', weekly: '#6A1B9A', special: '#D4AF37' };
 
 export default function MissionCard({ mission, delay = 0 }) {
-  const { completeMission, completedMissions } = useAppStore();
-  const isDone = completedMissions.includes(mission.id) || mission.status === 'completed';
+  const { currentUser } = useAppStore();
+  const [emailGateOpen, setEmailGateOpen] = useState(false);
+  const isDone = mission.status === 'completed';
   const cfg = statusConfig[isDone ? 'completed' : mission.status] || statusConfig.pending;
   const StatusIcon = cfg.Icon;
   const progress = mission.progress != null ? mission.progress : (isDone ? mission.goal : 0);
   const pct = Math.min((progress / mission.goal) * 100, 100);
   const accent = typeAccent[mission.type] || '#1A237E';
-
-  const handleComplete = async () => {
-    try {
-      await completeMission(mission.id, mission.xpReward);
-    } catch (error) {
-      toast.error(error.message || 'No se pudo completar la misión.');
-    }
-  };
 
   return (
     <motion.div
@@ -80,15 +74,17 @@ export default function MissionCard({ mission, delay = 0 }) {
             <Zap size={13} fill="currentColor" />
             <span>+{mission.xpReward} XP</span>
           </div>
-          {!isDone && mission.status !== 'locked' && (
-            <button
-              onClick={handleComplete}
-            >
-              Completar
-            </button>
-          )}
+          <span className={`mission-auto-pill ${isDone ? 'is-done' : ''}`}>
+            {isDone ? <CheckCircle size={12} /> : <Activity size={12} />}
+            {isDone ? 'Detectada automáticamente' : 'Se actualiza con tu actividad'}
+          </span>
         </div>
       </div>
+      <EmailVerificationGateModal
+        open={emailGateOpen}
+        email={currentUser?.email}
+        onClose={() => setEmailGateOpen(false)}
+      />
     </motion.div>
   );
 }

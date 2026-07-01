@@ -6,7 +6,7 @@ import BrandLogo from '../common/BrandLogo';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/hub',       icon: BookOpen,        label: 'Hub de Contenido' },
+  { to: '/hub',       icon: BookOpen,        label: 'Biblioteca digital' },
   { to: '/ranking',   icon: Trophy,          label: 'Ranking' },
   { to: '/missions',  icon: Target,          label: 'Misiones' },
   { to: '/profile',   icon: User,            label: 'Mi Perfil' },

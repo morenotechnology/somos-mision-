@@ -1,4 +1,4 @@
--- Patch: completar perfil y compuerta de XP después de 100 puntos.
+-- Patch: completar perfil sin bloquear XP.
 -- Ejecutar en Supabase SQL Editor después del schema base/production_fix.
 
 alter table public.profiles add column if not exists tiene_cargo boolean;
@@ -107,10 +107,6 @@ begin
 
   if not v_already_awarded then
     v_xp := v_base_xp + v_featured_bonus + v_speed_bonus + v_verified_bonus;
-
-    if not v_profile_complete then
-      v_xp := greatest(least(v_xp, 100 - v_profile_xp), 0);
-    end if;
   end if;
 
   insert into public.shares (
@@ -193,10 +189,6 @@ begin
     select coalesce(xp_reward, 0) into v_xp
     from public.missions
     where id = p_mission_id;
-
-    if not v_profile_complete then
-      v_xp := greatest(least(v_xp, 100 - v_profile_xp), 0);
-    end if;
 
     if v_xp > 0 then
       perform public.apply_xp(v_user, v_xp, 'mision_completada', 'mission', p_mission_id::text);

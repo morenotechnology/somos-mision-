@@ -81,7 +81,7 @@ export default function Ranking() {
         className="rank-hero-pro"
       >
         <div className="rank-hero-copy">
-          <p className="rank-kicker"><Trophy size={15} /> Hall de honor nacional</p>
+          <p className="rank-kicker"><Trophy size={15} /> Muro de honor nacional</p>
           <h2>La mesa alta de los multiplicadores</h2>
           <span>Reconoce a quienes están moviendo contenido, misiones y avance en toda Colombia.</span>
         </div>

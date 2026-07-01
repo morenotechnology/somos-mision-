@@ -92,7 +92,11 @@ declare
   v_congregation_name text := nullif(trim(coalesce(meta ->> 'congregacion', '')), '');
   v_can_publish boolean := false;
 begin
-  if meta ->> 'rol' = 'pastor' then
+  if meta ->> 'rol' = 'pastor'
+    and (
+      meta ->> 'pastor_access_key' = 'IPUC2026MISION'
+      or meta ->> 'publisher_access_key' = 'ADMIN2026MISION'
+    ) then
     assigned_role := 'pastor';
   end if;
 
@@ -101,8 +105,7 @@ begin
   end if;
 
   v_can_publish := assigned_role = 'admin'
-    or meta ->> 'publisher_access_key' = 'ADMIN2026MISION'
-    or lower(coalesce(meta ->> 'can_publish', 'false')) in ('true', '1', 'yes');
+    or meta ->> 'publisher_access_key' = 'ADMIN2026MISION';
 
   if v_region_id is not null and not exists (select 1 from public.regions where id = v_region_id) then
     v_region_id := null;
@@ -112,22 +115,7 @@ begin
     v_district_id := null;
   end if;
 
-  if coalesce(meta ->> 'congregacion_id', '') ~ '^[0-9]+$' then
-    select id into v_congregation_id
-    from public.congregations
-    where id = (meta ->> 'congregacion_id')::bigint;
-  end if;
-
-  if v_congregation_id is null and v_congregation_name is not null then
-    select id into v_congregation_id
-    from public.congregations
-    where lower(regexp_replace(trim(nombre), '\s+', ' ', 'g')) = lower(regexp_replace(v_congregation_name, '\s+', ' ', 'g'))
-      and (v_district_id is null or district_id = v_district_id)
-    order by case when district_id = v_district_id then 0 else 1 end, id
-    limit 1;
-  end if;
-
-  if v_congregation_id is null and v_congregation_name is not null then
+  if v_congregation_name is not null then
     insert into public.congregations (region_id, district_id, nombre, descripcion, redes_sociales, es_punto_blanco)
     values (v_region_id, v_district_id, v_congregation_name, 'Congregación registrada desde la beta.', '{}'::jsonb, false)
     returning id into v_congregation_id;
@@ -206,7 +194,6 @@ where u.id = p.id
   and (
     p.rol = 'admin'
     or u.raw_user_meta_data ->> 'publisher_access_key' = 'ADMIN2026MISION'
-    or lower(coalesce(u.raw_user_meta_data ->> 'can_publish', 'false')) in ('true', '1', 'yes')
   );
 
 create or replace function public.apply_xp(p_profile_id uuid, p_points integer, p_action text, p_reference_type text default null, p_reference_id text default null)
@@ -312,10 +299,6 @@ begin
 
   if not v_already_awarded then
     v_xp := v_base_xp + v_featured_bonus + v_speed_bonus + v_verified_bonus;
-
-    if not v_profile_complete then
-      v_xp := greatest(least(v_xp, 100 - v_profile_xp), 0);
-    end if;
   end if;
 
   insert into public.shares (

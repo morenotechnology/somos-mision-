@@ -64,12 +64,12 @@ function getUser(payload = {}) {
 }
 
 function resolveRegisterRole(payload = {}) {
-  if (payload.role === 'pastor') return 'pastor';
+  if (payload.role === 'pastor' && ['IPUC2026MISION', 'ADMIN2026MISION'].includes(payload.accessKey)) return 'pastor';
   return 'multiplicador';
 }
 
 function resolveCanPublish(payload = {}) {
-  return payload.role === 'admin' || payload.canPublish === true || payload.accessKey === 'ADMIN2026MISION';
+  return payload.role === 'admin' || payload.accessKey === 'ADMIN2026MISION';
 }
 
 function normalizeSocialUsername(value = '') {
@@ -115,6 +115,45 @@ function calculateMockShareXp(content, payload = {}) {
   return Math.max(base + featuredBonus + speedBonus + verifiedBonus, 0);
 }
 
+function getMockUserShareRows(user) {
+  const userKey = String(user?.schemaId || user?.id || '');
+  if (!userKey) return [];
+  return state.compartidos.filter((item) => String(item.usuario_id || item.user_id || '') === userKey);
+}
+
+function getMockMissionProgress(mission, user) {
+  const shares = getMockUserShareRows(user);
+  const today = new Date().toISOString().slice(0, 10);
+  const weekAgo = Date.now() - (7 * 86400000);
+  const todayShares = shares.filter((item) => String(item.created_at || '').slice(0, 10) === today).length;
+  const weeklyShares = shares.filter((item) => {
+    const time = new Date(item.created_at || 0).getTime();
+    return Number.isFinite(time) && time >= weekAgo;
+  }).length;
+
+  let progress = 0;
+  if (mission.id === 'm1') progress = todayShares;
+  if (mission.id === 'm2') progress = todayShares;
+  if (mission.id === 'm3') progress = isProfileComplete(user) ? 1 : 0;
+  if (mission.id === 'm4') progress = weeklyShares;
+  if (mission.id === 'm5') progress = Number(user?.streak || 0);
+  if (mission.id === 'm6') progress = shares.some((item) => item.verification_status === 'verified' || item.verification_status === 'opened') ? 1 : 0;
+  if (mission.id === 'm7') progress = Number(user?.xp || 0) >= 1000 ? 1 : 0;
+
+  const cappedProgress = Math.min(Math.max(progress, 0), Number(mission.goal || 1));
+  const status = cappedProgress >= Number(mission.goal || 1)
+    ? 'completed'
+    : cappedProgress > 0
+      ? 'in_progress'
+      : 'pending';
+
+  return {
+    ...mission,
+    progress: cappedProgress,
+    status,
+  };
+}
+
 async function resolve(data) {
   await wait();
   return clone(data);
@@ -145,7 +184,7 @@ export function createMockApi() {
           region: payload.region || 'r3',
           district: payload.district || 'd5',
           congregation: payload.congregation || 'Misiones Nacionales',
-          xp: 100,
+          xp: 0,
           level: 1,
           streak: 0,
           shared: 0,
@@ -160,7 +199,7 @@ export function createMockApi() {
           active: true,
         };
         state.users.push(user);
-        if (payload.congregation && !state.congregaciones.some((item) => item.nombre?.toLowerCase() === payload.congregation.toLowerCase())) {
+        if (payload.congregation) {
           state.congregaciones.push({
             id: state.congregaciones.length + 101,
             region_id: payload.region || 'r3',
@@ -187,7 +226,7 @@ export function createMockApi() {
           schemaMetrics,
           weeklyActivity,
           regionActivity,
-          missions: missions.filter((mission) => mission.type === 'daily'),
+          missions: missions.map((mission) => getMockMissionProgress(mission, user)).filter((mission) => mission.type === 'daily'),
           topUsers: [...state.users].sort((a, b) => b.xp - a.xp),
           regionalUsers: [...state.users].filter((item) => item.region === user.region).sort((a, b) => b.xp - a.xp),
           badges: badges.filter((badge) => user.badges?.includes(badge.id)),
@@ -216,10 +255,7 @@ export function createMockApi() {
           && String(item.usuario_id || item.user_id || '') === userShareKey
           && Number(item.xp_awarded || 0) > 0
         ));
-        const rawXp = alreadyAwardedXp ? 0 : calculateMockShareXp(content, payload);
-        const profileComplete = isProfileComplete(user);
-        const currentXp = Number(user?.xp || 0);
-        const xp = profileComplete ? rawXp : Math.max(Math.min(rawXp, 100 - currentXp), 0);
+        const xp = alreadyAwardedXp ? 0 : calculateMockShareXp(content, payload);
         if (content) content.shares += 1;
         if (user && xp > 0) {
           user.xp = Number(user.xp || 0) + xp;
@@ -242,7 +278,7 @@ export function createMockApi() {
           created_at: new Date().toISOString(),
         };
         state.compartidos.unshift(compartido);
-        const sharedContentIds = [...new Set(state.compartidos.map((item) => String(item.post_id)))];
+        const sharedContentIds = [...new Set(getMockUserShareRows(user).map((item) => String(item.post_id)))];
         return resolve({
           content,
           compartido,
@@ -255,7 +291,10 @@ export function createMockApi() {
     },
 
     missions: {
-      list: (params) => resolve(searchRows(missions, params)),
+      list: (params) => {
+        const user = state.currentUser || getUser(params);
+        return resolve(searchRows(missions.map((mission) => getMockMissionProgress(mission, user)), params));
+      },
       complete: (id) => resolve({ mission: missions.find((mission) => mission.id === id), completed: true }),
     },
 

@@ -31,6 +31,7 @@ const profileSelect = `
 `;
 
 const PUBLISHER_ACCESS_KEY = 'ADMIN2026MISION';
+const PASTOR_ACCESS_KEY = 'IPUC2026MISION';
 const DEFAULT_PUBLIC_SITE_URL = 'https://somosmisioncolombia.com';
 
 function ensureClient() {
@@ -86,10 +87,43 @@ function isProfileCompletionSchemaDrift(error) {
   );
 }
 
+function isEmailGateSchemaDrift(error) {
+  if (!error) return false;
+  const message = [error.message, error.details, error.hint].filter(Boolean).join(' ').toLowerCase();
+  return (
+    error.code === '42703' ||
+    error.code === 'PGRST204' ||
+    (message.includes('schema cache') && message.includes('email_gate_verified_at')) ||
+    (message.includes('could not find') && message.includes('email_gate_verified_at'))
+  );
+}
+
+function shouldConfirmDelayedEmailGate() {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  return params.get('email_gate') === 'verified';
+}
+
+function clearDelayedEmailGateFlag() {
+  if (typeof window === 'undefined') return;
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has('email_gate')) return;
+  url.searchParams.delete('email_gate');
+  window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash}`);
+}
+
 function initials(name = '') {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return 'SM';
   return `${parts[0][0] || ''}${parts[1]?.[0] || parts[0][1] || ''}`.toUpperCase();
+}
+
+function inferSocialPlatform(url = '') {
+  const value = String(url || '').toLowerCase();
+  if (value.includes('instagram.com')) return 'instagram';
+  if (value.includes('facebook.com') || value.includes('fb.watch') || value.includes('fb.com')) return 'facebook';
+  if (value.includes('whatsapp.com') || value.includes('wa.me')) return 'whatsapp';
+  return '';
 }
 
 function emptyProfileStats() {
@@ -130,12 +164,15 @@ function emptySchemaMetrics() {
 }
 
 function roleFromMetadata(meta = {}) {
-  if (meta.rol === 'pastor') return 'pastor';
+  if (
+    meta.rol === 'pastor' &&
+    (meta.pastor_access_key === PASTOR_ACCESS_KEY || meta.publisher_access_key === PUBLISHER_ACCESS_KEY)
+  ) return 'pastor';
   return 'multiplicador';
 }
 
 function canPublishFromMetadata(meta = {}) {
-  return meta.rol === 'admin' || meta.publisher_access_key === PUBLISHER_ACCESS_KEY || meta.can_publish === true;
+  return meta.rol === 'admin' || meta.publisher_access_key === PUBLISHER_ACCESS_KEY;
 }
 
 function cleanOptional(value) {
@@ -175,6 +212,36 @@ function getAuthRedirectUrl(path = '/login') {
   const baseUrl = normalizeSiteUrl(configuredUrl || DEFAULT_PUBLIC_SITE_URL || runtimeUrl);
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return baseUrl ? `${baseUrl}${normalizedPath}` : undefined;
+}
+
+function authUserHasVerifiedEmail(authUser = {}) {
+  const meta = authUser.user_metadata || authUser.raw_user_meta_data || {};
+  return Boolean(
+    authUser.email_confirmed_at ||
+    authUser.confirmed_at ||
+    meta.email_verified === true ||
+    meta.email_verified === 'true'
+  );
+}
+
+async function markDelayedEmailGateVerified(client) {
+  let rpcResult = await client.rpc('mark_email_gate_verified');
+  if (!rpcResult.error) return true;
+  if (!isRpcSignatureMissing(rpcResult.error) && !isEmailGateSchemaDrift(rpcResult.error)) {
+    throw new ApiError(rpcResult.error.message || 'No se pudo confirmar el correo', rpcResult.error.status || 500, rpcResult.error);
+  }
+
+  const sessionData = unwrap(await client.auth.getSession(), 'No se pudo recuperar la sesión');
+  const userId = sessionData?.session?.user?.id;
+  if (!userId) throw new ApiError('Sesión no encontrada para confirmar el correo', 401);
+
+  const updateResult = await client
+    .from('profiles')
+    .update({ email_gate_verified_at: new Date().toISOString() })
+    .eq('id', userId);
+  if (isEmailGateSchemaDrift(updateResult.error)) return false;
+  unwrap(updateResult, 'No se pudo confirmar el correo');
+  return true;
 }
 
 function profilePayloadFromAuthUser(authUser = {}) {
@@ -236,6 +303,7 @@ async function ensureProfileForUser(client, authUser) {
 function normalizeProfile(row, stats = {}) {
   if (!row) return null;
   const profileComplete = computeProfileComplete(row);
+  const emailVerified = Boolean(row.email_gate_verified_at || row.email_verified);
   return {
     id: row.id,
     schemaId: row.id,
@@ -252,7 +320,9 @@ function normalizeProfile(row, stats = {}) {
     hasChurchRole: typeof row.tiene_cargo === 'boolean' ? row.tiene_cargo : row.cargo ? true : null,
     socialUsername: row.usuario_redes || '',
     profileComplete,
-    xpGateLocked: !profileComplete && Number(row.xp || 0) >= 100,
+    xpGateLocked: false,
+    emailVerified,
+    emailGateLocked: false,
     phone: row.celular || row.whatsapp || '',
     xp: row.xp || 0,
     level: row.level || Math.min(Math.floor((row.xp || 0) / 500) + 1, 10),
@@ -298,6 +368,11 @@ function normalizePublicRankingRow(row) {
 }
 
 function normalizePublication(row) {
+  const sourceUrl = row.source_url || row.facebook_url || row.instagram_url || '';
+  const sourcePlatform = row.source_platform || inferSocialPlatform(sourceUrl);
+  const facebookUrl = row.facebook_url || (sourcePlatform === 'facebook' ? sourceUrl : '');
+  const instagramUrl = row.instagram_url || (sourcePlatform === 'instagram' ? sourceUrl : '');
+
   return {
     id: String(row.id),
     title: row.title,
@@ -313,16 +388,19 @@ function normalizePublication(row) {
     createdAt: row.created_at,
     copyText: row.copy_text,
     imageUrl: row.media_url,
-    sourceUrl: row.source_url || row.facebook_url || row.instagram_url || '',
-    facebookUrl: row.facebook_url || '',
-    instagramUrl: row.instagram_url || '',
-    sourcePlatform: row.source_platform || '',
+    sourceUrl,
+    facebookUrl,
+    instagramUrl,
+    sourcePlatform,
     imageGradient: 'from-[#1A237E] to-[#5C1800]',
   };
 }
 
-function normalizeMission(row, completedIds = []) {
-  const done = completedIds.includes(row.id);
+function normalizeMission(row, completedIds = [], progressMap = new Map()) {
+  const autoProgress = progressMap.get(row.id);
+  const done = completedIds.includes(row.id) || autoProgress?.status === 'completed';
+  const defaultStatus = row.default_status === 'locked' ? 'locked' : 'pending';
+  const progress = autoProgress?.progress ?? (done ? row.goal : 0);
   return {
     id: row.id,
     type: row.type,
@@ -332,8 +410,8 @@ function normalizeMission(row, completedIds = []) {
     goal: row.goal,
     unit: row.unit,
     icon: row.icon,
-    status: done ? 'completed' : row.default_status,
-    progress: done ? row.goal : row.default_progress,
+    status: done ? 'completed' : (autoProgress?.status || defaultStatus),
+    progress,
   };
 }
 
@@ -500,6 +578,14 @@ async function getProfileStats(client, profileId) {
 }
 
 async function getProfileBundle(client, profileId, authUser = null) {
+  let resolvedAuthUser = authUser;
+  if (!resolvedAuthUser || resolvedAuthUser.id !== profileId || resolvedAuthUser.email_confirmed_at === undefined) {
+    const authResult = await client.auth.getUser();
+    if (!authResult.error && authResult.data?.user?.id === profileId) {
+      resolvedAuthUser = authResult.data.user;
+    }
+  }
+
   const result = await client
     .from('profiles')
     .select(profileSelect)
@@ -511,8 +597,8 @@ async function getProfileBundle(client, profileId, authUser = null) {
   }
 
   let row = result.data;
-  if (!row && authUser?.id === profileId) {
-    row = await ensureProfileForUser(client, authUser);
+  if (!row && resolvedAuthUser?.id === profileId) {
+    row = await ensureProfileForUser(client, resolvedAuthUser);
   }
   if (!row) throw new ApiError('Perfil no encontrado para esta cuenta', 404);
 
@@ -526,8 +612,9 @@ async function getProfileBundle(client, profileId, authUser = null) {
   } else if (!isProfilePermissionSchemaDrift(permissionResult.error)) {
     row.can_publish = false;
   }
-  if (authUser) {
-    row.can_publish = row.can_publish || canPublishFromMetadata(authUser.user_metadata || authUser.raw_user_meta_data || {});
+  if (resolvedAuthUser) {
+    row.can_publish = row.can_publish || canPublishFromMetadata(resolvedAuthUser.user_metadata || resolvedAuthUser.raw_user_meta_data || {});
+    row.email_verified = authUserHasVerifiedEmail(resolvedAuthUser);
   }
 
   const completionResult = await client
@@ -545,6 +632,19 @@ async function getProfileBundle(client, profileId, authUser = null) {
     row.perfil_completo = false;
   }
 
+  const emailGateResult = await client
+    .from('profiles')
+    .select('email_gate_verified_at')
+    .eq('id', profileId)
+    .maybeSingle();
+  if (!emailGateResult.error) {
+    row.email_gate_verified_at = emailGateResult.data?.email_gate_verified_at || null;
+    row.email_verified = Boolean(row.email_gate_verified_at);
+  } else if (isEmailGateSchemaDrift(emailGateResult.error)) {
+    row.email_gate_verified_at = null;
+    row.email_verified = authUserHasVerifiedEmail(resolvedAuthUser || {});
+  }
+
   const stats = await getProfileStats(client, profileId);
   return {
     user: normalizeProfile(row, stats),
@@ -552,6 +652,19 @@ async function getProfileBundle(client, profileId, authUser = null) {
     sharedContentIds: stats.sharedContentIds,
     completedMissionIds: stats.completedMissionIds,
   };
+}
+
+async function getAutoMissionProgressMap(client) {
+  const result = await client.rpc('sync_my_mission_progress');
+  if (result.error) return new Map();
+
+  return new Map((result.data || []).map((row) => [
+    row.mission_id,
+    {
+      progress: Number(row.progress || 0),
+      status: row.computed_status || row.status || 'pending',
+    },
+  ]));
 }
 
 async function getReferenceData(client) {
@@ -719,6 +832,10 @@ async function fetchCurrentSessionBundle(client) {
   const sessionData = unwrap(await client.auth.getSession(), 'No se pudo recuperar la sesión');
   const session = sessionData?.session || null;
   if (!session?.user) return null;
+  if (shouldConfirmDelayedEmailGate()) {
+    await markDelayedEmailGateVerified(client).catch(() => false);
+    clearDelayedEmailGateFlag();
+  }
   const bundle = await getProfileBundle(client, session.user.id, session.user);
   return { ...bundle, session };
 }
@@ -796,12 +913,12 @@ export function createSupabaseApi() {
                 nombre_completo: payload.name,
                 nombre: payload.name?.split(' ')?.[0] || payload.name,
                 rol: payload.role,
-                publisher_access_key: payload.role === 'pastor' ? payload.accessKey : null,
-                can_publish: Boolean(payload.canPublish),
+                pastor_access_key: payload.role === 'pastor' ? payload.accessKey : null,
+                publisher_access_key: payload.canPublish ? payload.accessKey : null,
                 region_id: payload.region,
                 district_id: payload.district,
-                congregacion_id: payload.congregationId || null,
-                congregacion: payload.congregation,
+                congregacion_id: null,
+                congregacion: payload.congregation?.trim(),
                 celular: payload.phone,
                 whatsapp: payload.phone,
               },
@@ -855,17 +972,40 @@ export function createSupabaseApi() {
         );
         return true;
       },
+
+      async resendVerification(email) {
+        const sessionData = await client.auth.getSession();
+        const sessionEmail = sessionData.data?.session?.user?.email;
+        const targetEmail = email || sessionEmail;
+        if (!targetEmail) throw new ApiError('No encontramos el correo de la sesión actual.', 400);
+
+        unwrap(
+          await client.auth.signInWithOtp({
+            email: targetEmail,
+            options: {
+              shouldCreateUser: false,
+              emailRedirectTo: getAuthRedirectUrl('/dashboard?email_gate=verified'),
+            },
+          }),
+          'No se pudo enviar el correo de verificación'
+        );
+        return true;
+      },
+
+      async confirmDelayedEmailGate() {
+        return markDelayedEmailGateVerified(client);
+      },
     },
 
     dashboard: {
       async get() {
-        const sessionBundle = await fetchCurrentSessionBundle(client);
+        let sessionBundle = await fetchCurrentSessionBundle(client);
         if (!sessionBundle?.user) throw new ApiError('Sesión no encontrada', 401);
 
         const isPastor = sessionBundle.user.role === 'pastor';
         const regionId = sessionBundle.user.region;
 
-        const [metrics, ranking, regionalRanking, missions, badges] = await Promise.all([
+        const [metrics, ranking, regionalRanking, missions, badges, missionProgress] = await Promise.all([
           getMetrics(client).catch(() => ({
             globalMetrics: emptyMetrics(),
             schemaMetrics: emptySchemaMetrics(),
@@ -876,7 +1016,12 @@ export function createSupabaseApi() {
           isPastor && regionId ? getRankingRows(client, { region: regionId, limit: 30 }).catch(() => []) : Promise.resolve([]),
           client.from('missions').select('*').eq('active', true).order('order_index').then((result) => (result.error ? [] : result.data || [])),
           client.from('badges').select('*').order('xp').then((result) => (result.error ? [] : result.data || [])),
+          getAutoMissionProgressMap(client).catch(() => new Map()),
         ]);
+
+        if (missionProgress.size) {
+          sessionBundle = await fetchCurrentSessionBundle(client).catch(() => sessionBundle);
+        }
 
         return {
           user: sessionBundle.user,
@@ -884,7 +1029,7 @@ export function createSupabaseApi() {
           schemaMetrics: metrics.schemaMetrics,
           weeklyActivity: metrics.weeklyActivity,
           regionActivity: metrics.regionActivity,
-          missions: missions.map((mission) => normalizeMission(mission, sessionBundle.completedMissionIds)),
+          missions: missions.map((mission) => normalizeMission(mission, sessionBundle.completedMissionIds, missionProgress)),
           topUsers: ranking,
           regionalUsers: regionalRanking,
           badges: badges.filter((badge) => sessionBundle.user.badges.includes(badge.id)),
@@ -1039,12 +1184,16 @@ export function createSupabaseApi() {
 
     missions: {
       async list(params = {}) {
-        const sessionBundle = await fetchCurrentSessionBundle(client);
+        let sessionBundle = await fetchCurrentSessionBundle(client);
         const rows = unwrap(
           await client.from('missions').select('*').eq('active', true).order('order_index'),
           'No se pudieron cargar las misiones'
         );
-        const items = rows.map((row) => normalizeMission(row, sessionBundle?.completedMissionIds || []));
+        const missionProgress = await getAutoMissionProgressMap(client).catch(() => new Map());
+        if (missionProgress.size) {
+          sessionBundle = await fetchCurrentSessionBundle(client).catch(() => sessionBundle);
+        }
+        const items = rows.map((row) => normalizeMission(row, sessionBundle?.completedMissionIds || [], missionProgress));
         if (!params.type) return items;
         return items.filter((item) => item.type === params.type);
       },

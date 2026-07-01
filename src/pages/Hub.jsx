@@ -421,7 +421,7 @@ export default function Hub() {
         <div className="content-hub-hero-copy">
           <div className="content-hub-orb"><BookOpen size={26} /></div>
           <p className="content-hub-kicker"><Sparkles size={14} /> Contenido nacional</p>
-          <h2>Hub de Contenido</h2>
+          <h2>Biblioteca digital</h2>
           <span>Piezas oficiales listas para copiar, adaptar y compartir desde una sola biblioteca misionera.</span>
         </div>
 

@@ -51,7 +51,6 @@ export default function Profile() {
 
   const user = currentUser;
   const profileComplete = Boolean(user.profileComplete);
-  const xpGateLocked = !profileComplete && Number(user.xp || 0) >= 100;
   const profileStepsDone = [
     Boolean(profileForm.hasChurchRole),
     profileForm.hasChurchRole === 'no' || Boolean(profileForm.position.trim()),
@@ -169,22 +168,6 @@ export default function Profile() {
         </div>
       </motion.section>
 
-      {xpGateLocked && (
-        <motion.section
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.08 }}
-          className="profile-xp-gate"
-        >
-          <div className="profile-xp-gate-icon"><Lock size={18} /></div>
-          <div>
-            <p>XP en pausa</p>
-            <h3>Completa tu perfil para seguir sumando después de los 100 puntos.</h3>
-            <span>Esto nos ayuda a validar mejor tu iglesia, tu rol y tu actividad en redes.</span>
-          </div>
-        </motion.section>
-      )}
-
       <motion.section
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -197,8 +180,8 @@ export default function Profile() {
           </div>
           <div>
             <p>{profileComplete ? 'Perfil verificado' : 'Completar perfil'}</p>
-            <h3>{profileComplete ? 'Tu perfil está listo para seguir creciendo' : 'Desbloquea el avance completo de XP'}</h3>
-            <span>Después de los 100 puntos, estos datos son necesarios para seguir acumulando XP.</span>
+            <h3>{profileComplete ? 'Tu perfil está listo para seguir creciendo' : 'Fortalece tu identidad dentro de la red'}</h3>
+            <span>Estos datos ayudan a validar mejor tu iglesia, tu servicio y tu actividad en redes.</span>
           </div>
           <strong>{profileCompletionPercent}%</strong>
         </div>
@@ -255,7 +238,7 @@ export default function Profile() {
           </div>
 
           <div className="profile-completion-actions">
-            <span>{profileComplete ? 'Datos guardados y activos.' : 'Completa 3 pasos para liberar el avance.'}</span>
+            <span>{profileComplete ? 'Datos guardados y activos.' : 'Completa 3 pasos para dejar tu perfil listo.'}</span>
             <button type="submit" disabled={profileSaving || profileComplete}>
               <Save size={16} />
               {profileSaving ? 'Guardando...' : profileComplete ? 'Perfil completo' : 'Guardar perfil'}

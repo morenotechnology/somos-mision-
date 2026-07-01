@@ -64,7 +64,7 @@ function MultiplicadorDash({ user, weeklyActivity = [], missions = [], topUsers 
 
         <div>
           <div className="dashboard-section-header">
-            <div><p>Hall de honor</p><h3>Ranking nacional</h3></div>
+            <div><p>Muro de honor</p><h3>Ranking nacional</h3></div>
             <button onClick={() => navigate('/ranking')} className="dashboard-link-button">Ver completo <ArrowRight size={15} /></button>
           </div>
           <div className="dashboard-list is-compact">{topUsers.map((rankingUser, index) => <RankingCard key={rankingUser.id} user={rankingUser} position={index + 1} delay={index * 0.06} />)}</div>
@@ -138,7 +138,7 @@ function PastorDash({ user, weeklyActivity = [], topUsers = [], regionalUsers = 
       <div className="dashboard-content-grid">
         <div className="pastor-panel-card">
           <div className="dashboard-section-header">
-            <div><p>Hall regional</p><h3>Top de {regionName}</h3></div>
+            <div><p>Muro regional</p><h3>Top de {regionName}</h3></div>
           </div>
           <div className="dashboard-list is-compact">
             {topRegion.map((rankingUser, index) => <RankingCard key={rankingUser.id} user={rankingUser} position={index + 1} delay={index * 0.08} />)}
@@ -208,7 +208,7 @@ function AdminDash({ metrics = {}, weeklyActivity = [], regionActivity = [], top
       </div>
 
       <div className="card p-5">
-        <div className="flex items-center justify-between mb-4"><h3 className="font-bold text-[#0F172A]">Top multiplicadores nacionales</h3><div className="flex items-center gap-1 text-[#D4AF37]"><Star size={13} fill="#D4AF37" /><span className="text-xs font-bold text-[#8B6914]">Hall de Honor</span></div></div>
+        <div className="flex items-center justify-between mb-4"><h3 className="font-bold text-[#0F172A]">Top multiplicadores nacionales</h3><div className="flex items-center gap-1 text-[#D4AF37]"><Star size={13} fill="#D4AF37" /><span className="text-xs font-bold text-[#8B6914]">Muro de Honor</span></div></div>
         <div className="grid md:grid-cols-2 gap-2">{topUsers.map((rankingUser, index) => <RankingCard key={rankingUser.id} user={rankingUser} position={index + 1} delay={index * 0.04} />)}</div>
       </div>
     </div>

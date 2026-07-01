@@ -314,7 +314,11 @@ declare
   v_congregation_name text := nullif(trim(coalesce(meta ->> 'congregacion', '')), '');
   v_can_publish boolean := false;
 begin
-  if meta ->> 'rol' = 'pastor' then
+  if meta ->> 'rol' = 'pastor'
+    and (
+      meta ->> 'pastor_access_key' = 'IPUC2026MISION'
+      or meta ->> 'publisher_access_key' = 'ADMIN2026MISION'
+    ) then
     assigned_role := 'pastor';
   end if;
 
@@ -323,8 +327,7 @@ begin
   end if;
 
   v_can_publish := assigned_role = 'admin'
-    or meta ->> 'publisher_access_key' = 'ADMIN2026MISION'
-    or lower(coalesce(meta ->> 'can_publish', 'false')) in ('true', '1', 'yes');
+    or meta ->> 'publisher_access_key' = 'ADMIN2026MISION';
 
   if v_region_id is not null and not exists (select 1 from public.regions where id = v_region_id) then
     v_region_id := null;
@@ -334,22 +337,7 @@ begin
     v_district_id := null;
   end if;
 
-  if coalesce(meta ->> 'congregacion_id', '') ~ '^[0-9]+$' then
-    select id into v_congregation_id
-    from public.congregations
-    where id = (meta ->> 'congregacion_id')::bigint;
-  end if;
-
-  if v_congregation_id is null and v_congregation_name is not null then
-    select id into v_congregation_id
-    from public.congregations
-    where lower(regexp_replace(trim(nombre), '\s+', ' ', 'g')) = lower(regexp_replace(v_congregation_name, '\s+', ' ', 'g'))
-      and (v_district_id is null or district_id = v_district_id)
-    order by case when district_id = v_district_id then 0 else 1 end, id
-    limit 1;
-  end if;
-
-  if v_congregation_id is null and v_congregation_name is not null then
+  if v_congregation_name is not null then
     insert into public.congregations (region_id, district_id, nombre, descripcion, redes_sociales, es_punto_blanco)
     values (v_region_id, v_district_id, v_congregation_name, 'Congregación registrada desde la beta.', '{}'::jsonb, false)
     returning id into v_congregation_id;
@@ -428,7 +416,6 @@ where u.id = p.id
   and (
     p.rol = 'admin'
     or u.raw_user_meta_data ->> 'publisher_access_key' = 'ADMIN2026MISION'
-    or lower(coalesce(u.raw_user_meta_data ->> 'can_publish', 'false')) in ('true', '1', 'yes')
   );
 
 create or replace function public.sync_user_email()
@@ -583,10 +570,6 @@ begin
 
   if not v_already_awarded then
     v_xp := v_base_xp + v_featured_bonus + v_speed_bonus + v_verified_bonus;
-
-    if not v_profile_complete then
-      v_xp := greatest(least(v_xp, 100 - v_profile_xp), 0);
-    end if;
   end if;
 
   insert into public.shares (
@@ -667,9 +650,6 @@ begin
     returning id into v_exists;
 
     select coalesce(xp_reward, 0) into v_xp from public.missions where id = p_mission_id;
-    if not v_profile_complete then
-      v_xp := greatest(least(v_xp, 100 - v_profile_xp), 0);
-    end if;
     if v_xp > 0 then
       perform public.apply_xp(v_user, coalesce(v_xp, 0), 'mision_completada', 'mission', p_mission_id::text);
       perform public.refresh_profile_badges(v_user);
@@ -1015,13 +995,13 @@ insert into public.badges (id, name, icon, description, xp, color) values
 on conflict (id) do update set name = excluded.name, icon = excluded.icon, description = excluded.description, xp = excluded.xp, color = excluded.color;
 
 insert into public.missions (id, type, title, description, xp_reward, goal, unit, icon, default_status, default_progress, active, order_index) values
-  ('11111111-aaaa-4111-8111-111111111111', 'daily', 'Primera Misión del Día', 'Comparte 1 contenido oficial hoy', 50, 1, 'contenidos', 'Zap', 'completed', 1, true, 1),
-  ('22222222-aaaa-4222-8222-222222222222', 'daily', 'Mensajero Activo', 'Comparte 3 contenidos hoy', 120, 3, 'contenidos', 'Megaphone', 'in_progress', 1, true, 2),
+  ('11111111-aaaa-4111-8111-111111111111', 'daily', 'Primera Misión del Día', 'Comparte 1 contenido oficial hoy', 50, 1, 'contenidos', 'Zap', 'pending', 0, true, 1),
+  ('22222222-aaaa-4222-8222-222222222222', 'daily', 'Mensajero Activo', 'Comparte 3 contenidos hoy', 120, 3, 'contenidos', 'Megaphone', 'pending', 0, true, 2),
   ('33333333-aaaa-4333-8333-333333333333', 'daily', 'Perfil Completo', 'Completa tu información de perfil', 80, 1, 'pasos', 'UserCheck', 'pending', 0, true, 3),
-  ('44444444-aaaa-4444-8444-444444444444', 'weekly', 'Semana de Impacto', 'Comparte 10 contenidos esta semana', 500, 10, 'contenidos', 'Trophy', 'in_progress', 4, true, 4),
-  ('55555555-aaaa-4555-8555-555555555555', 'weekly', 'Racha Semanal', 'Mantén racha de 5 días seguidos', 300, 5, 'días', 'Flame', 'in_progress', 3, true, 5),
+  ('44444444-aaaa-4444-8444-444444444444', 'weekly', 'Semana de Impacto', 'Comparte 10 contenidos esta semana', 500, 10, 'contenidos', 'Trophy', 'pending', 0, true, 4),
+  ('55555555-aaaa-4555-8555-555555555555', 'weekly', 'Racha Semanal', 'Mantén racha de 5 días seguidos', 300, 5, 'días', 'Flame', 'pending', 0, true, 5),
   ('66666666-aaaa-4666-8666-666666666666', 'weekly', 'Campaña Temática', 'Participa en la campaña de la semana', 400, 1, 'campañas', 'Megaphone', 'pending', 0, true, 6),
-  ('77777777-aaaa-4777-8777-777777777777', 'special', 'Voz del Movimiento', 'Sube al Top 50 del ranking nacional', 1000, 1, 'logro', 'Crown', 'locked', 0, true, 7)
+  ('77777777-aaaa-4777-8777-777777777777', 'special', 'Voz del Movimiento', 'Sube al Top 50 del ranking nacional', 1000, 1, 'logro', 'Crown', 'pending', 0, true, 7)
 on conflict (id) do update set
   type = excluded.type,
   title = excluded.title,
@@ -1035,36 +1015,14 @@ on conflict (id) do update set
   active = excluded.active,
   order_index = excluded.order_index;
 
-insert into public.publications (id, author_profile_id, coordination_id, title, description, category, format, featured, xp_reward, shares_count, likes_count, copy_text, media_url, active, is_official, created_at, published_at) values
-  (1, null, 'c9', '¡Colombia se está transformando!', 'Misiones Nacionales está llegando a los rincones más alejados de Colombia.', 'Testimonio', 'texto', true, 50, 0, 3892, 'Misiones Nacionales está llevando esperanza a cada rincón de nuestra nación. #SomosMisiónColombia #MisionesNacionales', 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=75', true, true, '2024-05-01T10:00:00Z', '2024-05-01T10:00:00Z'),
-  (2, null, 'c1', 'Campaña: Estudiantes con Misión 2024', 'El evangelismo estudiantil llega a 200 universidades colombianas. Comparte y suma al movimiento.', 'Campaña', 'imagen', true, 75, 0, 2341, 'El evangelismo estudiantil llega a 200 universidades colombianas. #EstudiantesConMisión', 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=75', true, true, '2024-05-03T10:00:00Z', '2024-05-03T10:00:00Z'),
-  (3, null, 'c2', 'Ministerio en Hospitales: Fe que Sana', 'Nuestros equipos hospitalarios visitaron 45 hospitales en Colombia este mes.', 'Impacto', 'video', false, 60, 0, 1876, 'Los equipos hospitalarios visitaron 45 hospitales este mes. #FeMisiónNacional', 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=75', true, true, '2024-05-05T10:00:00Z', '2024-05-05T10:00:00Z'),
-  (4, null, 'c4', 'Asuntos Étnicos: El Evangelio en Amazonía', 'Equipos misioneros acompañan comunidades indígenas, afrocolombianas, raizales, palenqueras y pueblo Rom.', 'Hito', 'texto', true, 100, 0, 5421, 'El evangelio avanza entre comunidades étnicas con respeto, acompañamiento y presencia territorial. #AsuntosÉtnicos #SomosMisiónColombia', 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=75', true, true, '2024-05-07T10:00:00Z', '2024-05-07T10:00:00Z'),
-  (5, null, 'c8', 'Capacitación Misionera: obreros listos', 'La formación misionera prepara líderes para contextos urbanos, rurales y transculturales.', 'Campaña', 'carrusel', true, 80, 0, 8934, 'Obreros listos para servir en cada contexto. La capacitación misionera fortalece la visión nacional. #CapacitaciónMisionera', 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=75', true, true, '2024-05-08T10:00:00Z', '2024-05-08T10:00:00Z'),
-  (6, null, 'c3', 'Ministerio Carcelario en 2024', 'Más de 80 centros penitenciarios están siendo alcanzados por el evangelio cada domingo.', 'Impacto', 'imagen', false, 55, 0, 987, '80 centros penitenciarios alcanzados. La libertad espiritual no tiene muros. #MisiónCarcelaria', 'https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?w=800&q=75', true, true, '2024-05-09T10:00:00Z', '2024-05-09T10:00:00Z')
-on conflict (id) do update set
-  coordination_id = excluded.coordination_id,
-  title = excluded.title,
-  description = excluded.description,
-  category = excluded.category,
-  format = excluded.format,
-  featured = excluded.featured,
-  xp_reward = excluded.xp_reward,
-  likes_count = excluded.likes_count,
-  copy_text = excluded.copy_text,
-  media_url = excluded.media_url,
-  active = excluded.active,
-  is_official = excluded.is_official,
-  created_at = excluded.created_at,
-  published_at = excluded.published_at;
-
-select setval(pg_get_serial_sequence('public.publications', 'id'), greatest((select max(id) from public.publications), 6), true);
+delete from public.publications;
+select setval(pg_get_serial_sequence('public.publications', 'id'), 1, false);
 
 delete from public.role_codes where codigo = 'MISION2026NACIONAL';
-delete from public.role_codes where codigo = 'IPUC2026MISION';
 
 insert into public.role_codes (codigo, rol_asignado, descripcion, activo) values
   ('MISION-ADMIN-2026', 'admin', 'Acceso equipo nacional', true),
+  ('IPUC2026MISION', 'pastor', 'Llave pastoral para Pastor/Directivo', true),
   ('ADMIN2026MISION', 'pastor', 'Llave editorial para Pastor/Directivo publicador', true),
   ('MISION-MULT-2026', 'multiplicador', 'Registro de embajadores digitales', true)
 on conflict (codigo) do update set rol_asignado = excluded.rol_asignado, descripcion = excluded.descripcion, activo = excluded.activo;

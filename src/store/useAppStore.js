@@ -1,12 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { api, ApiError } from '../api';
-
-const PROFILE_XP_GATE = 100;
-
-function profileNeedsCompletion(user) {
-  return Boolean(user && !user.profileComplete && Number(user.xp || 0) >= PROFILE_XP_GATE);
-}
+import { api } from '../api';
 
 export const useAppStore = create(
   persist(
@@ -24,7 +18,7 @@ export const useAppStore = create(
           currentUser: payload?.user || null,
           session: payload?.session || null,
           isAuthenticated: Boolean(payload?.user),
-          sharedContent: payload?.sharedContentIds || [],
+          sharedContent: (payload?.sharedContentIds || []).map(String),
           completedMissions: payload?.completedMissionIds || [],
         });
       },
@@ -75,17 +69,15 @@ export const useAppStore = create(
       setMobileSidebar: (value) => set({ mobileSidebarOpen: value }),
 
       shareContent: async (contentId, xpReward = 50, socialNetwork = 'whatsapp', evidence = {}) => {
-        const { currentUser, sharedContent, showXP } = get();
-        if (profileNeedsCompletion(currentUser)) {
-          throw new ApiError('Completa tu perfil para seguir sumando XP después de los 100 puntos.', 403, {
-            code: 'PROFILE_REQUIRED',
-          });
-        }
+        const { sharedContent, showXP } = get();
         const payload = await api.content.share(contentId, { red_social: socialNetwork, ...evidence });
+        const nextSharedContent = payload.sharedContentIds?.length
+          ? payload.sharedContentIds.map(String)
+          : [...new Set([...sharedContent.map(String), String(contentId)])];
         set({
           currentUser: payload.user,
           isAuthenticated: Boolean(payload.user),
-          sharedContent: payload.sharedContentIds || sharedContent,
+          sharedContent: nextSharedContent,
           completedMissions: payload.completedMissionIds || get().completedMissions,
         });
         if ((payload.share?.xp_ganado ?? xpReward) > 0) showXP(payload.share?.xp_ganado ?? xpReward);
@@ -93,13 +85,8 @@ export const useAppStore = create(
       },
 
       completeMission: async (missionId, xpReward = 0) => {
-        const { currentUser, completedMissions, showXP } = get();
+        const { completedMissions, showXP } = get();
         if (completedMissions.includes(missionId)) return { alreadyCompleted: true };
-        if (profileNeedsCompletion(currentUser)) {
-          throw new ApiError('Completa tu perfil para seguir sumando XP después de los 100 puntos.', 403, {
-            code: 'PROFILE_REQUIRED',
-          });
-        }
         const payload = await api.missions.complete(missionId);
         set({
           currentUser: payload.user,

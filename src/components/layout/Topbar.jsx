@@ -5,7 +5,7 @@ import NotificationPanel from '../common/NotificationPanel';
 
 const pageTitles = {
   '/dashboard': 'Dashboard',
-  '/hub':       'Hub de Contenido',
+  '/hub':       'Biblioteca digital',
   '/ranking':   'Ranking Nacional',
   '/missions':  'Misiones & Recompensas',
   '/profile':   'Mi Perfil',

@@ -174,13 +174,13 @@ export const badges = [
 
 // ─── MISSIONS ──────────────────────────────────────────────────────────────
 export const missions = [
-  { id: 'm1', type: 'daily',   title: 'Primera Misión del Día', description: 'Comparte 1 contenido oficial hoy',     xpReward: 50,   goal: 1,  unit: 'contenidos', icon: 'Zap',       status: 'completed' },
-  { id: 'm2', type: 'daily',   title: 'Mensajero Activo',       description: 'Comparte 3 contenidos hoy',            xpReward: 120,  goal: 3,  unit: 'contenidos', icon: 'Megaphone', status: 'in_progress', progress: 1 },
-  { id: 'm3', type: 'daily',   title: 'Perfil Completo',        description: 'Completa tu información de perfil',    xpReward: 80,   goal: 1,  unit: 'pasos',      icon: 'UserCheck', status: 'pending' },
-  { id: 'm4', type: 'weekly',  title: 'Semana de Impacto',      description: 'Comparte 10 contenidos esta semana',   xpReward: 500,  goal: 10, unit: 'contenidos', icon: 'Trophy',    status: 'in_progress', progress: 4 },
-  { id: 'm5', type: 'weekly',  title: 'Racha Semanal',          description: 'Mantén racha de 5 días seguidos',      xpReward: 300,  goal: 5,  unit: 'días',       icon: 'Flame',     status: 'in_progress', progress: 3 },
-  { id: 'm6', type: 'weekly',  title: 'Campaña Temática',       description: 'Participa en la campaña de la semana', xpReward: 400,  goal: 1,  unit: 'campañas',   icon: 'Megaphone', status: 'pending' },
-  { id: 'm7', type: 'special', title: 'Voz del Movimiento',     description: 'Sube al Top 50 del ranking nacional',  xpReward: 1000, goal: 1,  unit: 'logro',      icon: 'Crown',     status: 'locked' },
+  { id: 'm1', type: 'daily',   title: 'Primera Misión del Día', description: 'Comparte 1 contenido oficial hoy',     xpReward: 50,   goal: 1,  unit: 'contenidos', icon: 'Zap',       status: 'pending', progress: 0 },
+  { id: 'm2', type: 'daily',   title: 'Mensajero Activo',       description: 'Comparte 3 contenidos hoy',            xpReward: 120,  goal: 3,  unit: 'contenidos', icon: 'Megaphone', status: 'pending', progress: 0 },
+  { id: 'm3', type: 'daily',   title: 'Perfil Completo',        description: 'Completa tu información de perfil',    xpReward: 80,   goal: 1,  unit: 'pasos',      icon: 'UserCheck', status: 'pending', progress: 0 },
+  { id: 'm4', type: 'weekly',  title: 'Semana de Impacto',      description: 'Comparte 10 contenidos esta semana',   xpReward: 500,  goal: 10, unit: 'contenidos', icon: 'Trophy',    status: 'pending', progress: 0 },
+  { id: 'm5', type: 'weekly',  title: 'Racha Semanal',          description: 'Mantén racha de 5 días seguidos',      xpReward: 300,  goal: 5,  unit: 'días',       icon: 'Flame',     status: 'pending', progress: 0 },
+  { id: 'm6', type: 'weekly',  title: 'Campaña Temática',       description: 'Participa en la campaña de la semana', xpReward: 400,  goal: 1,  unit: 'campañas',   icon: 'Megaphone', status: 'pending', progress: 0 },
+  { id: 'm7', type: 'special', title: 'Voz del Movimiento',     description: 'Sube al Top 50 del ranking nacional',  xpReward: 1000, goal: 1,  unit: 'logro',      icon: 'Crown',     status: 'pending', progress: 0 },
 ];
 
 // ─── USERS — internal app adapter (derived from perfiles for the UI) ───────
@@ -245,81 +245,22 @@ export const perfiles = users.map((u) => ({
 }));
 
 // ─── CONTENT — internal app schema ────────────────────────────────────────
-export const contentItems = [
-  { id: 'cnt1', title: '¡Colombia se está transformando!',         description: 'Misiones Nacionales está llegando a los rincones más alejados de Colombia.',     category: 'Testimonio', coordination: 'c9', format: 'texto',    featured: true,  xpReward: 50,  shares: 1247, likes: 3892, createdAt: '2024-05-01', copyText: 'Misiones Nacionales está llevando esperanza a cada rincón de nuestra nación. #SomosMisiónColombia #MisionesNacionales',              imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=75' },
-  { id: 'cnt2', title: 'Campaña: Estudiantes con Misión 2024',     description: 'El evangelismo estudiantil llega a 200 universidades colombianas. Comparte y suma al movimiento.', category: 'Campaña',   coordination: 'c1', format: 'imagen',   featured: true,  xpReward: 75,  shares: 892,  likes: 2341, createdAt: '2024-05-03', copyText: 'El evangelismo estudiantil llega a 200 universidades colombianas. #EstudiantesConMisión',                               imageUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=75' },
-  { id: 'cnt3', title: 'Ministerio en Hospitales: Fe que Sana',    description: 'Nuestros equipos hospitalarios visitaron 45 hospitales en Colombia este mes.',                     category: 'Impacto',   coordination: 'c2', format: 'video',    featured: false, xpReward: 60,  shares: 534,  likes: 1876, createdAt: '2024-05-05', copyText: 'Los equipos hospitalarios visitaron 45 hospitales este mes. #FeMisiónNacional',                                               imageUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=75' },
-  { id: 'cnt4', title: 'Asuntos Étnicos: El Evangelio en Amazonía', description: 'Equipos misioneros acompañan comunidades indígenas, afrocolombianas, raizales, palenqueras y pueblo Rom.', category: 'Hito', coordination: 'c4', format: 'texto', featured: true, xpReward: 100, shares: 2103, likes: 5421, createdAt: '2024-05-07', copyText: 'El evangelio avanza entre comunidades étnicas con respeto, acompañamiento y presencia territorial. #AsuntosÉtnicos #SomosMisiónColombia', imageUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&q=75' },
-  { id: 'cnt5', title: 'Capacitación Misionera: obreros listos',   description: 'La formación misionera prepara líderes para contextos urbanos, rurales y transculturales.',        category: 'Campaña',   coordination: 'c8', format: 'carrusel', featured: true,  xpReward: 80,  shares: 3412, likes: 8934, createdAt: '2024-05-08', copyText: 'Obreros listos para servir en cada contexto. La capacitación misionera fortalece la visión nacional. #CapacitaciónMisionera', imageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=75' },
-  { id: 'cnt6', title: 'Ministerio Carcelario en 2024',            description: 'Más de 80 centros penitenciarios están siendo alcanzados por el evangelio cada domingo.',           category: 'Impacto',   coordination: 'c3', format: 'imagen',   featured: false, xpReward: 55,  shares: 321,  likes: 987,  createdAt: '2024-05-09', copyText: '80 centros penitenciarios alcanzados. La libertad espiritual no tiene muros. #MisiónCarcelaria',                                        imageUrl: 'https://images.unsplash.com/photo-1585776245991-cf89dd7fc73a?w=800&q=75' },
-];
+export const contentItems = [];
 
 // ─── PUBLICACIONES — Supabase DB schema ────────────────────────────────────
-export const publicaciones = contentItems.map((c, index) => ({
-  id: index + 1,
-  perfil_id: profileIds.u8,
-  contenido: c.copyText,
-  tipo: c.format,
-  media_url: c.imageUrl,
-  created_at: `${c.createdAt}T10:00:00Z`,
-}));
+export const publicaciones = [];
 
 // ─── COMUNICADOS NACIONALES — Supabase DB schema ───────────────────────────
-export const comunicados_nacionales = contentItems.filter((c) => c.featured).map((c, index) => ({
-  id: `70000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
-  contenido: c.copyText,
-  autor_id: profileIds.u8,
-  activo: true,
-  created_at: `${c.createdAt}T10:00:00Z`,
-}));
+export const comunicados_nacionales = [];
 
 // ─── VICTORIAS — Supabase DB schema ────────────────────────────────────────
-export const victorias = contentItems.filter((c) => c.category !== 'Campaña').map((c, index) => ({
-  id: `71000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
-  created_at: `${c.createdAt}T12:00:00Z`,
-  autor_id: profileIds[`u${(index % 6) + 1}`],
-  contenido: c.description,
-  media_url: c.imageUrl,
-  es_video: c.format === 'video',
-  vistas: c.likes,
-  es_oficial: c.featured,
-}));
+export const victorias = [];
 
-const shareNetwork = ['whatsapp', 'facebook', 'instagram'];
-const engagementUsers = users.filter((u) => u.role !== 'admin');
+export const compartidos = [];
 
-export const compartidos = publicaciones.flatMap((post, postIndex) =>
-  engagementUsers.slice(0, Math.min(3 + (postIndex % 3), engagementUsers.length)).map((u, userIndex) => ({
-    id: `72000000-0000-4000-8000-${String(postIndex + 1).padStart(2, '0')}${String(userIndex + 1).padStart(10, '0')}`,
-    post_id: post.id,
-    usuario_id: u.schemaId,
-    red_social: shareNetwork[(postIndex + userIndex) % shareNetwork.length],
-    created_at: post.created_at,
-  }))
-);
+export const reacciones = [];
 
-export const reacciones = publicaciones.flatMap((post, postIndex) =>
-  engagementUsers.slice(0, Math.min(4 + (postIndex % 2), engagementUsers.length)).map((u, userIndex) => ({
-    id: `73000000-0000-4000-8000-${String(postIndex + 1).padStart(2, '0')}${String(userIndex + 1).padStart(10, '0')}`,
-    post_id: post.id,
-    usuario_id: u.schemaId,
-    created_at: post.created_at,
-    tipo: userIndex % 2 === 0 ? 'like' : 'amen',
-  }))
-);
-
-export const comentarios = publicaciones.slice(0, 4).map((post, index) => ({
-  id: `74000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
-  post_id: post.id,
-  usuario_id: engagementUsers[index]?.schemaId,
-  contenido: [
-    'Listo para compartir con el grupo de jóvenes.',
-    'Este material queda perfecto para la campaña del fin de semana.',
-    'Lo llevamos al equipo del distrito esta noche.',
-    'Excelente enfoque para redes y estados.',
-  ][index],
-  created_at: post.created_at,
-}));
+export const comentarios = [];
 
 export const actividad_xp = users.map((u, index) => ({
   id: `75000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
@@ -352,8 +293,9 @@ export const seguidores = [
 
 export const codigos_roles = [
   { id: 1, codigo: 'MISION-ADMIN-2026', rol_asignado: 'admin', descripcion: 'Acceso equipo nacional', activo: true },
-  { id: 2, codigo: 'ADMIN2026MISION', rol_asignado: 'pastor', descripcion: 'Llave editorial para Pastor/Directivo publicador', activo: true },
-  { id: 3, codigo: 'MISION-MULT-2026', rol_asignado: 'multiplicador', descripcion: 'Registro de multiplicadores digitales', activo: true },
+  { id: 2, codigo: 'IPUC2026MISION', rol_asignado: 'pastor', descripcion: 'Llave pastoral para Pastor/Directivo', activo: true },
+  { id: 3, codigo: 'ADMIN2026MISION', rol_asignado: 'pastor', descripcion: 'Llave editorial para Pastor/Directivo publicador', activo: true },
+  { id: 4, codigo: 'MISION-MULT-2026', rol_asignado: 'multiplicador', descripcion: 'Registro de multiplicadores digitales', activo: true },
 ];
 
 export const llaves = [
@@ -366,8 +308,8 @@ export const llaves = [
 export const globalMetrics = {
   totalEmbajadores:      4287,
   embajadoresActivos:    3142,
-  contenidosPublicados:  284,
-  contenidosCompartidos: 124509,
+  contenidosPublicados:  0,
+  contenidosCompartidos: 0,
   regionesConectadas:    6,
   distritosImpactados:   48,
   xpGenerado:            1842300,

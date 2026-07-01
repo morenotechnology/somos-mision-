@@ -12,7 +12,7 @@ const typeMap = { Diarias: 'daily', Semanales: 'weekly', Especiales: 'special' }
 
 export default function Missions() {
   const [tab, setTab] = useState('Diarias');
-  const { currentUser, completedMissions, loginFromApi } = useAppStore();
+  const { currentUser, loginFromApi } = useAppStore();
   const [missions, setMissions] = useState([]);
   const [badges, setBadges] = useState([]);
 
@@ -31,7 +31,8 @@ export default function Missions() {
   const earnedBadges = currentUser?.badges || [];
   const userBadges = badges.filter((badge) => earnedBadges.includes(badge.id));
   const filtered = missions.filter((mission) => mission.type === typeMap[tab]);
-  const totalDoneToday = completedMissions.length + missions.filter((mission) => mission.status === 'completed').length;
+  const completedMissionIds = new Set(missions.filter((mission) => mission.status === 'completed').map((mission) => mission.id));
+  const totalDoneToday = completedMissionIds.size;
   const totalXPEarned = currentUser?.xp || 0;
 
   return (

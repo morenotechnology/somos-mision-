@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Copy, ExternalLink, Heart, MessageCircle, Send, Star, Zap } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CheckCircle2, Copy, ExternalLink, Heart, MessageCircle, Send, Smartphone, Star, X, Zap } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import toast from 'react-hot-toast';
 
@@ -80,15 +80,28 @@ function InstagramIcon(props) {
   );
 }
 
+function isMobileShareDevice() {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+  return (
+    window.matchMedia?.('(pointer: coarse)').matches ||
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  );
+}
+
 export default function ContentCard({ item, delay = 0 }) {
   const { shareContent, sharedContent } = useAppStore();
   const [imgErr, setImgErr] = useState(false);
+  const [mobileGuide, setMobileGuide] = useState(null);
+  const [guideLoading, setGuideLoading] = useState(false);
   const alreadyShared = sharedContent.includes(String(item.id));
   const accent = formatTone[item.format] || '#1A237E';
   const networkNames = { whatsapp: 'WhatsApp', facebook: 'Facebook', instagram: 'Instagram' };
   const fallbackUrl = `${window.location.origin}/dashboard?contenido=${encodeURIComponent(item.id)}`;
+  const sourceLooksFacebook = /facebook\.com|fb\.com|fb\.watch/i.test(item.sourceUrl || '');
+  const hasInstagramLink = Boolean(item.instagramUrl);
+  const hasFacebookLink = Boolean(item.facebookUrl || sourceLooksFacebook);
   const originalLinks = [
-    item.facebookUrl ? { network: 'facebook', label: 'Facebook', url: item.facebookUrl } : null,
+    hasFacebookLink ? { network: 'facebook', label: 'Facebook', url: item.facebookUrl || item.sourceUrl } : null,
     item.instagramUrl ? { network: 'instagram', label: 'Instagram', url: item.instagramUrl } : null,
   ].filter(Boolean);
 
@@ -99,8 +112,8 @@ export default function ContentCard({ item, delay = 0 }) {
   };
 
   const getNetworkUrl = (network) => {
-    if (network === 'facebook') return item.facebookUrl || item.sourceUrl || item.instagramUrl || fallbackUrl;
-    if (network === 'instagram') return item.instagramUrl || item.sourceUrl || item.facebookUrl || fallbackUrl;
+    if (network === 'facebook') return item.facebookUrl || (sourceLooksFacebook ? item.sourceUrl : '') || fallbackUrl;
+    if (network === 'instagram') return item.instagramUrl || '';
     return item.facebookUrl || item.instagramUrl || item.sourceUrl || fallbackUrl;
   };
 
@@ -119,8 +132,12 @@ export default function ContentCard({ item, delay = 0 }) {
     const message = getShareMessage();
     const shareText = message.includes(shareUrl) ? message : `${message}\n${shareUrl}`;
     if (network === 'instagram') {
+      if (!shareUrl) {
+        toast.error('Esta publicación no tiene enlace de Instagram asignado');
+        return '';
+      }
       await navigator.clipboard?.writeText(shareText).catch(() => {});
-      window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer');
+      window.open(shareUrl, '_blank', 'noopener,noreferrer');
       return shareUrl;
     }
 
@@ -132,7 +149,29 @@ export default function ContentCard({ item, delay = 0 }) {
   };
 
   const handleShare = async (network) => {
+    if (network === 'instagram' && !hasInstagramLink) return;
+
+    if (isMobileShareDevice() && network === 'facebook') {
+      const shareUrl = getNetworkUrl(network);
+      window.open(shareUrl, '_blank', 'noopener,noreferrer');
+      await registerShare(network, shareUrl);
+      return;
+    }
+
+    if (isMobileShareDevice() && network === 'instagram') {
+      setMobileGuide({
+        network,
+        label: networkNames[network],
+        shareUrl: getNetworkUrl(network),
+      });
+      return;
+    }
+
     const shareUrl = await openNetworkShare(network);
+    await registerShare(network, shareUrl);
+  };
+
+  const registerShare = async (network, shareUrl) => {
     try {
       const shareSignal = await waitForShareSignal();
       const payload = await shareContent(item.id, item.xpReward, network, {
@@ -145,6 +184,18 @@ export default function ContentCard({ item, delay = 0 }) {
       toast.success(xp > 0 ? `Compartido ${statusText}. +${xp} XP` : `Compartido ${statusText} en ${networkNames[network]}`);
     } catch (error) {
       toast.error(error.message || 'No se pudo registrar el compartido');
+    }
+  };
+
+  const confirmMobileShareGuide = async () => {
+    if (!mobileGuide) return;
+    setGuideLoading(true);
+    window.open(mobileGuide.shareUrl, '_blank', 'noopener,noreferrer');
+    try {
+      await registerShare(mobileGuide.network, mobileGuide.shareUrl);
+      setMobileGuide(null);
+    } finally {
+      setGuideLoading(false);
     }
   };
 
@@ -178,6 +229,13 @@ export default function ContentCard({ item, delay = 0 }) {
           <div className="content-featured-chip">
             <Star size={10} fill="currentColor" />
             Destacado
+          </div>
+        )}
+
+        {alreadyShared && (
+          <div className="content-shared-ribbon">
+            <CheckCircle2 size={12} />
+            Compartida
           </div>
         )}
 
@@ -225,16 +283,70 @@ export default function ContentCard({ item, delay = 0 }) {
             <WhatsAppIcon />
             WhatsApp
           </button>
-          <button type="button" onClick={() => handleShare('facebook')} className={`content-action-social is-facebook ${alreadyShared ? 'is-shared' : ''}`}>
-            <FacebookIcon />
-            Facebook
-          </button>
-          <button type="button" onClick={() => handleShare('instagram')} className={`content-action-social is-instagram ${alreadyShared ? 'is-shared' : ''}`}>
-            <InstagramIcon />
-            Instagram
-          </button>
+          {hasFacebookLink && (
+            <button type="button" onClick={() => handleShare('facebook')} className={`content-action-social is-facebook ${alreadyShared ? 'is-shared' : ''}`}>
+              <FacebookIcon />
+              Facebook
+            </button>
+          )}
+          {hasInstagramLink && (
+            <button type="button" onClick={() => handleShare('instagram')} className={`content-action-social is-instagram ${alreadyShared ? 'is-shared' : ''}`}>
+              <InstagramIcon />
+              Instagram
+            </button>
+          )}
         </div>
       </div>
+
+      <AnimatePresence>
+        {mobileGuide && (
+          <>
+            <motion.div
+              className="content-share-guide-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !guideLoading && setMobileGuide(null)}
+            />
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              className="content-share-guide-modal"
+              initial={{ opacity: 0, y: 24, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.96 }}
+              transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <button
+                type="button"
+                className="content-share-guide-close"
+                onClick={() => !guideLoading && setMobileGuide(null)}
+                aria-label="Cerrar pasos para compartir"
+              >
+                <X size={18} />
+              </button>
+              <div className="content-share-guide-icon">
+                {mobileGuide.network === 'facebook' ? <FacebookIcon /> : <InstagramIcon />}
+              </div>
+              <p>Compartir en {mobileGuide.label}</p>
+              <h3>Abre la publicación original y compártela manualmente</h3>
+              <ol>
+                <li><Smartphone size={15} />Toca “Abrir publicación”.</li>
+                <li><Send size={15} />En la red social, pulsa “Compartir”.</li>
+                <li><CheckCircle2 size={15} />Publícala en tu perfil o historias.</li>
+                <li><Zap size={15} />Regresa aquí para registrar tu avance.</li>
+              </ol>
+              <div className="content-share-guide-actions">
+                <button type="button" onClick={() => setMobileGuide(null)} disabled={guideLoading}>Cancelar</button>
+                <button type="button" onClick={confirmMobileShareGuide} disabled={guideLoading}>
+                  {guideLoading ? 'Registrando...' : 'Abrir publicación'}
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
     </motion.div>
   );
 }

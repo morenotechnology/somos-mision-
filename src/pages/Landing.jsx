@@ -24,7 +24,7 @@ import { api } from '../api';
 import { formatNumber } from '../utils/helpers';
 import BrandLogo from '../components/common/BrandLogo';
 import { LucideIcon } from '../components/common/LucideIcon';
-import regionAmazonica from '../assets/regiones/optimized/AMAZONICA_1.png';
+import regionAmazonica from '../assets/regiones/optimized/AMAZONICA_2.png';
 import regionAndina from '../assets/regiones/optimized/ANDINA_1.png';
 import regionCaribe from '../assets/regiones/optimized/CARIBE_1.png';
 import regionOrinoquia from '../assets/regiones/optimized/ORINOQUIA_1.png';
@@ -458,9 +458,12 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
           </div>
         </motion.div>
 
-        <motion.p {...fadeUp(0.32)} className="ln-hero-sub">
-          ¡Bienvenido a la Red de los 5.000! En Colombia vivimos las misiones: una nación que ama a Dios, sirve con pasión y lleva la misión en el corazón. Esta red conecta iglesias, distritos, coordinaciones, misioneros nacionales y creyentes para compartir historias, proyectos, noticias y testimonios que anuncian a Jesucristo en cada región. No es solo una campaña: es un compromiso espiritual.
-        </motion.p>
+        <motion.div {...fadeUp(0.32)} className="ln-hero-sub">
+          <strong>¡Bienvenido a la Red de los 5.000 Amigos!</strong>
+          <span>En Colombia, vivimos la misión como un estilo de vida: somos una nación que ama a Dios, sirve con pasión y lleva su llamado en el corazón.</span>
+          <span>Esta red conecta iglesias, distritos, coordinaciones, misioneros nacionales y creyentes, para compartir testimonios, historias y noticias que anuncian a Jesucristo. Gracias al trabajo de cada equipo regional, la palabra de Dios llega hasta el último rincón del País.</span>
+          <span>No es solo una campaña: es un compromiso espiritual, y tú puedes sumarte y compartir esta misión con otros.</span>
+        </motion.div>
 
         {/* CTAs */}
         <motion.div {...fadeUp(0.42)} className="ln-hero-actions">
@@ -775,7 +778,7 @@ function RankingSection({ topUsers, onLogin }) {
           {/* Left: copy */}
           <div className="ln-ranking-copy">
             <motion.div {...fadeUp(0)}>
-              <p className="ln-eyebrow"><Award size={13} strokeWidth={2.5} /> Hall de Honor</p>
+              <p className="ln-eyebrow"><Award size={13} strokeWidth={2.5} /> Muro de Honor</p>
               <div className="ln-ranking-live"><span /> En tiempo real</div>
               <h2>Top Multiplicadores</h2>
               <p className="ln-band-desc is-left">El ranking convierte la participación en reconocimiento visible para toda la red nacional y se actualiza automáticamente.</p>

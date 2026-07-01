@@ -156,10 +156,6 @@ begin
 
   if not v_already_awarded then
     v_xp := v_base_xp + v_featured_bonus + v_speed_bonus + v_verified_bonus;
-
-    if not v_profile_complete then
-      v_xp := greatest(least(v_xp, 100 - v_profile_xp), 0);
-    end if;
   end if;
 
   insert into public.shares (
