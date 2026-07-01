@@ -1,89 +1,17 @@
--- Patch de puntos, racha y coordinaciones oficiales.
--- Ejecutar en Supabase SQL Editor sobre una base existente.
+-- Patch: completar perfil y compuerta de XP después de 100 puntos.
+-- Ejecutar en Supabase SQL Editor después del schema base/production_fix.
 
-alter table public.shares add column if not exists share_url text;
-alter table public.shares add column if not exists verification_status text not null default 'pending';
-alter table public.shares add column if not exists verification_method text not null default 'client_open_return';
-alter table public.shares add column if not exists opened_at timestamptz;
-alter table public.shares add column if not exists verified_at timestamptz;
-alter table public.shares add column if not exists share_latency_ms integer;
-alter table public.shares add column if not exists xp_awarded integer not null default 0;
-alter table public.profiles add column if not exists last_streak_date date;
 alter table public.profiles add column if not exists tiene_cargo boolean;
 alter table public.profiles add column if not exists usuario_redes text;
 alter table public.profiles add column if not exists perfil_completo boolean not null default false;
+alter table public.profiles add column if not exists last_streak_date date;
 
-do $$
-begin
-  alter table public.shares drop constraint if exists shares_publication_id_user_id_key;
-
-  if not exists (
-    select 1
-    from pg_constraint
-    where conname = 'shares_publication_id_user_id_social_network_key'
-      and conrelid = 'public.shares'::regclass
-  ) then
-    alter table public.shares
-      add constraint shares_publication_id_user_id_social_network_key
-      unique (publication_id, user_id, social_network);
-  end if;
-
-  if not exists (
-    select 1
-    from pg_constraint
-    where conname = 'shares_verification_status_check'
-      and conrelid = 'public.shares'::regclass
-  ) then
-    alter table public.shares
-      add constraint shares_verification_status_check
-      check (verification_status in ('pending', 'opened', 'verified'));
-  end if;
-end $$;
-
-insert into public.coordinations (id, name, icon, color, members_count, active) values
-  ('c1', 'Evangelismo', 'Megaphone', '#1A237E', 842, true),
-  ('c2', 'Hospitalaria', 'HeartPulse', '#5C1800', 315, true),
-  ('c3', 'Evangelismo Carcelario', 'Scale', '#283593', 228, true),
-  ('c4', 'Asuntos Étnicos', 'Leaf', '#2E7D32', 520, true),
-  ('c5', 'Población Vulnerable y Especiales', 'Heart', '#6A1B9A', 267, true),
-  ('c6', 'Evangelismo en Medios de Comunicación', 'Radio', '#E65100', 531, true),
-  ('c7', 'Estadísticas', 'BarChart3', '#00838F', 184, true),
-  ('c8', 'Capacitación Misionera', 'BookOpenCheck', '#AD1457', 412, true),
-  ('c9', 'Misión Juvenil', 'Flame', '#0B5D91', 760, true),
-  ('c10', 'Instituciones Públicas', 'Landmark', '#8B5CF6', 236, true),
-  ('c11', 'Restauración Espiritual', 'RefreshCw', '#16A34A', 305, true),
-  ('c12', 'Población Sorda, Ciega y Sordociega', 'HandHeart', '#C2410C', 148, true)
-on conflict (id) do update set
-  name = excluded.name,
-  icon = excluded.icon,
-  color = excluded.color,
-  members_count = excluded.members_count,
-  active = excluded.active;
-
-create or replace function public.apply_xp(p_profile_id uuid, p_points integer, p_action text, p_reference_type text default null, p_reference_id text default null)
-returns void
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v_today date := (now() at time zone 'America/Bogota')::date;
-begin
-  update public.profiles
-  set
-    xp = xp + greatest(p_points, 0),
-    streak = case
-      when last_streak_date = v_today then streak
-      when last_streak_date = v_today - 1 then streak + 1
-      else 1
-    end,
-    last_streak_date = v_today
-  where id = p_profile_id;
-
-  insert into public.xp_activities (profile_id, accion, puntos_ganados, reference_type, reference_id)
-  values (p_profile_id, p_action, greatest(p_points, 0), p_reference_type, p_reference_id);
-end;
-$$;
+update public.profiles
+set perfil_completo = true
+where perfil_completo = false
+  and usuario_redes is not null
+  and trim(usuario_redes) <> ''
+  and (tiene_cargo = false or (tiene_cargo = true and coalesce(trim(cargo), '') <> ''));
 
 drop function if exists public.share_publication(bigint, text);
 drop function if exists public.share_publication(bigint, text, text, text);
@@ -215,6 +143,8 @@ begin
         else existing_share.verified_at
       end
     where existing_share.id = v_exists;
+
+    v_xp := 0;
   end if;
 
   return query
@@ -228,4 +158,61 @@ begin
 end;
 $$;
 
+create or replace function public.complete_mission_action(p_mission_id uuid)
+returns table(completion_id uuid, xp_ganado integer, total_completions integer, profile_xp integer)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_exists uuid;
+  v_xp integer := 0;
+  v_profile_xp integer := 0;
+  v_profile_complete boolean := false;
+begin
+  if v_user is null then
+    raise exception 'No authenticated user';
+  end if;
+
+  select coalesce(xp, 0), coalesce(perfil_completo, false)
+  into v_profile_xp, v_profile_complete
+  from public.profiles
+  where id = v_user;
+
+  select id into v_exists
+  from public.mission_completions
+  where mission_id = p_mission_id and profile_id = v_user;
+
+  if v_exists is null then
+    insert into public.mission_completions (mission_id, profile_id)
+    values (p_mission_id, v_user)
+    returning id into v_exists;
+
+    select coalesce(xp_reward, 0) into v_xp
+    from public.missions
+    where id = p_mission_id;
+
+    if not v_profile_complete then
+      v_xp := greatest(least(v_xp, 100 - v_profile_xp), 0);
+    end if;
+
+    if v_xp > 0 then
+      perform public.apply_xp(v_user, v_xp, 'mision_completada', 'mission', p_mission_id::text);
+      perform public.refresh_profile_badges(v_user);
+    end if;
+  else
+    v_xp := 0;
+  end if;
+
+  return query
+  select
+    v_exists,
+    coalesce(v_xp, 0),
+    (select count(*)::integer from public.mission_completions where profile_id = v_user),
+    (select xp from public.profiles where id = v_user);
+end;
+$$;
+
 grant execute on function public.share_publication(bigint, text, text, text, integer) to authenticated;
+grant execute on function public.complete_mission_action(uuid) to authenticated;

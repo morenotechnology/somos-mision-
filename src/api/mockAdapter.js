@@ -18,6 +18,7 @@ import {
   users,
   weeklyActivity,
 } from '../data/mockData';
+import { ApiError } from './httpClient';
 
 const delay = Number(import.meta.env.VITE_MOCK_LATENCY_MS || 120);
 
@@ -69,6 +70,23 @@ function resolveRegisterRole(payload = {}) {
 
 function resolveCanPublish(payload = {}) {
   return payload.role === 'admin' || payload.canPublish === true || payload.accessKey === 'ADMIN2026MISION';
+}
+
+function normalizeSocialUsername(value = '') {
+  const cleaned = String(value || '').trim().replace(/^@+/, '');
+  return cleaned ? `@${cleaned}` : '';
+}
+
+function isProfileComplete(user = {}) {
+  const hasChurchRole =
+    typeof user.hasChurchRole === 'boolean'
+      ? user.hasChurchRole
+      : user.position
+        ? true
+        : null;
+  const hasPosition = hasChurchRole === false || Boolean(String(user.position || '').trim());
+  const hasSocial = Boolean(String(user.socialUsername || '').trim());
+  return Boolean(user.profileComplete || (hasPosition && hasSocial));
 }
 
 function updateMockStreak(user) {
@@ -132,6 +150,9 @@ export function createMockApi() {
           streak: 0,
           shared: 0,
           missionsCompleted: 0,
+          hasChurchRole: null,
+          socialUsername: '',
+          profileComplete: false,
           badges: ['b1'],
           avatar: 'NE',
           avatarColor: '#1A237E',
@@ -194,7 +215,10 @@ export function createMockApi() {
           && String(item.usuario_id || item.user_id || '') === String(user?.schemaId || user?.id || '')
           && item.red_social === network
         ));
-        const xp = existingShare ? 0 : calculateMockShareXp(content, payload);
+        const rawXp = existingShare ? 0 : calculateMockShareXp(content, payload);
+        const profileComplete = isProfileComplete(user);
+        const currentXp = Number(user?.xp || 0);
+        const xp = profileComplete ? rawXp : Math.max(Math.min(rawXp, 100 - currentXp), 0);
         if (content && !existingShare) content.shares += 1;
         if (user && xp > 0) {
           user.xp = Number(user.xp || 0) + xp;
@@ -243,6 +267,33 @@ export function createMockApi() {
       update: (id, payload) => {
         const index = state.perfiles.findIndex((profile) => profile.id === id);
         if (index >= 0) state.perfiles[index] = { ...state.perfiles[index], ...payload };
+        const userIndex = state.users.findIndex((user) => user.schemaId === id || user.id === id);
+        if (userIndex >= 0) {
+          const hasCompletionPayload =
+            Object.prototype.hasOwnProperty.call(payload, 'hasChurchRole') ||
+            Object.prototype.hasOwnProperty.call(payload, 'socialUsername');
+          const nextUser = {
+            ...state.users[userIndex],
+            ...(payload.name ? { name: payload.name } : {}),
+            ...(payload.phone ? { phone: payload.phone } : {}),
+            ...(payload.congregation ? { congregation: payload.congregation } : {}),
+            ...(payload.region ? { region: payload.region } : {}),
+            ...(payload.district ? { district: payload.district } : {}),
+            ...(hasCompletionPayload
+              ? {
+                  hasChurchRole: payload.hasChurchRole,
+                  position: payload.hasChurchRole === false ? '' : String(payload.position || '').trim(),
+                  socialUsername: normalizeSocialUsername(payload.socialUsername),
+                }
+              : {}),
+          };
+          nextUser.profileComplete = isProfileComplete(nextUser);
+          state.users[userIndex] = nextUser;
+          if (state.currentUser?.id === nextUser.id || state.currentUser?.schemaId === nextUser.schemaId) {
+            state.currentUser = nextUser;
+          }
+          return resolve(nextUser);
+        }
         return resolve(state.perfiles[index]);
       },
     },

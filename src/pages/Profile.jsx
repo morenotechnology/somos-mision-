@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Award, Building, CalendarDays, Edit3, Flame, Lock, MapPin, ShieldCheck, Share2, Sparkles, Target, Zap } from 'lucide-react';
+import { AtSign, Award, Briefcase, Building, CalendarDays, CheckCircle2, Edit3, Flame, Lock, MapPin, Save, ShieldCheck, Share2, Sparkles, Target, UserCheck, Zap } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAppStore } from '../store/useAppStore';
 import { api } from '../api';
@@ -9,10 +10,21 @@ import { LucideIcon } from '../components/common/LucideIcon';
 
 const roleLabel = { admin: 'Administrador', pastor: 'Pastor/Directivo', multiplicador: 'Multiplicador' };
 
+function normalizeSocialUsername(value = '') {
+  const cleaned = String(value || '').trim().replace(/^@+/, '');
+  return cleaned ? `@${cleaned}` : '';
+}
+
 export default function Profile() {
-  const { currentUser, loginFromApi } = useAppStore();
+  const { currentUser, loginFromApi, setCurrentUser } = useAppStore();
   const [badges, setBadges] = useState([]);
   const [weeklyActivity, setWeeklyActivity] = useState([]);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    hasChurchRole: '',
+    position: '',
+    socialUsername: '',
+  });
 
   useEffect(() => {
     let active = true;
@@ -26,9 +38,26 @@ export default function Profile() {
     return () => { active = false; };
   }, [loginFromApi]);
 
+  useEffect(() => {
+    if (!currentUser) return;
+    setProfileForm({
+      hasChurchRole: currentUser.hasChurchRole === true ? 'yes' : currentUser.hasChurchRole === false ? 'no' : '',
+      position: currentUser.position || '',
+      socialUsername: currentUser.socialUsername || '',
+    });
+  }, [currentUser?.id, currentUser?.hasChurchRole, currentUser?.position, currentUser?.socialUsername]);
+
   if (!currentUser) return null;
 
   const user = currentUser;
+  const profileComplete = Boolean(user.profileComplete);
+  const xpGateLocked = !profileComplete && Number(user.xp || 0) >= 100;
+  const profileStepsDone = [
+    Boolean(profileForm.hasChurchRole),
+    profileForm.hasChurchRole === 'no' || Boolean(profileForm.position.trim()),
+    Boolean(profileForm.socialUsername.trim()),
+  ].filter(Boolean).length;
+  const profileCompletionPercent = profileComplete ? 100 : Math.round((profileStepsDone / 3) * 100);
   const progress = xpProgress(user.xp, user.level);
   const nextXP = xpToNextLevel(user.level);
   const earnedBadges = user.badges || [];
@@ -43,6 +72,42 @@ export default function Profile() {
     { action: 'Completaste una misión', xp: 80, time: 'Esta semana', iconName: 'CheckCircle', color: '#22c55e' },
     { action: 'Ganaste una insignia', xp: 100, time: 'Último progreso', iconName: 'Medal', color: '#D4AF37' },
   ];
+
+  const handleProfileCompletion = async (event) => {
+    event.preventDefault();
+    if (!profileForm.hasChurchRole) {
+      toast.error('Cuéntanos si tienes algún cargo en la iglesia.');
+      return;
+    }
+    if (profileForm.hasChurchRole === 'yes' && !profileForm.position.trim()) {
+      toast.error('Escribe cuál es tu cargo o función.');
+      return;
+    }
+    if (!profileForm.socialUsername.trim()) {
+      toast.error('Agrega tu usuario de redes sociales.');
+      return;
+    }
+
+    setProfileSaving(true);
+    try {
+      const updatedUser = await api.perfiles.update(user.id, {
+        name: user.name,
+        phone: user.phone,
+        congregation: user.congregation,
+        region: user.region,
+        district: user.district,
+        hasChurchRole: profileForm.hasChurchRole === 'yes',
+        position: profileForm.hasChurchRole === 'yes' ? profileForm.position.trim() : '',
+        socialUsername: normalizeSocialUsername(profileForm.socialUsername),
+      });
+      setCurrentUser(updatedUser);
+      toast.success('Perfil completado. Ya puedes seguir sumando XP.');
+    } catch (error) {
+      toast.error(error.message || 'No se pudo completar el perfil.');
+    } finally {
+      setProfileSaving(false);
+    }
+  };
 
   return (
     <div className="profile-pro-page">
@@ -102,6 +167,101 @@ export default function Profile() {
             </div>
           </div>
         </div>
+      </motion.section>
+
+      {xpGateLocked && (
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08 }}
+          className="profile-xp-gate"
+        >
+          <div className="profile-xp-gate-icon"><Lock size={18} /></div>
+          <div>
+            <p>XP en pausa</p>
+            <h3>Completa tu perfil para seguir sumando después de los 100 puntos.</h3>
+            <span>Esto nos ayuda a validar mejor tu iglesia, tu rol y tu actividad en redes.</span>
+          </div>
+        </motion.section>
+      )}
+
+      <motion.section
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.14 }}
+        className={`profile-completion-card ${profileComplete ? 'is-complete' : ''}`}
+      >
+        <div className="profile-completion-head">
+          <div className="profile-completion-icon">
+            {profileComplete ? <CheckCircle2 size={20} /> : <UserCheck size={20} />}
+          </div>
+          <div>
+            <p>{profileComplete ? 'Perfil verificado' : 'Completar perfil'}</p>
+            <h3>{profileComplete ? 'Tu perfil está listo para seguir creciendo' : 'Desbloquea el avance completo de XP'}</h3>
+            <span>Después de los 100 puntos, estos datos son necesarios para seguir acumulando XP.</span>
+          </div>
+          <strong>{profileCompletionPercent}%</strong>
+        </div>
+
+        <div className="profile-completion-meter" aria-hidden="true">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${profileCompletionPercent}%` }}
+            transition={{ duration: 0.7, ease: 'easeOut' }}
+          />
+        </div>
+
+        <form className="profile-completion-form" onSubmit={handleProfileCompletion}>
+          <div className="profile-completion-field is-wide">
+            <label><Briefcase size={15} />¿Tienes algún cargo en la iglesia?</label>
+            <div className="profile-choice-row">
+              <button
+                type="button"
+                className={`profile-choice-button ${profileForm.hasChurchRole === 'yes' ? 'is-active' : ''}`}
+                onClick={() => setProfileForm((form) => ({ ...form, hasChurchRole: 'yes' }))}
+              >
+                Sí tengo cargo
+              </button>
+              <button
+                type="button"
+                className={`profile-choice-button ${profileForm.hasChurchRole === 'no' ? 'is-active' : ''}`}
+                onClick={() => setProfileForm((form) => ({ ...form, hasChurchRole: 'no', position: '' }))}
+              >
+                No por ahora
+              </button>
+            </div>
+          </div>
+
+          {profileForm.hasChurchRole === 'yes' && (
+            <div className="profile-completion-field">
+              <label htmlFor="church-position"><Briefcase size={15} />¿Cuál cargo?</label>
+              <input
+                id="church-position"
+                value={profileForm.position}
+                onChange={(event) => setProfileForm((form) => ({ ...form, position: event.target.value }))}
+                placeholder="Ej. líder, maestro, diácono"
+              />
+            </div>
+          )}
+
+          <div className="profile-completion-field">
+            <label htmlFor="social-username"><AtSign size={15} />Usuario en redes sociales</label>
+            <input
+              id="social-username"
+              value={profileForm.socialUsername}
+              onChange={(event) => setProfileForm((form) => ({ ...form, socialUsername: event.target.value }))}
+              placeholder="@tuusuario"
+            />
+          </div>
+
+          <div className="profile-completion-actions">
+            <span>{profileComplete ? 'Datos guardados y activos.' : 'Completa 3 pasos para liberar el avance.'}</span>
+            <button type="submit" disabled={profileSaving || profileComplete}>
+              <Save size={16} />
+              {profileSaving ? 'Guardando...' : profileComplete ? 'Perfil completo' : 'Guardar perfil'}
+            </button>
+          </div>
+        </form>
       </motion.section>
 
       <section className="profile-stat-grid">

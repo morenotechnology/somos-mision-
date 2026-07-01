@@ -199,6 +199,10 @@ export const users = baseUsers.map((u) => ({
   ...u,
   schemaId: profileIds[u.id],
   congregationId: congregationByName[u.congregation]?.id ?? 108,
+  hasChurchRole: u.role === 'pastor' || u.role === 'admin',
+  position: u.role === 'pastor' ? 'Pastor/Directivo' : u.role === 'admin' ? 'Coordinación nacional' : '',
+  socialUsername: `@${u.name.split(' ')[0].toLowerCase()}mision`,
+  profileComplete: true,
 }));
 
 // ─── PERFILES — Supabase DB schema (swap users → perfiles when connecting) ─
@@ -225,6 +229,10 @@ export const perfiles = users.map((u) => ({
   created_at:          `${u.joinedAt}T10:00:00Z`,
   celular:             '+57 300 000 0000',
   whatsapp:            '+57 300 000 0000',
+  cargo:               u.position,
+  tiene_cargo:         u.hasChurchRole,
+  usuario_redes:       u.socialUsername,
+  perfil_completo:     u.profileComplete,
   fecha_cumpleanos:    '1990-05-08',
   deletion_requested_at: null,
   cuenta_activa:       u.active,

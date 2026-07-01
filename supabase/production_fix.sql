@@ -31,6 +31,9 @@ alter table public.shares add column if not exists share_latency_ms integer;
 alter table public.shares add column if not exists xp_awarded integer not null default 0;
 alter table public.profiles add column if not exists last_streak_date date;
 alter table public.profiles add column if not exists can_publish boolean not null default false;
+alter table public.profiles add column if not exists tiene_cargo boolean;
+alter table public.profiles add column if not exists usuario_redes text;
+alter table public.profiles add column if not exists perfil_completo boolean not null default false;
 
 do $$
 begin
@@ -259,6 +262,8 @@ declare
   v_exists uuid;
   v_xp integer := 0;
   v_base_xp integer := 0;
+  v_profile_xp integer := 0;
+  v_profile_complete boolean := false;
   v_featured boolean := false;
   v_featured_bonus integer := 0;
   v_speed_bonus integer := 0;
@@ -272,6 +277,11 @@ begin
   if v_user is null then
     raise exception 'No authenticated user';
   end if;
+
+  select coalesce(xp, 0), coalesce(perfil_completo, false)
+  into v_profile_xp, v_profile_complete
+  from public.profiles
+  where id = v_user;
 
   select coalesce(xp_reward, 50), coalesce(featured, false)
   into v_base_xp, v_featured
@@ -305,6 +315,12 @@ begin
     and social_network = v_network;
 
   if v_exists is null then
+    v_xp := v_base_xp + v_featured_bonus + v_speed_bonus + v_verified_bonus;
+
+    if not v_profile_complete then
+      v_xp := greatest(least(v_xp, 100 - v_profile_xp), 0);
+    end if;
+
     insert into public.shares (
       publication_id,
       user_id,
@@ -327,7 +343,7 @@ begin
       now(),
       case when v_status = 'verified' then now() else null end,
       p_share_latency_ms,
-      v_base_xp + v_featured_bonus + v_speed_bonus + v_verified_bonus
+      v_xp
     )
     returning id into v_exists;
 
@@ -335,9 +351,10 @@ begin
     set shares_count = shares_count + 1
     where id = p_publication_id;
 
-    v_xp := v_base_xp + v_featured_bonus + v_speed_bonus + v_verified_bonus;
-    perform public.apply_xp(v_user, coalesce(v_xp, 0), 'contenido_compartido', 'publication', p_publication_id::text);
-    perform public.refresh_profile_badges(v_user);
+    if v_xp > 0 then
+      perform public.apply_xp(v_user, coalesce(v_xp, 0), 'contenido_compartido', 'publication', p_publication_id::text);
+      perform public.refresh_profile_badges(v_user);
+    end if;
   else
     update public.shares as existing_share
     set

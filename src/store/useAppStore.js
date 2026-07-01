@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { api } from '../api';
+import { api, ApiError } from '../api';
+
+const PROFILE_XP_GATE = 100;
+
+function profileNeedsCompletion(user) {
+  return Boolean(user && !user.profileComplete && Number(user.xp || 0) >= PROFILE_XP_GATE);
+}
 
 export const useAppStore = create(
   persist(
@@ -69,7 +75,12 @@ export const useAppStore = create(
       setMobileSidebar: (value) => set({ mobileSidebarOpen: value }),
 
       shareContent: async (contentId, xpReward = 50, socialNetwork = 'whatsapp', evidence = {}) => {
-        const { sharedContent, showXP } = get();
+        const { currentUser, sharedContent, showXP } = get();
+        if (profileNeedsCompletion(currentUser)) {
+          throw new ApiError('Completa tu perfil para seguir sumando XP después de los 100 puntos.', 403, {
+            code: 'PROFILE_REQUIRED',
+          });
+        }
         const payload = await api.content.share(contentId, { red_social: socialNetwork, ...evidence });
         set({
           currentUser: payload.user,
@@ -82,8 +93,13 @@ export const useAppStore = create(
       },
 
       completeMission: async (missionId, xpReward = 0) => {
-        const { completedMissions, showXP } = get();
+        const { currentUser, completedMissions, showXP } = get();
         if (completedMissions.includes(missionId)) return { alreadyCompleted: true };
+        if (profileNeedsCompletion(currentUser)) {
+          throw new ApiError('Completa tu perfil para seguir sumando XP después de los 100 puntos.', 403, {
+            code: 'PROFILE_REQUIRED',
+          });
+        }
         const payload = await api.missions.complete(missionId);
         set({
           currentUser: payload.user,

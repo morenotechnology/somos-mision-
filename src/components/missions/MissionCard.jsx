@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Zap, CheckCircle, Lock, Clock } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAppStore } from '../../store/useAppStore';
 import { LucideIcon } from '../common/LucideIcon';
 
@@ -22,6 +23,14 @@ export default function MissionCard({ mission, delay = 0 }) {
   const progress = mission.progress != null ? mission.progress : (isDone ? mission.goal : 0);
   const pct = Math.min((progress / mission.goal) * 100, 100);
   const accent = typeAccent[mission.type] || '#1A237E';
+
+  const handleComplete = async () => {
+    try {
+      await completeMission(mission.id, mission.xpReward);
+    } catch (error) {
+      toast.error(error.message || 'No se pudo completar la misión.');
+    }
+  };
 
   return (
     <motion.div
@@ -73,7 +82,7 @@ export default function MissionCard({ mission, delay = 0 }) {
           </div>
           {!isDone && mission.status !== 'locked' && (
             <button
-              onClick={() => completeMission(mission.id, mission.xpReward)}
+              onClick={handleComplete}
             >
               Completar
             </button>

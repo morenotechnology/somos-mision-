@@ -74,6 +74,18 @@ function isProfilePermissionSchemaDrift(error) {
   return error.code === '42703' || error.code === 'PGRST204' || message.includes('can_publish');
 }
 
+function isProfileCompletionSchemaDrift(error) {
+  if (!error) return false;
+  const message = [error.message, error.details, error.hint].filter(Boolean).join(' ').toLowerCase();
+  const profileCompletionColumns = ['tiene_cargo', 'usuario_redes', 'perfil_completo'];
+  return (
+    error.code === '42703' ||
+    error.code === 'PGRST204' ||
+    (message.includes('schema cache') && profileCompletionColumns.some((column) => message.includes(column))) ||
+    (message.includes('could not find') && profileCompletionColumns.some((column) => message.includes(column)))
+  );
+}
+
 function initials(name = '') {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return 'SM';
@@ -131,6 +143,23 @@ function cleanOptional(value) {
   return cleaned || null;
 }
 
+function normalizeSocialUsername(value = '') {
+  const cleaned = String(value || '').trim().replace(/^@+/, '');
+  return cleaned ? `@${cleaned}` : '';
+}
+
+function computeProfileComplete(row = {}) {
+  const hasChurchRole =
+    typeof row.tiene_cargo === 'boolean'
+      ? row.tiene_cargo
+      : row.cargo
+        ? true
+        : null;
+  const hasPosition = hasChurchRole === false || Boolean(String(row.cargo || '').trim());
+  const hasSocial = Boolean(String(row.usuario_redes || '').trim());
+  return Boolean(row.perfil_completo || (hasPosition && hasSocial));
+}
+
 function normalizeSiteUrl(url) {
   const cleaned = String(url || '').trim().replace(/\/+$/, '');
   if (!cleaned) return '';
@@ -184,6 +213,9 @@ function profileRowFromAuthUser(authUser) {
     regions: null,
     districts: null,
     congregations: null,
+    tiene_cargo: null,
+    usuario_redes: '',
+    perfil_completo: false,
   };
 }
 
@@ -203,6 +235,7 @@ async function ensureProfileForUser(client, authUser) {
 
 function normalizeProfile(row, stats = {}) {
   if (!row) return null;
+  const profileComplete = computeProfileComplete(row);
   return {
     id: row.id,
     schemaId: row.id,
@@ -216,6 +249,10 @@ function normalizeProfile(row, stats = {}) {
     congregation: row.congregacion || row.congregations?.nombre || 'Sin congregación',
     congregationId: row.congregacion_id,
     position: row.cargo || '',
+    hasChurchRole: typeof row.tiene_cargo === 'boolean' ? row.tiene_cargo : row.cargo ? true : null,
+    socialUsername: row.usuario_redes || '',
+    profileComplete,
+    xpGateLocked: !profileComplete && Number(row.xp || 0) >= 100,
     phone: row.celular || row.whatsapp || '',
     xp: row.xp || 0,
     level: row.level || Math.min(Math.floor((row.xp || 0) / 500) + 1, 10),
@@ -491,6 +528,21 @@ async function getProfileBundle(client, profileId, authUser = null) {
   }
   if (authUser) {
     row.can_publish = row.can_publish || canPublishFromMetadata(authUser.user_metadata || authUser.raw_user_meta_data || {});
+  }
+
+  const completionResult = await client
+    .from('profiles')
+    .select('tiene_cargo, usuario_redes, perfil_completo')
+    .eq('id', profileId)
+    .maybeSingle();
+  if (!completionResult.error) {
+    row.tiene_cargo = completionResult.data?.tiene_cargo ?? null;
+    row.usuario_redes = completionResult.data?.usuario_redes || '';
+    row.perfil_completo = completionResult.data?.perfil_completo === true;
+  } else if (isProfileCompletionSchemaDrift(completionResult.error)) {
+    row.tiene_cargo = null;
+    row.usuario_redes = '';
+    row.perfil_completo = false;
   }
 
   const stats = await getProfileStats(client, profileId);
@@ -1028,17 +1080,46 @@ export function createSupabaseApi() {
       },
 
       async update(id, payload) {
+        const hasCompletionPayload =
+          Object.prototype.hasOwnProperty.call(payload, 'hasChurchRole') ||
+          Object.prototype.hasOwnProperty.call(payload, 'socialUsername') ||
+          Object.prototype.hasOwnProperty.call(payload, 'usuario_redes') ||
+          Object.prototype.hasOwnProperty.call(payload, 'profileComplete');
+
+        const socialUsername = normalizeSocialUsername(payload.socialUsername || payload.usuario_redes || '');
+        const hasChurchRole = payload.hasChurchRole === true
+          ? true
+          : payload.hasChurchRole === false
+            ? false
+            : null;
+        const position = hasChurchRole === false ? '' : String(payload.position || payload.cargo || '').trim();
+        const profileComplete = hasCompletionPayload
+          ? Boolean((hasChurchRole === false || (hasChurchRole === true && position)) && socialUsername)
+          : undefined;
+
         const update = {
           nombre_completo: payload.name,
           nombre: payload.name?.split(' ')?.[0],
-          cargo: payload.position,
+          cargo: hasCompletionPayload ? position : payload.position,
           celular: payload.phone,
           whatsapp: payload.phone,
           congregacion: payload.congregation,
           region_id: payload.region,
           district_id: payload.district,
         };
-        unwrap(await client.from('profiles').update(update).eq('id', id), 'No se pudo actualizar el perfil');
+
+        if (hasCompletionPayload) {
+          update.tiene_cargo = hasChurchRole;
+          update.usuario_redes = socialUsername;
+          update.perfil_completo = profileComplete;
+        }
+
+        const cleanUpdate = Object.fromEntries(Object.entries(update).filter(([, value]) => value !== undefined));
+        const result = await client.from('profiles').update(cleanUpdate).eq('id', id);
+        if (isProfileCompletionSchemaDrift(result.error) && hasCompletionPayload) {
+          throw new ApiError('Falta ejecutar el parche SQL de completar perfil en Supabase.', 400, result.error);
+        }
+        unwrap(result, 'No se pudo actualizar el perfil');
         const bundle = await getProfileBundle(client, id);
         return bundle.user;
       },
