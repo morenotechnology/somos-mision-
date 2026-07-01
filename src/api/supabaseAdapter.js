@@ -491,7 +491,7 @@ async function getProfileStats(client, profileId) {
       sharedCount: sharedRows.length,
       missionsCompleted: completedRows.length,
       badgeIds: badgeRows.map((row) => row.badge_id),
-      sharedContentIds: sharedRows.map((row) => String(row.publication_id)),
+      sharedContentIds: [...new Set(sharedRows.map((row) => String(row.publication_id)))],
       completedMissionIds: completedRows.map((row) => row.mission_id),
     };
   } catch {

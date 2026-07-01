@@ -232,7 +232,7 @@ export default function Register() {
   const finishRegistration = () => {
     if (!betaModal) return;
     setBetaModal(null);
-    navigate('/dashboard');
+    navigate(betaModal.needsEmailConfirmation ? '/login' : '/dashboard');
   };
 
   const handleSubmit = async () => {
@@ -246,8 +246,10 @@ export default function Register() {
         congregationId: selectedCongregation?.id || null,
         canPublish: form.role === 'pastor' && form.accessKey.trim() === PUBLISHER_ACCESS_KEY,
       });
-      loginFromApi(result);
+      if (!result.needsEmailConfirmation) loginFromApi(result);
       setBetaModal({
+        needsEmailConfirmation: Boolean(result.needsEmailConfirmation),
+        email: form.email.trim(),
         betaPosition: result.betaPosition || 1,
         betaTotal: result.betaTotal || 500,
       });
@@ -468,23 +470,36 @@ export default function Register() {
                 exit={{ opacity: 0, y: 18, scale: 0.96 }}
                 transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
               >
-                <div className="auth-beta-modal">
-                  <div className="auth-beta-pill">Beta cerrada</div>
+                <div className={`auth-beta-modal ${betaModal.needsEmailConfirmation ? 'is-email-confirm' : ''}`}>
+                  <div className="auth-beta-pill">{betaModal.needsEmailConfirmation ? 'Verificación pendiente' : 'Beta cerrada'}</div>
                   <div className="auth-beta-badge">
-                    <CheckCircle size={26} />
+                    {betaModal.needsEmailConfirmation ? <Mail size={26} /> : <CheckCircle size={26} />}
                   </div>
-                  <p className="auth-beta-kicker">Registro confirmado</p>
-                  <h3>Eres el registro número {betaModal.betaPosition} de {betaModal.betaTotal}</h3>
-                  <p>Tu lugar ya quedó reservado en la beta. Tu perfil está listo para entrar y empezar a usar la plataforma.</p>
-                  <div className="auth-beta-progress" aria-hidden="true">
-                    <span style={{ width: `${Math.min((betaModal.betaPosition / betaModal.betaTotal) * 100, 100)}%` }} />
-                  </div>
-                  <div className="auth-beta-meta">
-                    <span><Zap size={14} /> Cupos limitados</span>
-                    <span><CircleAlert size={14} /> Acceso anticipado</span>
-                  </div>
+                  <p className="auth-beta-kicker">{betaModal.needsEmailConfirmation ? 'Confirma tu correo' : 'Registro confirmado'}</p>
+                  {betaModal.needsEmailConfirmation ? (
+                    <>
+                      <h3>Revisa tu correo para activar la cuenta</h3>
+                      <p>Ya reservamos tu lugar en la beta. Para entrar a la plataforma, abre el enlace de confirmación que enviamos a este correo:</p>
+                      <div className="auth-email-callout">
+                        <Mail size={16} />
+                        {betaModal.email}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h3>Eres el registro número {betaModal.betaPosition} de {betaModal.betaTotal}</h3>
+                      <p>Tu lugar ya quedó reservado en la beta. Tu perfil está listo para entrar y empezar a usar la plataforma.</p>
+                      <div className="auth-beta-progress" aria-hidden="true">
+                        <span style={{ width: `${Math.min((betaModal.betaPosition / betaModal.betaTotal) * 100, 100)}%` }} />
+                      </div>
+                      <div className="auth-beta-meta">
+                        <span><Zap size={14} /> Cupos limitados</span>
+                        <span><CircleAlert size={14} /> Acceso anticipado</span>
+                      </div>
+                    </>
+                  )}
                   <button type="button" className="auth-submit-button auth-beta-cta" onClick={finishRegistration}>
-                    Entrar al panel
+                    {betaModal.needsEmailConfirmation ? 'Volver al inicio de sesión' : 'Entrar al panel'}
                     <ArrowRight size={17} />
                   </button>
                 </div>

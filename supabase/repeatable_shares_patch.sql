@@ -1,10 +1,7 @@
--- Patch: completar perfil y compuerta de XP después de 100 puntos.
--- Ejecutar en Supabase SQL Editor después del schema base/production_fix.
+-- Patch: permitir compartir varias veces una publicacion sin sumar XP repetido.
+-- Ejecutar en Supabase SQL Editor. Es seguro correrlo mas de una vez.
 
-alter table public.profiles add column if not exists tiene_cargo boolean;
-alter table public.profiles add column if not exists usuario_redes text;
 alter table public.profiles add column if not exists perfil_completo boolean not null default false;
-alter table public.profiles add column if not exists last_streak_date date;
 alter table public.shares add column if not exists share_url text;
 alter table public.shares add column if not exists verification_status text not null default 'pending';
 alter table public.shares add column if not exists verification_method text not null default 'client_open_return';
@@ -17,17 +14,21 @@ do $$
 begin
   alter table public.shares drop constraint if exists shares_publication_id_user_id_key;
   alter table public.shares drop constraint if exists shares_publication_id_user_id_social_network_key;
+
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'shares_verification_status_check'
+      and conrelid = 'public.shares'::regclass
+  ) then
+    alter table public.shares
+      add constraint shares_verification_status_check
+      check (verification_status in ('pending', 'opened', 'verified'));
+  end if;
 end $$;
 
 create index if not exists shares_publication_user_idx on public.shares(publication_id, user_id);
 create index if not exists shares_user_created_idx on public.shares(user_id, created_at desc);
-
-update public.profiles
-set perfil_completo = true
-where perfil_completo = false
-  and usuario_redes is not null
-  and trim(usuario_redes) <> ''
-  and (tiene_cargo = false or (tiene_cargo = true and coalesce(trim(cargo), '') <> ''));
 
 drop function if exists public.share_publication(bigint, text);
 drop function if exists public.share_publication(bigint, text, text, text);
@@ -159,61 +160,4 @@ begin
 end;
 $$;
 
-create or replace function public.complete_mission_action(p_mission_id uuid)
-returns table(completion_id uuid, xp_ganado integer, total_completions integer, profile_xp integer)
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v_user uuid := auth.uid();
-  v_exists uuid;
-  v_xp integer := 0;
-  v_profile_xp integer := 0;
-  v_profile_complete boolean := false;
-begin
-  if v_user is null then
-    raise exception 'No authenticated user';
-  end if;
-
-  select coalesce(xp, 0), coalesce(perfil_completo, false)
-  into v_profile_xp, v_profile_complete
-  from public.profiles
-  where id = v_user;
-
-  select id into v_exists
-  from public.mission_completions
-  where mission_id = p_mission_id and profile_id = v_user;
-
-  if v_exists is null then
-    insert into public.mission_completions (mission_id, profile_id)
-    values (p_mission_id, v_user)
-    returning id into v_exists;
-
-    select coalesce(xp_reward, 0) into v_xp
-    from public.missions
-    where id = p_mission_id;
-
-    if not v_profile_complete then
-      v_xp := greatest(least(v_xp, 100 - v_profile_xp), 0);
-    end if;
-
-    if v_xp > 0 then
-      perform public.apply_xp(v_user, v_xp, 'mision_completada', 'mission', p_mission_id::text);
-      perform public.refresh_profile_badges(v_user);
-    end if;
-  else
-    v_xp := 0;
-  end if;
-
-  return query
-  select
-    v_exists,
-    coalesce(v_xp, 0),
-    (select count(*)::integer from public.mission_completions where profile_id = v_user),
-    (select xp from public.profiles where id = v_user);
-end;
-$$;
-
 grant execute on function public.share_publication(bigint, text, text, text, integer) to authenticated;
-grant execute on function public.complete_mission_action(uuid) to authenticated;

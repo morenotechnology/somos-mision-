@@ -16,17 +16,7 @@ alter table public.profiles add column if not exists perfil_completo boolean not
 do $$
 begin
   alter table public.shares drop constraint if exists shares_publication_id_user_id_key;
-
-  if not exists (
-    select 1
-    from pg_constraint
-    where conname = 'shares_publication_id_user_id_social_network_key'
-      and conrelid = 'public.shares'::regclass
-  ) then
-    alter table public.shares
-      add constraint shares_publication_id_user_id_social_network_key
-      unique (publication_id, user_id, social_network);
-  end if;
+  alter table public.shares drop constraint if exists shares_publication_id_user_id_social_network_key;
 
   if not exists (
     select 1
@@ -39,6 +29,9 @@ begin
       check (verification_status in ('pending', 'opened', 'verified'));
   end if;
 end $$;
+
+create index if not exists shares_publication_user_idx on public.shares(publication_id, user_id);
+create index if not exists shares_user_created_idx on public.shares(user_id, created_at desc);
 
 insert into public.coordinations (id, name, icon, color, members_count, active) values
   ('c1', 'Evangelismo', 'Megaphone', '#1A237E', 842, true),
@@ -103,7 +96,8 @@ set search_path = public
 as $$
 declare
   v_user uuid := auth.uid();
-  v_exists uuid;
+  v_shared_id uuid;
+  v_already_awarded boolean := false;
   v_xp integer := 0;
   v_base_xp integer := 0;
   v_profile_xp integer := 0;
@@ -152,78 +146,64 @@ begin
     v_verified_bonus := 10;
   end if;
 
-  select id into v_exists
-  from public.shares
-  where publication_id = p_publication_id
-    and user_id = v_user
-    and social_network = v_network;
+  select exists (
+    select 1
+    from public.shares
+    where publication_id = p_publication_id
+      and user_id = v_user
+      and xp_awarded > 0
+  ) into v_already_awarded;
 
-  if v_exists is null then
+  if not v_already_awarded then
     v_xp := v_base_xp + v_featured_bonus + v_speed_bonus + v_verified_bonus;
 
     if not v_profile_complete then
       v_xp := greatest(least(v_xp, 100 - v_profile_xp), 0);
     end if;
+  end if;
 
-    insert into public.shares (
-      publication_id,
-      user_id,
-      social_network,
-      share_url,
-      verification_status,
-      verification_method,
-      opened_at,
-      verified_at,
-      share_latency_ms,
-      xp_awarded
-    )
-    values (
-      p_publication_id,
-      v_user,
-      v_network,
-      p_share_url,
-      v_status,
-      'client_open_return',
-      now(),
-      case when v_status = 'verified' then now() else null end,
-      p_share_latency_ms,
-      v_xp
-    )
-    returning id into v_exists;
+  insert into public.shares (
+    publication_id,
+    user_id,
+    social_network,
+    share_url,
+    verification_status,
+    verification_method,
+    opened_at,
+    verified_at,
+    share_latency_ms,
+    xp_awarded
+  )
+  values (
+    p_publication_id,
+    v_user,
+    v_network,
+    p_share_url,
+    v_status,
+    'client_open_return',
+    now(),
+    case when v_status = 'verified' then now() else null end,
+    p_share_latency_ms,
+    v_xp
+  )
+  returning id into v_shared_id;
 
-    update public.publications
-    set shares_count = shares_count + 1
-    where id = p_publication_id;
+  update public.publications
+  set shares_count = shares_count + 1
+  where id = p_publication_id;
 
-    if v_xp > 0 then
-      perform public.apply_xp(v_user, v_xp, 'contenido_compartido', 'publication', p_publication_id::text);
-      perform public.refresh_profile_badges(v_user);
-    end if;
-  else
-    update public.shares as existing_share
-    set
-      share_url = coalesce(p_share_url, existing_share.share_url),
-      share_latency_ms = coalesce(p_share_latency_ms, existing_share.share_latency_ms),
-      verification_status = case
-        when existing_share.verification_status = 'verified' then 'verified'
-        when v_status = 'verified' then 'verified'
-        else v_status
-      end,
-      opened_at = coalesce(existing_share.opened_at, now()),
-      verified_at = case
-        when existing_share.verification_status = 'verified' or v_status = 'verified' then coalesce(existing_share.verified_at, now())
-        else existing_share.verified_at
-      end
-    where existing_share.id = v_exists;
+  if v_xp > 0 then
+    perform public.apply_xp(v_user, v_xp, 'contenido_compartido', 'publication', p_publication_id::text);
+    perform public.refresh_profile_badges(v_user);
   end if;
 
   return query
   select
-    v_exists,
+    v_shared_id,
     coalesce(v_xp, 0),
     (select shares_count from public.publications where id = p_publication_id),
     (select xp from public.profiles where id = v_user),
-    (select s.verification_status from public.shares s where s.id = v_exists),
+    (select s.verification_status from public.shares s where s.id = v_shared_id),
     (select p.streak from public.profiles p where p.id = v_user);
 end;
 $$;

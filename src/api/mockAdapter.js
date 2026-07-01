@@ -210,16 +210,17 @@ export function createMockApi() {
         const content = state.contentItems.find((item) => item.id === id);
         const user = state.currentUser || getUser(payload);
         const network = payload.red_social || 'whatsapp';
-        const existingShare = state.compartidos.find((item) => (
+        const userShareKey = String(user?.schemaId || user?.id || payload.usuario_id || payload.userId || '');
+        const alreadyAwardedXp = state.compartidos.some((item) => (
           String(item.post_id) === String(id)
-          && String(item.usuario_id || item.user_id || '') === String(user?.schemaId || user?.id || '')
-          && item.red_social === network
+          && String(item.usuario_id || item.user_id || '') === userShareKey
+          && Number(item.xp_awarded || 0) > 0
         ));
-        const rawXp = existingShare ? 0 : calculateMockShareXp(content, payload);
+        const rawXp = alreadyAwardedXp ? 0 : calculateMockShareXp(content, payload);
         const profileComplete = isProfileComplete(user);
         const currentXp = Number(user?.xp || 0);
         const xp = profileComplete ? rawXp : Math.max(Math.min(rawXp, 100 - currentXp), 0);
-        if (content && !existingShare) content.shares += 1;
+        if (content) content.shares += 1;
         if (user && xp > 0) {
           user.xp = Number(user.xp || 0) + xp;
           user.level = Math.min(Math.floor(Number(user.xp || 0) / 500) + 1, 10);
@@ -227,9 +228,9 @@ export function createMockApi() {
           updateMockStreak(user);
         }
         const compartido = {
-          id: existingShare?.id || crypto.randomUUID(),
+          id: crypto.randomUUID(),
           post_id: id,
-          usuario_id: user?.schemaId || user?.id || payload.usuario_id || payload.userId,
+          usuario_id: userShareKey,
           red_social: network,
           share_url: payload.share_url || content?.sourceUrl || '',
           verification_status: payload.verification_status || 'opened',
@@ -240,17 +241,14 @@ export function createMockApi() {
           xp_awarded: xp,
           created_at: new Date().toISOString(),
         };
-        if (existingShare) {
-          Object.assign(existingShare, compartido);
-        } else {
-          state.compartidos.unshift(compartido);
-        }
+        state.compartidos.unshift(compartido);
+        const sharedContentIds = [...new Set(state.compartidos.map((item) => String(item.post_id)))];
         return resolve({
           content,
           compartido,
           user,
           share: { shared_id: compartido.id, xp_ganado: xp, verification_status: compartido.verification_status, streak_dias: user?.streak || 0 },
-          sharedContentIds: state.compartidos.map((item) => String(item.post_id)),
+          sharedContentIds,
           completedMissionIds: [],
         });
       },
