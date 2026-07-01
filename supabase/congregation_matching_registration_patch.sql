@@ -1,65 +1,6 @@
--- Parche seguro para corregir "Database error saving new user" en Supabase Auth.
+-- Activa selección de congregación existente durante el registro.
 -- Ejecutar completo en Supabase Dashboard > SQL Editor.
--- No borra usuarios ni perfiles existentes.
-
-do $$
-begin
-  if not exists (select 1 from pg_type where typname = 'app_role') then
-    create type public.app_role as enum ('admin', 'pastor', 'multiplicador');
-  end if;
-end $$;
-
-alter table public.profiles add column if not exists congregacion_id bigint references public.congregations(id) on delete set null;
-alter table public.profiles add column if not exists congregacion text;
-alter table public.profiles add column if not exists cargo text;
-alter table public.profiles add column if not exists celular text;
-alter table public.profiles add column if not exists whatsapp text;
-alter table public.profiles add column if not exists avatar text;
-alter table public.profiles add column if not exists avatar_color text not null default '#1A237E';
-alter table public.profiles add column if not exists cuenta_activa boolean not null default true;
-alter table public.profiles add column if not exists can_publish boolean not null default false;
-alter table public.profiles add column if not exists tiene_cargo boolean;
-alter table public.profiles add column if not exists usuario_redes text;
-alter table public.profiles add column if not exists perfil_completo boolean not null default false;
-alter table public.profiles add column if not exists last_streak_date date;
-alter table public.profiles add column if not exists email_gate_verified_at timestamptz;
-
-insert into public.regions (id, name, color) values
-  ('r1', 'Andina', '#1A237E'),
-  ('r2', 'Caribe', '#283593'),
-  ('r3', 'Pacífica', '#3949AB'),
-  ('r4', 'Orinoquía', '#5C6BC0'),
-  ('r5', 'Amazonía', '#7986CB')
-on conflict (id) do update set name = excluded.name, color = excluded.color;
-
-insert into public.districts (id, region_id, name)
-select
-  'd' || n::text,
-  case
-    when n between 1 and 7 then 'r1'
-    when n between 8 and 14 then 'r2'
-    when n between 15 and 21 then 'r3'
-    when n between 22 and 28 then 'r4'
-    else 'r5'
-  end,
-  'Distrito ' || n::text
-from generate_series(1, 35) as n
-on conflict (id) do update set region_id = excluded.region_id, name = excluded.name;
-
-insert into public.badges (id, name, icon, description, xp, color)
-values ('b1', 'Primer Paso', 'Sprout', 'Registro inicial en la Red de los 5.000 Amigos', 50, '#22c55e')
-on conflict (id) do nothing;
-
-create or replace function public.initials_from_name(full_name text)
-returns text
-language sql
-immutable
-as $$
-  select upper(
-    left(coalesce(nullif(split_part(trim(coalesce(full_name, 'Usuario')), ' ', 1), ''), 'U'), 1) ||
-    left(coalesce(nullif(split_part(trim(coalesce(full_name, 'Usuario')), ' ', 2), ''), split_part(trim(coalesce(full_name, 'Usuario')), ' ', 1), 'S'), 1)
-  );
-$$;
+-- No borra datos: si llega congregacion_id válido, reutiliza esa iglesia; si no, crea una nueva.
 
 create or replace function public.handle_new_user()
 returns trigger
@@ -189,8 +130,14 @@ exception
         nombre_completo,
         email,
         rol,
+        region_id,
+        district_id,
+        congregacion,
+        celular,
+        whatsapp,
         avatar,
         avatar_color,
+        can_publish,
         cuenta_activa
       )
       values (
@@ -199,8 +146,14 @@ exception
         full_name,
         user_email,
         assigned_role,
+        v_region_id,
+        v_district_id,
+        v_congregation_name,
+        nullif(meta ->> 'celular', ''),
+        nullif(meta ->> 'whatsapp', ''),
         public.initials_from_name(full_name),
         coalesce(nullif(meta ->> 'avatar_color', ''), '#1A237E'),
+        v_can_publish,
         true
       )
       on conflict (id) do nothing;
@@ -217,32 +170,3 @@ create trigger on_auth_user_created
 after insert on auth.users
 for each row
 execute function public.handle_new_user();
-
-create or replace function public.sync_user_email()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  update public.profiles
-  set email = coalesce(new.email, email)
-  where id = new.id;
-  return new;
-end;
-$$;
-
-drop trigger if exists on_auth_user_updated on auth.users;
-create trigger on_auth_user_updated
-after update of email on auth.users
-for each row
-execute function public.sync_user_email();
-
-update public.profiles p
-set can_publish = true
-from auth.users u
-where u.id = p.id
-  and (
-    p.rol = 'admin'
-    or u.raw_user_meta_data ->> 'publisher_access_key' = 'ADMIN2026MISION'
-  );

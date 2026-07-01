@@ -174,6 +174,9 @@ export function createMockApi() {
       },
       register: async (payload) => {
         const role = resolveRegisterRole(payload);
+        const selectedCongregation = payload.congregationId
+          ? state.congregaciones.find((item) => String(item.id) === String(payload.congregationId))
+          : null;
         const user = {
           id: `u${state.users.length + 1}`,
           schemaId: crypto.randomUUID(),
@@ -183,7 +186,8 @@ export function createMockApi() {
           canPublish: resolveCanPublish({ ...payload, role }),
           region: payload.region || 'r3',
           district: payload.district || 'd5',
-          congregation: payload.congregation || 'Misiones Nacionales',
+          congregation: selectedCongregation?.nombre || payload.congregation || 'Misiones Nacionales',
+          congregationId: selectedCongregation?.id || null,
           xp: 0,
           level: 1,
           streak: 0,
@@ -199,7 +203,7 @@ export function createMockApi() {
           active: true,
         };
         state.users.push(user);
-        if (payload.congregation) {
+        if (payload.congregation && !selectedCongregation) {
           state.congregaciones.push({
             id: state.congregaciones.length + 101,
             region_id: payload.region || 'r3',

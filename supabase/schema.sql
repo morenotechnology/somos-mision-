@@ -310,8 +310,12 @@ declare
   assigned_role public.app_role := 'multiplicador';
   v_region_id text := nullif(meta ->> 'region_id', '');
   v_district_id text := nullif(meta ->> 'district_id', '');
+  v_congregation_meta text := nullif(meta ->> 'congregacion_id', '');
   v_congregation_id bigint := null;
   v_congregation_name text := nullif(trim(coalesce(meta ->> 'congregacion', '')), '');
+  v_existing_congregation_name text := null;
+  v_existing_region_id text := null;
+  v_existing_district_id text := null;
   v_can_publish boolean := false;
 begin
   if meta ->> 'rol' = 'pastor'
@@ -337,7 +341,20 @@ begin
     v_district_id := null;
   end if;
 
-  if v_congregation_name is not null then
+  if v_congregation_meta ~ '^[0-9]+$' then
+    select id, nombre, region_id, district_id
+    into v_congregation_id, v_existing_congregation_name, v_existing_region_id, v_existing_district_id
+    from public.congregations
+    where id = v_congregation_meta::bigint;
+
+    if v_congregation_id is not null then
+      v_congregation_name := coalesce(v_existing_congregation_name, v_congregation_name);
+      v_region_id := coalesce(v_existing_region_id, v_region_id);
+      v_district_id := coalesce(v_existing_district_id, v_district_id);
+    end if;
+  end if;
+
+  if v_congregation_id is null and v_congregation_name is not null then
     insert into public.congregations (region_id, district_id, nombre, descripcion, redes_sociales, es_punto_blanco)
     values (v_region_id, v_district_id, v_congregation_name, 'Congregación registrada desde la beta.', '{}'::jsonb, false)
     returning id into v_congregation_id;

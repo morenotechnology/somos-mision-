@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -42,6 +42,40 @@ const DISTRICTS = Array.from({ length: 35 }, (_, index) => ({
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASTOR_ACCESS_KEY = 'IPUC2026MISION';
 const PUBLISHER_ACCESS_KEY = 'ADMIN2026MISION';
+
+function normalizeMatchText(value = '') {
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function scoreCongregationMatch(congregation, query) {
+  const normalizedQuery = normalizeMatchText(query);
+  const normalizedName = normalizeMatchText(congregation?.nombre || '');
+  if (!normalizedQuery || !normalizedName) return 0;
+  if (normalizedName === normalizedQuery) return 120;
+  if (normalizedName.includes(normalizedQuery)) return 100;
+  if (normalizedQuery.includes(normalizedName) && normalizedName.length >= 5) return 92;
+
+  const queryTokens = normalizedQuery.split(' ').filter((token) => token.length >= 3);
+  if (!queryTokens.length) return 0;
+  const matchedTokens = queryTokens.filter((token) => normalizedName.includes(token)).length;
+  const tokenScore = Math.round((matchedTokens / queryTokens.length) * 78);
+  const charOverlap = [...new Set(normalizedQuery.replace(/\s/g, ''))]
+    .filter((char) => normalizedName.includes(char)).length;
+  const charScore = Math.min(charOverlap * 2, 20);
+  return tokenScore + charScore;
+}
+
+function describeCongregation(congregation) {
+  const districtName = congregation?.districts?.name || congregation?.district_name || 'Distrito no asignado';
+  const regionName = congregation?.regions?.name || congregation?.region_name || 'Región no asignada';
+  return `${districtName} · ${regionName}`;
+}
 
 function getPastorAccessLevel(accessKey = '') {
   const key = accessKey.trim();
@@ -105,9 +139,71 @@ export default function Register() {
     region: '',
     district: '',
     congregation: '',
+    congregationId: null,
   });
+  const [congregationMatches, setCongregationMatches] = useState([]);
+  const [congregationSearching, setCongregationSearching] = useState(false);
 
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const selectedCongregation = congregationMatches.find((item) => String(item.id) === String(form.congregationId));
+
+  const setCongregationName = (value) => {
+    setForm((current) => ({
+      ...current,
+      congregation: value,
+      congregationId: current.congregation === value ? current.congregationId : null,
+    }));
+  };
+
+  const selectCongregation = (congregation) => {
+    setForm((current) => ({
+      ...current,
+      congregation: congregation.nombre,
+      congregationId: congregation.id,
+    }));
+    setCongregationMatches([congregation]);
+  };
+
+  const useNewCongregation = () => {
+    setForm((current) => ({ ...current, congregationId: null }));
+    setCongregationMatches([]);
+  };
+
+  useEffect(() => {
+    const query = form.congregation.trim();
+    if (step !== 2 || query.length < 3 || form.congregationId) {
+      if (!form.congregationId) setCongregationMatches([]);
+      setCongregationSearching(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setCongregationSearching(true);
+    const timer = window.setTimeout(async () => {
+      try {
+        const rows = await api.congregaciones.list();
+        if (cancelled) return;
+        const matches = (Array.isArray(rows) ? rows : [])
+          .map((congregation) => ({
+            ...congregation,
+            matchScore: scoreCongregationMatch(congregation, query),
+          }))
+          .filter((congregation) => congregation.matchScore >= 42)
+          .sort((a, b) => b.matchScore - a.matchScore || String(a.nombre).localeCompare(String(b.nombre)))
+          .slice(0, 5);
+        setCongregationMatches(matches);
+      } catch {
+        if (!cancelled) setCongregationMatches([]);
+      } finally {
+        if (!cancelled) setCongregationSearching(false);
+      }
+    }, 260);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [form.congregation, form.congregationId, step]);
 
   const validateStep = (stepToValidate = step) => {
     if (stepToValidate === 0 && (!form.name || !form.email || !form.phone || !form.password)) {
@@ -165,7 +261,7 @@ export default function Register() {
       const result = await api.auth.register({
         ...form,
         congregation: finalCongregation,
-        congregationId: null,
+        congregationId: form.congregationId,
         canPublish: form.role === 'pastor' && getPastorAccessLevel(form.accessKey) === 'publisher',
       });
       if (!result.needsEmailConfirmation) loginFromApi(result);
@@ -290,12 +386,54 @@ export default function Register() {
               {step === 2 && (
                 <>
                   <FieldGroup label="Nombre de tu congregación">
-                    <AuthInput icon={Building2} value={form.congregation} onChange={(event) => set('congregation', event.target.value)} placeholder="Nombre de tu iglesia local" />
+                    <AuthInput icon={Building2} value={form.congregation} onChange={(event) => setCongregationName(event.target.value)} placeholder="Nombre de tu iglesia local" />
                   </FieldGroup>
-                  <div className="auth-congregation-new-note">
-                    <Building2 size={17} />
-                    <span>Registraremos esta congregación como nueva, asociada a la región y distrito seleccionados.</span>
-                  </div>
+                  {selectedCongregation ? (
+                    <div className="auth-congregation-confirmed">
+                      <CheckCircle size={17} />
+                      <div>
+                        <strong>{selectedCongregation.nombre}</strong>
+                        <span>Usaremos esta congregación existente: {describeCongregation(selectedCongregation)}.</span>
+                      </div>
+                      <button type="button" onClick={useNewCongregation}>Cambiar</button>
+                    </div>
+                  ) : congregationMatches.length > 0 ? (
+                    <div className="auth-congregation-matches">
+                      <div className="auth-congregation-matches-head">
+                        <Building2 size={17} />
+                        <div>
+                          <strong>¿Tu iglesia ya está registrada?</strong>
+                          <span>Selecciona una coincidencia para evitar duplicados. Si no es ninguna, puedes crearla como nueva.</span>
+                        </div>
+                      </div>
+                      <div className="auth-congregation-options">
+                        {congregationMatches.map((congregation) => (
+                          <button
+                            key={congregation.id}
+                            type="button"
+                            className="auth-congregation-option"
+                            onClick={() => selectCongregation(congregation)}
+                          >
+                            <span>{describeCongregation(congregation)}</span>
+                            <strong>{congregation.nombre}</strong>
+                            <small>{congregation.direccion || congregation.descripcion || 'Congregación registrada en la red.'}</small>
+                          </button>
+                        ))}
+                        <button type="button" className="auth-create-congregation" onClick={useNewCongregation}>
+                          Crear “{form.congregation.trim()}” como congregación nueva
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="auth-congregation-new-note">
+                      <Building2 size={17} />
+                      <span>
+                        {congregationSearching
+                          ? 'Buscando congregaciones similares para evitar duplicados...'
+                          : 'Si no encontramos una coincidencia, registraremos esta congregación como nueva.'}
+                      </span>
+                    </div>
+                  )}
                   <div className="auth-bonus-card">
                     <span><Zap size={17} fill="currentColor" /></span>
                     <div>
