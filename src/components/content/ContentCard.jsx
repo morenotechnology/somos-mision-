@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Copy, ExternalLink, Heart, MessageCircle, Send, Smartphone, Star, X, Zap } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
@@ -85,6 +86,75 @@ function isMobileShareDevice() {
   return (
     window.matchMedia?.('(pointer: coarse)').matches ||
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  );
+}
+
+function MobileShareGuidePortal({ mobileGuide, guideLoading, onClose, onConfirm }) {
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <AnimatePresence>
+      {mobileGuide && (
+        <>
+          <motion.div
+            className="content-share-guide-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => !guideLoading && onClose()}
+          />
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-share-guide-title"
+            className={`content-share-guide-modal is-${mobileGuide.network}`}
+            initial={{ opacity: 0, y: 28, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.96 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <button
+              type="button"
+              className="content-share-guide-close"
+              onClick={() => !guideLoading && onClose()}
+              aria-label="Cerrar pasos para compartir"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="content-share-guide-head">
+              <div className="content-share-guide-icon">
+                {mobileGuide.network === 'facebook' ? <FacebookIcon /> : <InstagramIcon />}
+              </div>
+              <div>
+                <span className="content-share-guide-kicker">Recordatorio</span>
+                <p>Compartir en {mobileGuide.label}</p>
+              </div>
+            </div>
+
+            <h3 id="mobile-share-guide-title">Abre la publicación original y compártela manualmente</h3>
+            <span className="content-share-guide-copy">
+              En móvil te llevamos a {mobileGuide.label}. Comparte desde la app y vuelve aquí para registrar tu avance.
+            </span>
+
+            <ol>
+              <li><Smartphone size={15} /><span>Toca “Abrir publicación”.</span></li>
+              <li><Send size={15} /><span>En {mobileGuide.label}, pulsa “Compartir”.</span></li>
+              <li><CheckCircle2 size={15} /><span>Publícala en tu perfil, historia o grupo.</span></li>
+              <li><Zap size={15} /><span>Regresa para guardar tu participación.</span></li>
+            </ol>
+
+            <div className="content-share-guide-actions">
+              <button type="button" onClick={onClose} disabled={guideLoading}>Ahora no</button>
+              <button type="button" onClick={onConfirm} disabled={guideLoading}>
+                {guideLoading ? 'Registrando...' : `Abrir ${mobileGuide.label}`}
+              </button>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>,
+    document.body
   );
 }
 
@@ -298,54 +368,12 @@ export default function ContentCard({ item, delay = 0 }) {
         </div>
       </div>
 
-      <AnimatePresence>
-        {mobileGuide && (
-          <>
-            <motion.div
-              className="content-share-guide-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => !guideLoading && setMobileGuide(null)}
-            />
-            <motion.div
-              role="dialog"
-              aria-modal="true"
-              className="content-share-guide-modal"
-              initial={{ opacity: 0, y: 24, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.96 }}
-              transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <button
-                type="button"
-                className="content-share-guide-close"
-                onClick={() => !guideLoading && setMobileGuide(null)}
-                aria-label="Cerrar pasos para compartir"
-              >
-                <X size={18} />
-              </button>
-              <div className="content-share-guide-icon">
-                {mobileGuide.network === 'facebook' ? <FacebookIcon /> : <InstagramIcon />}
-              </div>
-              <p>Compartir en {mobileGuide.label}</p>
-              <h3>Abre la publicación original y compártela manualmente</h3>
-              <ol>
-                <li><Smartphone size={15} />Toca “Abrir publicación”.</li>
-                <li><Send size={15} />En la red social, pulsa “Compartir”.</li>
-                <li><CheckCircle2 size={15} />Publícala en tu perfil o historias.</li>
-                <li><Zap size={15} />Regresa aquí para registrar tu avance.</li>
-              </ol>
-              <div className="content-share-guide-actions">
-                <button type="button" onClick={() => setMobileGuide(null)} disabled={guideLoading}>Cancelar</button>
-                <button type="button" onClick={confirmMobileShareGuide} disabled={guideLoading}>
-                  {guideLoading ? 'Registrando...' : 'Abrir publicación'}
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      <MobileShareGuidePortal
+        mobileGuide={mobileGuide}
+        guideLoading={guideLoading}
+        onClose={() => setMobileGuide(null)}
+        onConfirm={confirmMobileShareGuide}
+      />
 
     </motion.div>
   );

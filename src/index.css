@@ -2680,28 +2680,33 @@ body {
 .content-share-guide-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 80;
-  background: rgba(5, 10, 40, 0.62);
-  backdrop-filter: blur(12px);
+  z-index: 120;
+  background:
+    radial-gradient(circle at 50% 100%, rgba(212,175,55,0.18), transparent 38%),
+    rgba(5, 10, 40, 0.68);
+  backdrop-filter: blur(16px);
 }
 
 .content-share-guide-modal {
   position: fixed;
   left: 50%;
-  bottom: max(18px, env(safe-area-inset-bottom));
-  z-index: 81;
-  width: min(92vw, 430px);
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 121;
+  width: min(92vw, 440px);
+  max-height: calc(100dvh - 28px);
   transform: translateX(-50%);
-  overflow: hidden;
+  overflow: hidden auto;
   border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 32px;
-  padding: 22px;
+  border-radius: 30px;
+  padding: 18px;
   color: #fff;
   background:
-    radial-gradient(circle at 85% 0%, rgba(212,175,55,0.32), transparent 35%),
-    radial-gradient(circle at 0% 100%, rgba(55,95,255,0.26), transparent 38%),
-    linear-gradient(145deg, #080D46, #11165F 58%, #050821);
-  box-shadow: 0 28px 80px rgba(0,0,0,0.36);
+    radial-gradient(circle at 86% 4%, rgba(212,175,55,0.34), transparent 34%),
+    radial-gradient(circle at 4% 96%, rgba(55,95,255,0.24), transparent 36%),
+    linear-gradient(145deg, #080D46 0%, #11165F 58%, #050821 100%);
+  box-shadow: 0 28px 80px rgba(0,0,0,0.42);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .content-share-guide-modal::before {
@@ -2722,21 +2727,29 @@ body {
 
 .content-share-guide-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 14px;
+  right: 14px;
   z-index: 2;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border: 1px solid rgba(255,255,255,0.14);
-  border-radius: 16px;
+  border-radius: 50%;
   color: #fff;
-  background: rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.12);
   cursor: pointer;
 }
 
+.content-share-guide-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-right: 46px;
+}
+
 .content-share-guide-icon {
-  width: 58px;
-  height: 58px;
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2747,12 +2760,27 @@ body {
 }
 
 .content-share-guide-icon svg {
-  width: 25px;
-  height: 25px;
+  width: 24px;
+  height: 24px;
+}
+
+.content-share-guide-kicker {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 5px 10px;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 999px;
+  color: #080D46;
+  background: linear-gradient(135deg, #FFE56E, #D4AF37);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .content-share-guide-modal p {
-  margin-top: 14px;
+  margin-top: 8px;
   color: var(--gold-400);
   font-size: 0.78rem;
   font-weight: 950;
@@ -2761,17 +2789,26 @@ body {
 }
 
 .content-share-guide-modal h3 {
-  max-width: 310px;
-  margin-top: 5px;
-  font-size: clamp(1.25rem, 7vw, 1.75rem);
+  max-width: 350px;
+  margin-top: 16px;
+  font-size: clamp(1.35rem, 6.2vw, 1.8rem);
   font-weight: 950;
   line-height: 1.02;
   letter-spacing: -0.04em;
 }
 
+.content-share-guide-copy {
+  display: block;
+  margin-top: 10px;
+  color: rgba(255,255,255,0.72);
+  font-size: 0.93rem;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
 .content-share-guide-modal ol {
   display: grid;
-  gap: 9px;
+  gap: 8px;
   margin: 18px 0 0;
   padding: 0;
   list-style: none;
@@ -2779,33 +2816,35 @@ body {
 
 .content-share-guide-modal li {
   display: flex;
-  align-items: center;
-  gap: 9px;
-  min-height: 42px;
-  padding: 10px 12px;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 44px;
+  padding: 11px 12px;
   border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 16px;
+  border-radius: 18px;
   color: rgba(255,255,255,0.86);
   background: rgba(255,255,255,0.08);
-  font-size: 0.86rem;
+  font-size: 0.88rem;
   font-weight: 800;
+  line-height: 1.25;
 }
 
 .content-share-guide-modal li svg {
   flex: 0 0 auto;
+  margin-top: 1px;
   color: var(--gold-400);
 }
 
 .content-share-guide-actions {
   display: grid;
-  grid-template-columns: 0.8fr 1.2fr;
+  grid-template-columns: 0.86fr 1.14fr;
   gap: 10px;
   margin-top: 18px;
 }
 
 .content-share-guide-actions button {
-  min-height: 50px;
-  border-radius: 18px;
+  min-height: 52px;
+  border-radius: 19px;
   border: 1px solid rgba(255,255,255,0.14);
   font: inherit;
   font-size: 0.9rem;
@@ -2827,6 +2866,81 @@ body {
 .content-share-guide-actions button:disabled {
   cursor: progress;
   opacity: 0.72;
+}
+
+@media (max-width: 560px) {
+  .content-share-guide-backdrop {
+    backdrop-filter: blur(12px);
+  }
+
+  .content-share-guide-modal {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-height: min(88dvh, 720px);
+    transform: none;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 28px 28px 0 0;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+  }
+
+  .content-share-guide-modal::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    z-index: 2;
+    width: 48px;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.28);
+    transform: translateX(-50%);
+  }
+
+  .content-share-guide-head {
+    margin-top: 10px;
+  }
+
+  .content-share-guide-modal h3 {
+    max-width: none;
+  }
+
+  .content-share-guide-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .content-share-guide-actions button:first-child {
+    order: 2;
+  }
+
+  .content-share-guide-actions button:last-child {
+    order: 1;
+  }
+}
+
+@media (max-width: 360px) {
+  .content-share-guide-modal {
+    padding-right: 13px;
+    padding-left: 13px;
+  }
+
+  .content-share-guide-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 19px;
+  }
+
+  .content-share-guide-modal h3 {
+    font-size: 1.25rem;
+  }
+
+  .content-share-guide-copy,
+  .content-share-guide-modal li {
+    font-size: 0.82rem;
+  }
 }
 
 .email-gate-backdrop {
