@@ -38,4 +38,26 @@ with check (
   )
 );
 
-grant select, insert on public.publications to authenticated;
+drop policy if exists "editors update publications" on public.publications;
+create policy "editors update publications"
+on public.publications
+for update
+to authenticated
+using (
+  exists (
+    select 1
+    from public.profiles
+    where id = auth.uid()
+      and (rol = 'admin' or can_publish = true)
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.profiles
+    where id = auth.uid()
+      and (rol = 'admin' or can_publish = true)
+  )
+);
+
+grant select, insert, update on public.publications to authenticated;

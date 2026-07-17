@@ -1482,6 +1482,134 @@ export function createSupabaseApi() {
           sourcePlatform: normalized.sourcePlatform || payload.source_platform || 'manual',
         };
       },
+
+      async update(id, payload) {
+        const sessionBundle = await fetchCurrentSessionBundle(client);
+        if (!(sessionBundle?.user?.canPublish || sessionBundle?.user?.role === 'admin')) {
+          throw new ApiError('Solo los administradores o Pastor/Directivo editorial pueden editar publicaciones oficiales.', 403);
+        }
+
+        const publicationSelectWithSource = `
+              id,
+              title,
+              description,
+              category,
+              format,
+              featured,
+              xp_reward,
+              shares_count,
+              likes_count,
+              copy_text,
+              media_url,
+              source_url,
+              facebook_url,
+              instagram_url,
+              source_platform,
+              created_at,
+              coordination_id,
+              active,
+              is_official,
+              coordinations:coordinations(id, name, icon, color)
+            `;
+        const publicationSelectBase = `
+              id,
+              title,
+              description,
+              category,
+              format,
+              featured,
+              xp_reward,
+              shares_count,
+              likes_count,
+              copy_text,
+              media_url,
+              source_url,
+              source_platform,
+              created_at,
+              coordination_id,
+              active,
+              is_official,
+              coordinations:coordinations(id, name, icon, color)
+            `;
+        const publicationSelectLegacy = `
+              id,
+              title,
+              description,
+              category,
+              format,
+              featured,
+              xp_reward,
+              shares_count,
+              likes_count,
+              copy_text,
+              media_url,
+              created_at,
+              coordination_id,
+              active,
+              is_official,
+              coordinations:coordinations(id, name, icon, color)
+            `;
+        const basePayload = {
+          coordination_id: payload.coordination_id,
+          title: payload.title,
+          description: payload.description,
+          category: payload.category,
+          format: payload.format || 'texto',
+          featured: Boolean(payload.featured),
+          xp_reward: payload.xp_reward || 50,
+          copy_text: payload.copy_text || payload.description,
+          media_url: payload.media_url || null,
+          active: true,
+          is_official: true,
+        };
+        const socialPayload = {
+          ...basePayload,
+          source_url: payload.source_url || null,
+          facebook_url: payload.facebook_url || null,
+          instagram_url: payload.instagram_url || null,
+          source_platform: payload.source_platform || 'manual',
+        };
+        const sourcePayload = {
+          ...basePayload,
+          source_url: payload.source_url || null,
+          source_platform: payload.source_platform || 'manual',
+        };
+
+        let updateResult = await client
+          .from('publications')
+          .update(socialPayload)
+          .eq('id', id)
+          .select(publicationSelectWithSource)
+          .single();
+
+        if (isPublicationSchemaDrift(updateResult.error)) {
+          updateResult = await client
+            .from('publications')
+            .update(sourcePayload)
+            .eq('id', id)
+            .select(publicationSelectBase)
+            .single();
+        }
+
+        if (isPublicationSchemaDrift(updateResult.error)) {
+          updateResult = await client
+            .from('publications')
+            .update(basePayload)
+            .eq('id', id)
+            .select(publicationSelectLegacy)
+            .single();
+        }
+
+        const row = unwrap(updateResult, 'No se pudo actualizar la publicación');
+        const normalized = normalizePublication(row);
+        return {
+          ...normalized,
+          sourceUrl: normalized.sourceUrl || payload.source_url || payload.facebook_url || payload.instagram_url || '',
+          facebookUrl: normalized.facebookUrl || payload.facebook_url || '',
+          instagramUrl: normalized.instagramUrl || payload.instagram_url || '',
+          sourcePlatform: normalized.sourcePlatform || payload.source_platform || 'manual',
+        };
+      },
     },
 
     notifications: {

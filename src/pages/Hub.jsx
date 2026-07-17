@@ -128,12 +128,13 @@ async function fetchSocialPreview(sourceUrl) {
   };
 }
 
-function PastorPublicationComposer({ currentUser, coordinations, onCreated }) {
+function PastorPublicationComposer({ currentUser, coordinations, editingItem = null, onCreated, onUpdated, onCancelEdit }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(publisherInitialState);
   const [preview, setPreview] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const isEditing = Boolean(editingItem);
   const facebookUrl = normalizePostUrl(form.facebookUrl);
   const instagramUrl = normalizePostUrl(form.instagramUrl);
   const primaryUrl = facebookUrl || instagramUrl;
@@ -144,6 +145,26 @@ function PastorPublicationComposer({ currentUser, coordinations, onCreated }) {
   const composerCoordinations = getCanonicalCoordinations(coordinations);
 
   const setField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+
+  useEffect(() => {
+    if (!editingItem) return;
+    const sourceUrl = editingItem.sourceUrl || '';
+    const facebookFromSource = isFacebookUrl(sourceUrl) ? sourceUrl : '';
+    const instagramFromSource = isInstagramUrl(sourceUrl) ? sourceUrl : '';
+
+    setOpen(true);
+    setPreview(null);
+    setForm({
+      facebookUrl: editingItem.facebookUrl || facebookFromSource || '',
+      instagramUrl: editingItem.instagramUrl || instagramFromSource || '',
+      title: editingItem.title || '',
+      description: editingItem.description || '',
+      imageUrl: editingItem.imageUrl || '',
+      coordinationId: editingItem.coordination || '',
+      format: editingItem.format || 'imagen',
+      featured: Boolean(editingItem.featured),
+    });
+  }, [editingItem]);
 
   const validateSocialLinks = () => {
     const hasFacebook = Boolean(form.facebookUrl.trim());
@@ -186,6 +207,7 @@ function PastorPublicationComposer({ currentUser, coordinations, onCreated }) {
     setForm(publisherInitialState);
     setPreview(null);
     setOpen(false);
+    onCancelEdit?.();
   };
 
   const handleSubmit = async (event) => {
@@ -206,7 +228,7 @@ function PastorPublicationComposer({ currentUser, coordinations, onCreated }) {
         facebookUrl ? `Facebook: ${facebookUrl}` : '',
         instagramUrl ? `Instagram: ${instagramUrl}` : '',
       ].filter(Boolean).join('\n');
-      const created = await api.publicaciones.create({
+      const publicationPayload = {
         title: previewTitle,
         description: previewDescription,
         category: facebookUrl && instagramUrl ? 'Facebook + Instagram' : platform.label,
@@ -220,12 +242,19 @@ function PastorPublicationComposer({ currentUser, coordinations, onCreated }) {
         source_platform: facebookUrl ? 'facebook' : 'instagram',
         facebook_url: facebookUrl || null,
         instagram_url: instagramUrl || null,
-      });
-      onCreated(created);
-      toast.success('Publicación creada en el Hub');
+      };
+      if (isEditing) {
+        const updated = await api.publicaciones.update(editingItem.id, publicationPayload);
+        onUpdated?.(updated);
+        toast.success('Publicación actualizada');
+      } else {
+        const created = await api.publicaciones.create(publicationPayload);
+        onCreated(created);
+        toast.success('Publicación creada en el Hub');
+      }
       resetForm();
     } catch (error) {
-      toast.error(error.message || 'No se pudo crear la publicación');
+      toast.error(error.message || (isEditing ? 'No se pudo actualizar la publicación' : 'No se pudo crear la publicación'));
     } finally {
       setSaving(false);
     }
@@ -243,12 +272,22 @@ function PastorPublicationComposer({ currentUser, coordinations, onCreated }) {
       <div className="publisher-composer-hero">
         <div>
           <p><ShieldCheck size={14} /> Panel Pastor/Directivo</p>
-          <h3>Crear publicación desde redes sociales</h3>
-          <span>Pega un post de Facebook o Instagram. Guardamos el enlace, el título y una portada para que todos puedan compartirlo sin duplicar contenido.</span>
+          <h3>{isEditing ? 'Editar publicación oficial' : 'Crear publicación desde redes sociales'}</h3>
+          <span>{isEditing ? 'Ajusta el título, enlaces, portada o coordinación. Los cambios se aplican a la publicación ya existente.' : 'Pega un post de Facebook o Instagram. Guardamos el enlace, el título y una portada para que todos puedan compartirlo sin duplicar contenido.'}</span>
         </div>
-        <button type="button" className="publisher-toggle" onClick={() => setOpen((value) => !value)}>
+        <button
+          type="button"
+          className="publisher-toggle"
+          onClick={() => {
+            if (isEditing) {
+              resetForm();
+              return;
+            }
+            setOpen((value) => !value);
+          }}
+        >
           {open ? <XCircle size={18} /> : <PlusCircle size={18} />}
-          {open ? 'Cerrar' : 'Nueva publicación'}
+          {isEditing ? 'Cancelar edición' : open ? 'Cerrar' : 'Nueva publicación'}
         </button>
       </div>
 
@@ -362,7 +401,7 @@ function PastorPublicationComposer({ currentUser, coordinations, onCreated }) {
             </label>
             <button type="submit" disabled={saving}>
               {saving ? <Loader2 size={17} className="spin" /> : <Send size={17} />}
-              {saving ? 'Publicando...' : 'Publicar en el Hub'}
+              {saving ? (isEditing ? 'Guardando...' : 'Publicando...') : (isEditing ? 'Guardar cambios' : 'Publicar en el Hub')}
             </button>
           </div>
         </motion.form>
@@ -380,6 +419,7 @@ export default function Hub() {
   const [sort, setSort] = useState('Recientes');
   const [data, setData] = useState({ items: [], coordinations: [], schemaMetrics: {} });
   const [loading, setLoading] = useState(true);
+  const [editingPublication, setEditingPublication] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -415,6 +455,7 @@ export default function Hub() {
   const filterCoordinations = getCanonicalCoordinations(data.coordinations);
   const selectedCoord = filterCoordinations.find((item) => item.id === coord);
   const selectedRegion = contentRegions.find((item) => item.id === region);
+  const canManagePublications = Boolean(currentUser?.canPublish || currentUser?.role === 'admin');
   const activeFilterLabel = filterMode === 'coordination'
     ? (selectedCoord?.name || 'Todas las coordinaciones')
     : filterMode === 'region'
@@ -432,6 +473,23 @@ export default function Hub() {
         comunicadosActivos: Number(current.schemaMetrics.comunicadosActivos || 0) + 1,
       },
     }));
+  };
+
+  const handlePublicationUpdated = (item) => {
+    setEditingPublication(null);
+    setData((current) => ({
+      ...current,
+      items: current.items.map((publication) => (
+        String(publication.id) === String(item.id) ? { ...publication, ...item } : publication
+      )),
+    }));
+  };
+
+  const handleEditPublication = (item) => {
+    setEditingPublication(item);
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   };
 
   return (
@@ -470,7 +528,10 @@ export default function Hub() {
       <PastorPublicationComposer
         currentUser={currentUser}
         coordinations={data.coordinations}
+        editingItem={editingPublication}
         onCreated={handlePublicationCreated}
+        onUpdated={handlePublicationUpdated}
+        onCancelEdit={() => setEditingPublication(null)}
       />
 
       <motion.section
@@ -557,7 +618,17 @@ export default function Hub() {
             {[0, 1, 2].map((item) => <div key={item} className="content-card-skeleton" />)}
           </div>
         ) : data.items.length > 0 ? (
-          <div className="content-feed-grid">{data.items.map((item, i) => <ContentCard key={item.id} item={item} delay={i * 0.055} />)}</div>
+          <div className="content-feed-grid">
+            {data.items.map((item, i) => (
+              <ContentCard
+                key={item.id}
+                item={item}
+                delay={i * 0.055}
+                canEdit={canManagePublications}
+                onEdit={handleEditPublication}
+              />
+            ))}
+          </div>
         ) : (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="content-empty-wrap">
             <EmptyState icon={SearchX} title="Sin resultados" description="Prueba con otros filtros o palabras clave." />

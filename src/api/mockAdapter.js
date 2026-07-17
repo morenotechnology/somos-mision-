@@ -462,6 +462,59 @@ export function createMockApi() {
         state.publicaciones.unshift(publication);
         return resolve(contentItem);
       },
+      update: (id, payload) => {
+        const currentUser = state.currentUser || state.users.find((user) => user.role === 'admin');
+        if (!(currentUser?.canPublish || currentUser?.role === 'admin')) {
+          throw new ApiError('Solo los administradores o Pastor/Directivo editorial pueden editar publicaciones oficiales.', 403);
+        }
+        const contentIndex = state.contentItems.findIndex((item) => String(item.id) === String(id));
+        if (contentIndex < 0) throw new ApiError('Publicación no encontrada', 404);
+
+        const coordination = coordinations.find((item) => item.id === payload.coordination_id);
+        const previous = state.contentItems[contentIndex];
+        const updated = {
+          ...previous,
+          title: payload.title,
+          description: payload.description,
+          category: payload.category || previous.category,
+          coordination: payload.coordination_id || '',
+          coordinationName: coordination?.name || '',
+          format: payload.format || previous.format,
+          featured: Boolean(payload.featured),
+          xpReward: payload.xp_reward || previous.xpReward || 50,
+          copyText: payload.copy_text || previous.copyText,
+          imageUrl: payload.media_url || previous.imageUrl || '/hero-map.png',
+          sourceUrl: payload.source_url || '',
+          facebookUrl: payload.facebook_url || '',
+          instagramUrl: payload.instagram_url || '',
+          sourcePlatform: payload.source_platform || 'manual',
+        };
+
+        state.contentItems[contentIndex] = updated;
+        const publicationIndex = state.publicaciones.findIndex((item) => (
+          String(item.id) === String(id) || String(`cnt${item.id}`) === String(id)
+        ));
+        if (publicationIndex >= 0) {
+          state.publicaciones[publicationIndex] = {
+            ...state.publicaciones[publicationIndex],
+            coordination_id: updated.coordination || null,
+            title: updated.title,
+            description: updated.description,
+            category: updated.category,
+            format: updated.format,
+            featured: updated.featured,
+            xp_reward: updated.xpReward,
+            copy_text: updated.copyText,
+            media_url: updated.imageUrl,
+            source_url: updated.sourceUrl,
+            facebook_url: updated.facebookUrl,
+            instagram_url: updated.instagramUrl,
+            source_platform: updated.sourcePlatform,
+          };
+        }
+
+        return resolve(updated);
+      },
     },
 
     social: {

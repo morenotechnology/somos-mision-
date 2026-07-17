@@ -877,6 +877,22 @@ create policy "pastors create publications" on public.publications for insert to
       and (rol = 'admin' or can_publish = true)
   )
 );
+drop policy if exists "editors update publications" on public.publications;
+create policy "editors update publications" on public.publications for update to authenticated using (
+  exists (
+    select 1
+    from public.profiles
+    where id = auth.uid()
+      and (rol = 'admin' or can_publish = true)
+  )
+) with check (
+  exists (
+    select 1
+    from public.profiles
+    where id = auth.uid()
+      and (rol = 'admin' or can_publish = true)
+  )
+);
 
 drop policy if exists "authenticated read profiles" on public.profiles;
 create policy "authenticated read profiles" on public.profiles for select to authenticated using (true);

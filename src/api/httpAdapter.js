@@ -50,6 +50,7 @@ export function createHttpApi() {
     publicaciones: {
       list: (params) => apiRequest(`/publicaciones${toQuery(params)}`),
       create: (payload) => apiRequest('/publicaciones', { method: 'POST', body: jsonBody(payload) }),
+      update: (id, payload) => apiRequest(`/publicaciones/${id}`, { method: 'PATCH', body: jsonBody(payload) }),
     },
 
     social: {
