@@ -24,6 +24,56 @@ const delay = Number(import.meta.env.VITE_MOCK_LATENCY_MS || 120);
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const wait = () => new Promise((resolve) => setTimeout(resolve, delay));
+const DISTRICT_REGION_MAP = {
+  1: 'r4',
+  2: 'r1',
+  3: 'r4',
+  4: 'r1',
+  5: 'r3',
+  6: 'r3',
+  7: 'r2',
+  8: 'r2',
+  9: 'r1',
+  10: 'r1',
+  11: 'r5',
+  12: 'r3',
+  13: 'r4',
+  14: 'r4',
+  15: 'r1',
+  16: 'r3',
+  17: 'r2',
+  18: 'r2',
+  19: 'r2',
+  20: 'r3',
+  21: 'r1',
+  22: 'r1',
+  23: 'r5',
+  24: 'r2',
+  25: 'r3',
+  26: 'r5',
+  27: 'r2',
+  28: 'r1',
+  29: 'r2',
+  30: 'r4',
+  31: 'r3',
+  32: 'r3',
+  33: 'r5',
+  34: 'r2',
+  35: 'r2',
+};
+
+const CONTENT_REGION_ALIASES = {
+  r1: ['andina', 'andes', 'montaña', 'montañas', 'd2', 'd4', 'd9', 'd10', 'd15', 'd21', 'd22', 'd28'],
+  r2: ['caribe', 'costa', 'costas', 'islas', 'd7', 'd8', 'd17', 'd18', 'd19', 'd24', 'd27', 'd29', 'd34', 'd35'],
+  r3: ['pacífica', 'pacifica', 'selva', 'costa pacífica', 'd5', 'd6', 'd12', 'd16', 'd20', 'd25', 'd31', 'd32'],
+  r4: ['orinoquía', 'orinoquia', 'llanos', 'd1', 'd3', 'd13', 'd14', 'd30'],
+  r5: ['amazónica', 'amazonica', 'amazonía', 'amazonia', 'ribereñas', 'riberena', 'd11', 'd23', 'd26', 'd33'],
+};
+
+function regionFromDistrict(districtId = '') {
+  const districtNumber = Number(String(districtId).replace(/\D/g, ''));
+  return DISTRICT_REGION_MAP[districtNumber] || '';
+}
 
 const state = {
   comentarios: clone(comentarios),
@@ -48,11 +98,21 @@ function searchRows(rows, params = {}) {
     const role = params.role || params.rol;
     result = result.filter((item) => item.role === role || item.rol === role);
   }
-  if (params.format) {
+  if (params.format && params.format !== 'Todos') {
     result = result.filter((item) => item.format === params.format || item.tipo === params.format);
   }
   if (params.coordination) {
     result = result.filter((item) => item.coordination === params.coordination);
+  }
+  if (params.region) {
+    const regionNeedle = String(params.region).toLowerCase();
+    const aliases = CONTENT_REGION_ALIASES[params.region] || [];
+    result = result.filter((item) => (
+      item.region === params.region ||
+      item.region_id === params.region ||
+      JSON.stringify(item).toLowerCase().includes(regionNeedle) ||
+      aliases.some((alias) => JSON.stringify(item).toLowerCase().includes(String(alias).toLowerCase()))
+    ));
   }
   return result;
 }
@@ -184,7 +244,7 @@ export function createMockApi() {
           email: payload.email,
           role,
           canPublish: resolveCanPublish({ ...payload, role }),
-          region: payload.region || 'r3',
+          region: payload.region || regionFromDistrict(payload.district) || 'r3',
           district: payload.district || 'd5',
           congregation: selectedCongregation?.nombre || payload.congregation || 'Misiones Nacionales',
           congregationId: selectedCongregation?.id || null,
@@ -206,7 +266,7 @@ export function createMockApi() {
         if (payload.congregation && !selectedCongregation) {
           state.congregaciones.push({
             id: state.congregaciones.length + 101,
-            region_id: payload.region || 'r3',
+            region_id: payload.region || regionFromDistrict(payload.district) || 'r3',
             district_id: payload.district || 'd5',
             nombre: payload.congregation,
             direccion: '',

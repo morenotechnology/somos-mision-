@@ -158,11 +158,85 @@ function MobileShareGuidePortal({ mobileGuide, guideLoading, onClose, onConfirm 
   );
 }
 
+function ShareConfirmationPortal({ confirmation, loading, onClose, onConfirm }) {
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <AnimatePresence>
+      {confirmation && (
+        <>
+          <motion.div
+            className="content-share-guide-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => !loading && onClose()}
+          />
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="share-confirm-title"
+            className={`content-share-guide-modal content-share-confirm-modal is-${confirmation.network}`}
+            initial={{ opacity: 0, y: 28, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.96 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <button
+              type="button"
+              className="content-share-guide-close"
+              onClick={() => !loading && onClose()}
+              aria-label="Cerrar confirmación de compartido"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="content-share-guide-head">
+              <div className="content-share-guide-icon">
+                {confirmation.network === 'whatsapp' && <WhatsAppIcon />}
+                {confirmation.network === 'facebook' && <FacebookIcon />}
+                {confirmation.network === 'instagram' && <InstagramIcon />}
+              </div>
+              <div>
+                <span className="content-share-guide-kicker">Confirmación</span>
+                <p>Guardar avance</p>
+              </div>
+            </div>
+
+            <h3 id="share-confirm-title">¿Compartiste esta publicación?</h3>
+            <span className="content-share-guide-copy">
+              Confirma solo si ya la compartiste en {confirmation.label}. Al confirmar guardamos tu participación y sumamos XP únicamente la primera vez.
+            </span>
+
+            <div className="content-share-confirm-card">
+              <CheckCircle2 size={18} />
+              <div>
+                <strong>{confirmation.title}</strong>
+                <span>{confirmation.status === 'verified' ? 'Detectamos que volviste a la web.' : 'El enlace fue abierto correctamente.'}</span>
+              </div>
+            </div>
+
+            <div className="content-share-guide-actions">
+              <button type="button" onClick={onClose} disabled={loading}>Todavía no</button>
+              <button type="button" onClick={onConfirm} disabled={loading}>
+                {loading ? 'Guardando...' : 'Sí, ya compartí'}
+              </button>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>,
+    document.body
+  );
+}
+
 export default function ContentCard({ item, delay = 0 }) {
   const { shareContent, sharedContent } = useAppStore();
   const [imgErr, setImgErr] = useState(false);
   const [mobileGuide, setMobileGuide] = useState(null);
   const [guideLoading, setGuideLoading] = useState(false);
+  const [shareConfirm, setShareConfirm] = useState(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
   const alreadyShared = sharedContent.includes(String(item.id));
   const accent = formatTone[item.format] || '#1A237E';
   const networkNames = { whatsapp: 'WhatsApp', facebook: 'Facebook', instagram: 'Instagram' };
@@ -218,17 +292,24 @@ export default function ContentCard({ item, delay = 0 }) {
     return shareUrl;
   };
 
+  const askForShareConfirmation = async (network, shareUrl) => {
+    if (!shareUrl) return;
+    const shareSignal = await waitForShareSignal();
+    setShareConfirm({
+      network,
+      shareUrl,
+      label: networkNames[network],
+      title: item.title,
+      status: shareSignal.status,
+      elapsedMs: shareSignal.elapsedMs,
+    });
+  };
+
   const handleShare = async (network) => {
     if (network === 'instagram' && !hasInstagramLink) return;
+    if (network === 'facebook' && !hasFacebookLink) return;
 
-    if (isMobileShareDevice() && network === 'facebook') {
-      const shareUrl = getNetworkUrl(network);
-      window.open(shareUrl, '_blank', 'noopener,noreferrer');
-      await registerShare(network, shareUrl);
-      return;
-    }
-
-    if (isMobileShareDevice() && network === 'instagram') {
+    if (isMobileShareDevice() && ['facebook', 'instagram'].includes(network)) {
       setMobileGuide({
         network,
         label: networkNames[network],
@@ -238,16 +319,15 @@ export default function ContentCard({ item, delay = 0 }) {
     }
 
     const shareUrl = await openNetworkShare(network);
-    await registerShare(network, shareUrl);
+    await askForShareConfirmation(network, shareUrl);
   };
 
-  const registerShare = async (network, shareUrl) => {
+  const registerShare = async (network, shareUrl, shareSignal = {}) => {
     try {
-      const shareSignal = await waitForShareSignal();
       const payload = await shareContent(item.id, item.xpReward, network, {
         share_url: shareUrl,
-        verification_status: shareSignal.status,
-        share_latency_ms: shareSignal.elapsedMs,
+        verification_status: shareSignal.status || 'confirmed',
+        share_latency_ms: shareSignal.elapsedMs ?? null,
       });
       const xp = Number(payload.share?.xp_ganado || 0);
       const statusText = shareSignal.status === 'verified' ? 'verificado' : 'registrado';
@@ -262,10 +342,24 @@ export default function ContentCard({ item, delay = 0 }) {
     setGuideLoading(true);
     window.open(mobileGuide.shareUrl, '_blank', 'noopener,noreferrer');
     try {
-      await registerShare(mobileGuide.network, mobileGuide.shareUrl);
+      await askForShareConfirmation(mobileGuide.network, mobileGuide.shareUrl);
       setMobileGuide(null);
     } finally {
       setGuideLoading(false);
+    }
+  };
+
+  const confirmShareRegistration = async () => {
+    if (!shareConfirm) return;
+    setConfirmLoading(true);
+    try {
+      await registerShare(shareConfirm.network, shareConfirm.shareUrl, {
+        status: shareConfirm.status,
+        elapsedMs: shareConfirm.elapsedMs,
+      });
+      setShareConfirm(null);
+    } finally {
+      setConfirmLoading(false);
     }
   };
 
@@ -373,6 +467,13 @@ export default function ContentCard({ item, delay = 0 }) {
         guideLoading={guideLoading}
         onClose={() => setMobileGuide(null)}
         onConfirm={confirmMobileShareGuide}
+      />
+
+      <ShareConfirmationPortal
+        confirmation={shareConfirm}
+        loading={confirmLoading}
+        onClose={() => setShareConfirm(null)}
+        onConfirm={confirmShareRegistration}
       />
 
     </motion.div>

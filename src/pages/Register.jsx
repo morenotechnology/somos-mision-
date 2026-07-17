@@ -9,7 +9,6 @@ import {
   KeyRound,
   Lock,
   Mail,
-  MapPin,
   Phone,
   ShieldCheck,
   User,
@@ -22,7 +21,7 @@ import { useAppStore } from '../store/useAppStore';
 
 const steps = [
   { label: 'Cuenta', desc: 'Datos de acceso' },
-  { label: 'Ubicación', desc: 'Región y distrito' },
+  { label: 'Ubicación', desc: 'Distrito local' },
   { label: 'Congregación', desc: 'Tu iglesia local' },
 ];
 
@@ -34,9 +33,58 @@ const REGIONS = [
   { id: 'r5', name: 'Amazonía' },
 ];
 
+const DISTRICT_REGION_MAP = {
+  1: 'r4',
+  2: 'r1',
+  3: 'r4',
+  4: 'r1',
+  5: 'r3',
+  6: 'r3',
+  7: 'r2',
+  8: 'r2',
+  9: 'r1',
+  10: 'r1',
+  11: 'r5',
+  12: 'r3',
+  13: 'r4',
+  14: 'r4',
+  15: 'r1',
+  16: 'r3',
+  17: 'r2',
+  18: 'r2',
+  19: 'r2',
+  20: 'r3',
+  21: 'r1',
+  22: 'r1',
+  23: 'r5',
+  24: 'r2',
+  25: 'r3',
+  26: 'r5',
+  27: 'r2',
+  28: 'r1',
+  29: 'r2',
+  30: 'r4',
+  31: 'r3',
+  32: 'r3',
+  33: 'r5',
+  34: 'r2',
+  35: 'r2',
+};
+
+function getRegionFromDistrict(districtId = '') {
+  const districtNumber = Number(String(districtId).replace(/\D/g, ''));
+  return DISTRICT_REGION_MAP[districtNumber] || '';
+}
+
+function getRegionName(regionId = '') {
+  return REGIONS.find((region) => region.id === regionId)?.name || '';
+}
+
 const DISTRICTS = Array.from({ length: 35 }, (_, index) => ({
   id: `d${index + 1}`,
   name: `Distrito ${index + 1}`,
+  regionId: getRegionFromDistrict(`d${index + 1}`),
+  regionName: getRegionName(getRegionFromDistrict(`d${index + 1}`)),
 }));
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -136,7 +184,6 @@ export default function Register() {
     password: '',
     role: 'multiplicador',
     accessKey: '',
-    region: '',
     district: '',
     congregation: '',
     congregationId: null,
@@ -218,8 +265,8 @@ export default function Register() {
       toast.error('La contraseña debe tener mínimo 8 caracteres');
       return false;
     }
-    if (stepToValidate === 1 && (!form.role || !form.region || !form.district)) {
-      toast.error('Selecciona rol, región y distrito');
+    if (stepToValidate === 1 && (!form.role || !form.district)) {
+      toast.error('Selecciona rol y distrito');
       return false;
     }
     if (stepToValidate === 1 && form.role === 'pastor' && !form.accessKey.trim()) {
@@ -258,19 +305,23 @@ export default function Register() {
     setLoading(true);
     try {
       const finalCongregation = form.congregation.trim();
+      const assignedRegion = getRegionFromDistrict(form.district);
       const result = await api.auth.register({
         ...form,
+        region: assignedRegion,
         congregation: finalCongregation,
         congregationId: form.congregationId,
         canPublish: form.role === 'pastor' && getPastorAccessLevel(form.accessKey) === 'publisher',
       });
-      if (!result.needsEmailConfirmation) loginFromApi(result);
-      setBetaModal({
-        needsEmailConfirmation: Boolean(result.needsEmailConfirmation),
-        email: form.email.trim(),
-        betaPosition: result.betaPosition || 1,
-        betaTotal: result.betaTotal || 500,
-      });
+      if (result.needsEmailConfirmation) {
+        setBetaModal({
+          needsEmailConfirmation: true,
+          email: form.email.trim(),
+        });
+        return;
+      }
+      loginFromApi(result);
+      navigate('/dashboard');
     } catch (error) {
       toast.error(error.message || 'No se pudo completar el registro');
     } finally {
@@ -364,21 +415,18 @@ export default function Register() {
                       <small className="auth-key-hint">Esta llave confirma tu rol. Algunas llaves habilitan creación de publicaciones oficiales; no compartas este acceso.</small>
                     </FieldGroup>
                   )}
-                  <FieldGroup label="Región">
-                    <AuthInput as="select" icon={MapPin} value={form.region} onChange={(event) => set('region', event.target.value)}>
-                      <option value="">Seleccionar región</option>
-                      {REGIONS.map((region) => (
-                        <option key={region.id} value={region.id}>{region.name}</option>
-                      ))}
-                    </AuthInput>
-                  </FieldGroup>
                   <FieldGroup label="Distrito">
                     <AuthInput as="select" icon={Building2} value={form.district} onChange={(event) => set('district', event.target.value)}>
                       <option value="">Seleccionar distrito</option>
                       {DISTRICTS.map((district) => (
-                        <option key={district.id} value={district.id}>{district.name}</option>
+                        <option key={district.id} value={district.id}>{district.name} · {district.regionName}</option>
                       ))}
                     </AuthInput>
+                    {form.district && (
+                      <small className="auth-key-hint">
+                        Región asignada automáticamente: {getRegionName(getRegionFromDistrict(form.district))}.
+                      </small>
+                    )}
                   </FieldGroup>
                 </>
               )}
@@ -486,36 +534,20 @@ export default function Register() {
                 exit={{ opacity: 0, y: 18, scale: 0.96 }}
                 transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
               >
-                <div className={`auth-beta-modal ${betaModal.needsEmailConfirmation ? 'is-email-confirm' : ''}`}>
-                  <div className="auth-beta-pill">{betaModal.needsEmailConfirmation ? 'Verificación pendiente' : 'Beta cerrada'}</div>
+                  <div className="auth-beta-modal is-email-confirm">
+                  <div className="auth-beta-pill">Verificación pendiente</div>
                   <div className="auth-beta-badge">
-                    {betaModal.needsEmailConfirmation ? <Mail size={26} /> : <CheckCircle size={26} />}
+                    <Mail size={26} />
                   </div>
-                  <p className="auth-beta-kicker">{betaModal.needsEmailConfirmation ? 'Confirma tu correo' : 'Registro confirmado'}</p>
-                  {betaModal.needsEmailConfirmation ? (
-                    <>
-                      <h3>Revisa tu correo para activar la cuenta</h3>
-                      <p>Ya reservamos tu lugar en la beta. Para entrar a la plataforma, abre el enlace de confirmación que enviamos a este correo:</p>
-                      <div className="auth-email-callout">
-                        <Mail size={16} />
-                        {betaModal.email}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <h3>Eres el registro número {betaModal.betaPosition} de {betaModal.betaTotal}</h3>
-                      <p>Tu lugar ya quedó reservado en la beta. Tu perfil está listo para entrar y empezar a usar la plataforma.</p>
-                      <div className="auth-beta-progress" aria-hidden="true">
-                        <span style={{ width: `${Math.min((betaModal.betaPosition / betaModal.betaTotal) * 100, 100)}%` }} />
-                      </div>
-                      <div className="auth-beta-meta">
-                        <span><Zap size={14} /> Cupos limitados</span>
-                        <span><CheckCircle size={14} /> Acceso anticipado</span>
-                      </div>
-                    </>
-                  )}
+                  <p className="auth-beta-kicker">Confirma tu correo</p>
+                  <h3>Revisa tu correo para activar la cuenta</h3>
+                  <p>Abre el enlace de confirmación que enviamos a este correo. Si no aparece, revisa también la carpeta de spam:</p>
+                  <div className="auth-email-callout">
+                    <Mail size={16} />
+                    {betaModal.email}
+                  </div>
                   <button type="button" className="auth-submit-button auth-beta-cta" onClick={finishRegistration}>
-                    {betaModal.needsEmailConfirmation ? 'Volver al inicio de sesión' : 'Entrar al panel'}
+                    Volver al inicio de sesión
                     <ArrowRight size={17} />
                   </button>
                 </div>

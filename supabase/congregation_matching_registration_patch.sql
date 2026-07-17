@@ -44,6 +44,12 @@ begin
     v_district_id := null;
   end if;
 
+  if v_district_id is not null then
+    select d.region_id into v_region_id
+    from public.districts d
+    where d.id = v_district_id;
+  end if;
+
   if v_congregation_meta ~ '^[0-9]+$' then
     select id, nombre, region_id, district_id
     into v_congregation_id, v_existing_congregation_name, v_existing_region_id, v_existing_district_id

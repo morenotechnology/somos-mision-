@@ -4,8 +4,11 @@ import Topbar from './Topbar';
 import MobileSidebar from './MobileSidebar';
 import BottomNav from './BottomNav';
 import XPNotification from '../common/XPNotification';
+import { useAppStore } from '../../store/useAppStore';
 
 export default function AppLayout() {
+  const { sidebarOpen } = useAppStore();
+
   return (
     <div className="app-shell flex h-screen overflow-hidden">
       {/* Desktop Sidebar */}
@@ -18,8 +21,8 @@ export default function AppLayout() {
 
       {/* Main content area */}
       <div
-        className="flex-1 flex flex-col min-w-0 transition-all duration-300"
-        style={{ marginLeft: 0 }}
+        className="app-main-shell flex-1 flex flex-col min-w-0 transition-all duration-300"
+        style={{ '--sidebar-offset': sidebarOpen ? '260px' : '68px' }}
       >
         <Topbar />
         <main className="flex-1 overflow-y-auto">

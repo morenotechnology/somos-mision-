@@ -30,8 +30,19 @@ import { formatNumber } from '../utils/helpers';
 import { useAppStore } from '../store/useAppStore';
 import toast from 'react-hot-toast';
 
-const formats = ['Todos', 'imagen', 'video', 'texto', 'carrusel'];
 const sorts = ['Recientes', 'Populares', 'Destacados'];
+const filterModes = [
+  { id: 'all', label: 'Todos' },
+  { id: 'coordination', label: 'Por coordinaciones' },
+  { id: 'region', label: 'Por regiones' },
+];
+const contentRegions = [
+  { id: 'r1', name: 'Andina' },
+  { id: 'r2', name: 'Caribe' },
+  { id: 'r3', name: 'Pacífica' },
+  { id: 'r4', name: 'Orinoquía' },
+  { id: 'r5', name: 'Amazónica' },
+];
 const FALLBACK_IMAGE = '/hero-map.png';
 const CANONICAL_COORDINATIONS = [
   { id: 'c1', name: 'Evangelismo', icon: 'Megaphone', color: '#1A237E', members_count: 842 },
@@ -363,8 +374,9 @@ function PastorPublicationComposer({ currentUser, coordinations, onCreated }) {
 export default function Hub() {
   const { currentUser } = useAppStore();
   const [query, setQuery] = useState('');
-  const [format, setFormat] = useState('Todos');
+  const [filterMode, setFilterMode] = useState('all');
   const [coord, setCoord] = useState('');
+  const [region, setRegion] = useState('');
   const [sort, setSort] = useState('Recientes');
   const [data, setData] = useState({ items: [], coordinations: [], schemaMetrics: {} });
   const [loading, setLoading] = useState(true);
@@ -375,7 +387,12 @@ export default function Hub() {
     async function loadHub() {
       setLoading(true);
       try {
-        const payload = await api.hub.list({ q: query, format, coordination: coord, sort });
+        const payload = await api.hub.list({
+          q: query,
+          coordination: filterMode === 'coordination' ? coord : '',
+          region: filterMode === 'region' ? region : '',
+          sort,
+        });
         if (!active) return;
         setData(payload);
       } finally {
@@ -385,7 +402,7 @@ export default function Hub() {
 
     loadHub();
     return () => { active = false; };
-  }, [query, format, coord, sort]);
+  }, [query, filterMode, coord, region, sort]);
 
   const hubStats = [
     { label: 'Publicaciones', value: data.schemaMetrics.publicaciones || 0, Icon: BookOpen, color: '#1A237E' },
@@ -396,6 +413,13 @@ export default function Hub() {
   const featuredCount = data.items.filter((item) => item.featured).length;
   const xpAvailable = data.items.reduce((sum, item) => sum + Number(item.xpReward || 0), 0);
   const filterCoordinations = getCanonicalCoordinations(data.coordinations);
+  const selectedCoord = filterCoordinations.find((item) => item.id === coord);
+  const selectedRegion = contentRegions.find((item) => item.id === region);
+  const activeFilterLabel = filterMode === 'coordination'
+    ? (selectedCoord?.name || 'Todas las coordinaciones')
+    : filterMode === 'region'
+      ? (selectedRegion?.name || 'Todas las regiones')
+      : 'Toda la red';
 
   const handlePublicationCreated = (item) => {
     setSort('Recientes');
@@ -463,18 +487,40 @@ export default function Hub() {
 
           <label className="content-filter-pro">
             <Filter size={16} />
-            <select value={coord} onChange={(e) => setCoord(e.target.value)}>
-              <option value="">Todas las coordinaciones</option>
-              {filterCoordinations.map((coordination) => <option key={coordination.id} value={coordination.id}>{coordination.name}</option>)}
-            </select>
+            {filterMode === 'coordination' && (
+              <select value={coord} onChange={(e) => setCoord(e.target.value)}>
+                <option value="">Todas las coordinaciones</option>
+                {filterCoordinations.map((coordination) => <option key={coordination.id} value={coordination.id}>{coordination.name}</option>)}
+              </select>
+            )}
+            {filterMode === 'region' && (
+              <select value={region} onChange={(e) => setRegion(e.target.value)}>
+                <option value="">Todas las regiones</option>
+                {contentRegions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+            )}
+            {filterMode === 'all' && (
+              <select value="" onChange={() => {}} aria-label="Toda la biblioteca">
+                <option value="">Toda la biblioteca nacional</option>
+              </select>
+            )}
           </label>
         </div>
 
         <div className="content-segments-stack">
-          <div className="content-segment-pro" role="tablist" aria-label="Formato de contenido">
-            {formats.map((option) => (
-              <button key={option} type="button" onClick={() => setFormat(option)} className={format === option ? 'is-active' : ''}>
-                {option === 'Todos' ? option : option.charAt(0).toUpperCase() + option.slice(1)}
+          <div className="content-segment-pro is-intentional" role="tablist" aria-label="Filtro de contenido">
+            {filterModes.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => {
+                  setFilterMode(option.id);
+                  if (option.id !== 'coordination') setCoord('');
+                  if (option.id !== 'region') setRegion('');
+                }}
+                className={filterMode === option.id ? 'is-active' : ''}
+              >
+                {option.label}
               </button>
             ))}
           </div>
@@ -494,6 +540,7 @@ export default function Hub() {
         <span><Star size={14} />{featuredCount} destacados</span>
         <span><Zap size={14} />{formatNumber(xpAvailable)} XP disponibles</span>
         <span><TrendingUp size={14} />{sort}</span>
+        <span><Filter size={14} />{activeFilterLabel}</span>
       </div>
 
       <section className="content-feed-section">
@@ -502,7 +549,7 @@ export default function Hub() {
             <p><Megaphone size={13} /> Biblioteca oficial</p>
             <h3>{sort}</h3>
           </div>
-          <span>{format === 'Todos' ? 'Todos los formatos' : format}</span>
+          <span>{activeFilterLabel}</span>
         </div>
 
         {loading ? (

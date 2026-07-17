@@ -341,6 +341,12 @@ begin
     v_district_id := null;
   end if;
 
+  if v_district_id is not null then
+    select d.region_id into v_region_id
+    from public.districts d
+    where d.id = v_district_id;
+  end if;
+
   if v_congregation_meta ~ '^[0-9]+$' then
     select id, nombre, region_id, district_id
     into v_congregation_id, v_existing_congregation_name, v_existing_region_id, v_existing_district_id
@@ -923,41 +929,41 @@ insert into public.regions (id, name, color) values
 on conflict (id) do update set name = excluded.name, color = excluded.color;
 
 insert into public.districts (id, region_id, name) values
-  ('d1', 'r1', 'Distrito 1'),
+  ('d1', 'r4', 'Distrito 1'),
   ('d2', 'r1', 'Distrito 2'),
-  ('d3', 'r1', 'Distrito 3'),
+  ('d3', 'r4', 'Distrito 3'),
   ('d4', 'r1', 'Distrito 4'),
-  ('d5', 'r1', 'Distrito 5'),
-  ('d6', 'r1', 'Distrito 6'),
-  ('d7', 'r1', 'Distrito 7'),
+  ('d5', 'r3', 'Distrito 5'),
+  ('d6', 'r3', 'Distrito 6'),
+  ('d7', 'r2', 'Distrito 7'),
   ('d8', 'r2', 'Distrito 8'),
-  ('d9', 'r2', 'Distrito 9'),
-  ('d10', 'r2', 'Distrito 10'),
-  ('d11', 'r2', 'Distrito 11'),
-  ('d12', 'r2', 'Distrito 12'),
-  ('d13', 'r2', 'Distrito 13'),
-  ('d14', 'r2', 'Distrito 14'),
-  ('d15', 'r3', 'Distrito 15'),
+  ('d9', 'r1', 'Distrito 9'),
+  ('d10', 'r1', 'Distrito 10'),
+  ('d11', 'r5', 'Distrito 11'),
+  ('d12', 'r3', 'Distrito 12'),
+  ('d13', 'r4', 'Distrito 13'),
+  ('d14', 'r4', 'Distrito 14'),
+  ('d15', 'r1', 'Distrito 15'),
   ('d16', 'r3', 'Distrito 16'),
-  ('d17', 'r3', 'Distrito 17'),
-  ('d18', 'r3', 'Distrito 18'),
-  ('d19', 'r3', 'Distrito 19'),
+  ('d17', 'r2', 'Distrito 17'),
+  ('d18', 'r2', 'Distrito 18'),
+  ('d19', 'r2', 'Distrito 19'),
   ('d20', 'r3', 'Distrito 20'),
-  ('d21', 'r3', 'Distrito 21'),
-  ('d22', 'r4', 'Distrito 22'),
-  ('d23', 'r4', 'Distrito 23'),
-  ('d24', 'r4', 'Distrito 24'),
-  ('d25', 'r4', 'Distrito 25'),
-  ('d26', 'r4', 'Distrito 26'),
-  ('d27', 'r4', 'Distrito 27'),
-  ('d28', 'r4', 'Distrito 28'),
-  ('d29', 'r5', 'Distrito 29'),
-  ('d30', 'r5', 'Distrito 30'),
-  ('d31', 'r5', 'Distrito 31'),
-  ('d32', 'r5', 'Distrito 32'),
+  ('d21', 'r1', 'Distrito 21'),
+  ('d22', 'r1', 'Distrito 22'),
+  ('d23', 'r5', 'Distrito 23'),
+  ('d24', 'r2', 'Distrito 24'),
+  ('d25', 'r3', 'Distrito 25'),
+  ('d26', 'r5', 'Distrito 26'),
+  ('d27', 'r2', 'Distrito 27'),
+  ('d28', 'r1', 'Distrito 28'),
+  ('d29', 'r2', 'Distrito 29'),
+  ('d30', 'r4', 'Distrito 30'),
+  ('d31', 'r3', 'Distrito 31'),
+  ('d32', 'r3', 'Distrito 32'),
   ('d33', 'r5', 'Distrito 33'),
-  ('d34', 'r5', 'Distrito 34'),
-  ('d35', 'r5', 'Distrito 35')
+  ('d34', 'r2', 'Distrito 34'),
+  ('d35', 'r2', 'Distrito 35')
 on conflict (id) do update set region_id = excluded.region_id, name = excluded.name;
 
 delete from public.regions where id = 'r6' and name = 'Insular';

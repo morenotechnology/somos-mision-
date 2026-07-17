@@ -36,11 +36,12 @@ insert into public.districts (id, region_id, name)
 select
   'd' || n::text,
   case
-    when n between 1 and 7 then 'r1'
-    when n between 8 and 14 then 'r2'
-    when n between 15 and 21 then 'r3'
-    when n between 22 and 28 then 'r4'
-    else 'r5'
+    when n in (2, 4, 9, 10, 15, 21, 22, 28) then 'r1'
+    when n in (7, 8, 17, 18, 19, 24, 27, 29, 34, 35) then 'r2'
+    when n in (5, 6, 12, 16, 20, 25, 31, 32) then 'r3'
+    when n in (1, 3, 13, 14, 30) then 'r4'
+    when n in (11, 23, 26, 33) then 'r5'
+    else 'r1'
   end,
   'Distrito ' || n::text
 from generate_series(1, 35) as n
@@ -101,6 +102,12 @@ begin
 
   if v_district_id is not null and not exists (select 1 from public.districts where id = v_district_id) then
     v_district_id := null;
+  end if;
+
+  if v_district_id is not null then
+    select d.region_id into v_region_id
+    from public.districts d
+    where d.id = v_district_id;
   end if;
 
   if v_congregation_meta ~ '^[0-9]+$' then

@@ -373,6 +373,16 @@ body {
     linear-gradient(180deg, rgba(255,255,255,0.88), rgba(245,245,247,0.58) 38%, rgba(239,242,247,0.96));
 }
 
+.app-main-shell {
+  margin-left: 0;
+}
+
+@media (min-width: 1024px) {
+  .app-main-shell {
+    margin-left: var(--sidebar-offset, 260px);
+  }
+}
+
 .main-surface {
   width: 100%;
   max-width: 1440px;
@@ -2255,6 +2265,10 @@ body {
   background: rgba(255,255,255,0.72);
 }
 
+.content-segment-pro.is-intentional {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .content-segment-pro.is-gold {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -2806,6 +2820,42 @@ body {
   line-height: 1.45;
 }
 
+.content-share-confirm-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  background: rgba(255,255,255,0.09);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+.content-share-confirm-card > svg {
+  flex: 0 0 auto;
+  color: var(--gold-400);
+}
+
+.content-share-confirm-card strong,
+.content-share-confirm-card span {
+  display: block;
+}
+
+.content-share-confirm-card strong {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 950;
+  line-height: 1.18;
+}
+
+.content-share-confirm-card span {
+  margin-top: 4px;
+  color: rgba(255,255,255,0.68);
+  font-size: 0.76rem;
+  font-weight: 760;
+}
+
 .content-share-guide-modal ol {
   display: grid;
   gap: 8px;
@@ -3266,6 +3316,10 @@ body {
     grid-template-columns: repeat(5, max-content);
     overflow-x: auto;
     scrollbar-width: none;
+  }
+
+  .content-segment-pro.is-intentional {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .content-segment-pro::-webkit-scrollbar {

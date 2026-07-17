@@ -33,6 +33,51 @@ const profileSelect = `
 const PUBLISHER_ACCESS_KEY = 'ADMIN2026MISION';
 const PASTOR_ACCESS_KEY = 'IPUC2026MISION';
 const DEFAULT_PUBLIC_SITE_URL = 'https://somosmisioncolombia.com';
+const DISTRICT_REGION_MAP = {
+  1: 'r4',
+  2: 'r1',
+  3: 'r4',
+  4: 'r1',
+  5: 'r3',
+  6: 'r3',
+  7: 'r2',
+  8: 'r2',
+  9: 'r1',
+  10: 'r1',
+  11: 'r5',
+  12: 'r3',
+  13: 'r4',
+  14: 'r4',
+  15: 'r1',
+  16: 'r3',
+  17: 'r2',
+  18: 'r2',
+  19: 'r2',
+  20: 'r3',
+  21: 'r1',
+  22: 'r1',
+  23: 'r5',
+  24: 'r2',
+  25: 'r3',
+  26: 'r5',
+  27: 'r2',
+  28: 'r1',
+  29: 'r2',
+  30: 'r4',
+  31: 'r3',
+  32: 'r3',
+  33: 'r5',
+  34: 'r2',
+  35: 'r2',
+};
+
+const CONTENT_REGION_ALIASES = {
+  r1: ['andina', 'andes', 'montaña', 'montañas', 'd2', 'd4', 'd9', 'd10', 'd15', 'd21', 'd22', 'd28'],
+  r2: ['caribe', 'costa', 'costas', 'islas', 'd7', 'd8', 'd17', 'd18', 'd19', 'd24', 'd27', 'd29', 'd34', 'd35'],
+  r3: ['pacífica', 'pacifica', 'selva', 'costa pacífica', 'd5', 'd6', 'd12', 'd16', 'd20', 'd25', 'd31', 'd32'],
+  r4: ['orinoquía', 'orinoquia', 'llanos', 'd1', 'd3', 'd13', 'd14', 'd30'],
+  r5: ['amazónica', 'amazonica', 'amazonía', 'amazonia', 'ribereñas', 'riberena', 'd11', 'd23', 'd26', 'd33'],
+};
 
 function ensureClient() {
   if (!hasSupabaseEnv || !supabase) {
@@ -180,6 +225,11 @@ function cleanOptional(value) {
   return cleaned || null;
 }
 
+function regionFromDistrict(districtId = '') {
+  const districtNumber = Number(String(districtId).replace(/\D/g, ''));
+  return DISTRICT_REGION_MAP[districtNumber] || '';
+}
+
 function normalizeSocialUsername(value = '') {
   const cleaned = String(value || '').trim().replace(/^@+/, '');
   return cleaned ? `@${cleaned}` : '';
@@ -256,7 +306,7 @@ function profilePayloadFromAuthUser(authUser = {}) {
     nombre_completo: fullName,
     email,
     rol: roleFromMetadata(meta),
-    region_id: cleanOptional(meta.region_id),
+    region_id: cleanOptional(meta.region_id) || cleanOptional(regionFromDistrict(meta.district_id)),
     district_id: cleanOptional(meta.district_id),
     congregacion_id: meta.congregacion_id ? Number(meta.congregacion_id) : null,
     congregacion: cleanOptional(meta.congregacion),
@@ -395,6 +445,17 @@ function normalizePublication(row) {
     sourcePlatform,
     imageGradient: 'from-[#1A237E] to-[#5C1800]',
   };
+}
+
+function filterPublicationsByRegion(items, regionId) {
+  if (!regionId) return items;
+  const aliases = CONTENT_REGION_ALIASES[regionId] || [];
+  if (!aliases.length) return items;
+
+  return items.filter((item) => {
+    const haystack = JSON.stringify(item).toLowerCase();
+    return aliases.some((alias) => haystack.includes(String(alias).toLowerCase()));
+  });
 }
 
 function normalizeMission(row, completedIds = [], progressMap = new Map()) {
@@ -819,14 +880,14 @@ async function getPublications(client, params = {}) {
     const fallbackResult = await buildQuery(publicationSelectBase);
     if (isPublicationSchemaDrift(fallbackResult.error)) {
       const legacyRows = unwrap(await buildQuery(publicationSelectLegacy), 'No se pudo cargar el contenido');
-      return legacyRows.map(normalizePublication);
+      return filterPublicationsByRegion(legacyRows.map(normalizePublication), params.region);
     }
     const fallbackRows = unwrap(fallbackResult, 'No se pudo cargar el contenido');
-    return fallbackRows.map(normalizePublication);
+    return filterPublicationsByRegion(fallbackRows.map(normalizePublication), params.region);
   }
 
   const rows = unwrap(result, 'No se pudo cargar el contenido');
-  return rows.map(normalizePublication);
+  return filterPublicationsByRegion(rows.map(normalizePublication), params.region);
 }
 
 async function fetchCurrentSessionBundle(client) {
@@ -916,7 +977,7 @@ export function createSupabaseApi() {
                 rol: payload.role,
                 pastor_access_key: payload.role === 'pastor' ? payload.accessKey : null,
                 publisher_access_key: payload.canPublish ? payload.accessKey : null,
-                region_id: payload.region,
+                region_id: payload.region || regionFromDistrict(payload.district),
                 district_id: payload.district,
                 congregacion_id: payload.congregationId || null,
                 congregacion: payload.congregation?.trim(),
