@@ -17,7 +17,7 @@ const navItems = [
 ];
 
 const adminItems = [
-  { to: '/admin', icon: Settings, label: 'Admin' },
+  { to: '/admin', icon: Settings, label: 'Superadmin' },
 ];
 
 export default function Sidebar() {

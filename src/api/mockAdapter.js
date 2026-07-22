@@ -363,7 +363,14 @@ export function createMockApi() {
     },
 
     perfiles: {
-      list: (params) => resolve(searchRows(state.perfiles, params)),
+      list: (params = {}) => {
+        const rows = [...state.users].sort((a, b) => (
+          params.sort === 'registered_desc'
+            ? new Date(b.joinedAt || 0) - new Date(a.joinedAt || 0)
+            : Number(b.xp || 0) - Number(a.xp || 0)
+        ));
+        return resolve(searchRows(rows, params));
+      },
       get: (id) => resolve(state.perfiles.find((profile) => profile.id === id)),
       update: (id, payload) => {
         const index = state.perfiles.findIndex((profile) => profile.id === id);
@@ -514,6 +521,24 @@ export function createMockApi() {
         }
 
         return resolve(updated);
+      },
+      delete: (id) => {
+        const currentUser = state.currentUser || state.users.find((user) => user.role === 'admin');
+        if (!(currentUser?.canPublish || currentUser?.role === 'admin')) {
+          throw new ApiError('Solo los editores pueden eliminar publicaciones oficiales.', 403);
+        }
+
+        const publicationIndex = state.publicaciones.findIndex((item) => (
+          String(item.id) === String(id) || String(`cnt${item.id}`).toLowerCase() === String(id).toLowerCase()
+        ));
+        const contentIndex = state.contentItems.findIndex((item) => (
+          String(item.id) === String(id) || String(`cnt${item.id}`).toLowerCase() === String(id).toLowerCase()
+        ));
+        if (publicationIndex < 0 && contentIndex < 0) throw new ApiError('Publicación no encontrada', 404);
+
+        if (publicationIndex >= 0) state.publicaciones.splice(publicationIndex, 1);
+        if (contentIndex >= 0) state.contentItems.splice(contentIndex, 1);
+        return resolve({ id: String(id), deleted: true });
       },
     },
 

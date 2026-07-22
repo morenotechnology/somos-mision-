@@ -384,6 +384,7 @@ function normalizeProfile(row, stats = {}) {
     badges: stats.badgeIds || [],
     avatar: row.avatar || initials(row.nombre_completo),
     avatarColor: row.avatar_color || '#1A237E',
+    registeredAt: row.created_at || null,
     joinedAt: row.created_at?.slice(0, 10) || new Date().toISOString().slice(0, 10),
     active: row.cuenta_activa ?? true,
   };
@@ -1276,7 +1277,9 @@ export function createSupabaseApi() {
 
     perfiles: {
       async list(params = {}) {
-        let query = client.from('profiles').select(profileSelect).order('xp', { ascending: false });
+        let query = client.from('profiles').select(profileSelect);
+        if (params.sort === 'registered_desc') query = query.order('created_at', { ascending: false });
+        else query = query.order('xp', { ascending: false });
         if (params.q) query = query.ilike('nombre_completo', `%${params.q}%`);
         if (params.role || params.rol) query = query.eq('rol', params.role || params.rol);
         const rows = unwrap(await query, 'No se pudieron cargar los perfiles');
@@ -1609,6 +1612,17 @@ export function createSupabaseApi() {
           instagramUrl: normalized.instagramUrl || payload.instagram_url || '',
           sourcePlatform: normalized.sourcePlatform || payload.source_platform || 'manual',
         };
+      },
+
+      async delete(id) {
+        const sessionBundle = await fetchCurrentSessionBundle(client);
+        if (!(sessionBundle?.user?.canPublish || sessionBundle?.user?.role === 'admin')) {
+          throw new ApiError('Solo los editores pueden eliminar publicaciones oficiales.', 403);
+        }
+
+        const result = await client.from('publications').delete().eq('id', id);
+        unwrap(result, 'No se pudo eliminar la publicación');
+        return { id: String(id), deleted: true };
       },
     },
 

@@ -2629,6 +2629,28 @@ body {
   transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
 }
 
+.content-inline-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.content-inline-actions .content-inline-edit-button:only-child {
+  grid-column: 1 / -1;
+}
+
+.content-inline-edit-button.is-delete {
+  border-color: rgba(185, 28, 28, 0.16);
+  background: rgba(254, 242, 242, 0.88);
+  color: #b91c1c;
+}
+
+.content-inline-edit-button.is-delete:hover {
+  border-color: rgba(185, 28, 28, 0.32);
+  background: #fff;
+  color: #991b1b;
+}
+
 .content-inline-edit-button:hover {
   transform: translateY(-1px);
   border-color: rgba(212,175,55,0.34);

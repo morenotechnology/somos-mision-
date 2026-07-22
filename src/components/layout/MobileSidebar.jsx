@@ -77,7 +77,7 @@ export default function MobileSidebar() {
                   }
                 >
                   <Settings size={18} />
-                  Admin
+                  Superadmin
                 </NavLink>
               )}
             </nav>

@@ -9,7 +9,7 @@ const pageTitles = {
   '/ranking':   'Ranking Nacional',
   '/missions':  'Misiones & Recompensas',
   '/profile':   'Mi Perfil',
-  '/admin':     'Panel Admin',
+  '/admin':     'Panel Superadmin',
 };
 
 const roleLabels = { admin: 'Administrador', pastor: 'Pastor/Directivo', multiplicador: 'Multiplicador' };

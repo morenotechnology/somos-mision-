@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle2, Copy, ExternalLink, Heart, MessageCircle, PencilLine, Send, Smartphone, Star, X, Zap } from 'lucide-react';
+import { CheckCircle2, Copy, ExternalLink, Heart, MessageCircle, PencilLine, Send, Smartphone, Star, Trash2, X, Zap } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import toast from 'react-hot-toast';
 
@@ -230,7 +230,7 @@ function ShareConfirmationPortal({ confirmation, loading, onClose, onConfirm }) 
   );
 }
 
-export default function ContentCard({ item, delay = 0, canEdit = false, onEdit }) {
+export default function ContentCard({ item, delay = 0, canEdit = false, canDelete = false, onEdit, onDelete }) {
   const { shareContent, sharedContent } = useAppStore();
   const [imgErr, setImgErr] = useState(false);
   const [mobileGuide, setMobileGuide] = useState(null);
@@ -439,11 +439,21 @@ export default function ContentCard({ item, delay = 0, canEdit = false, onEdit }
           </div>
         )}
 
-        {canEdit && (
-          <button type="button" className="content-inline-edit-button" onClick={() => onEdit?.(item)}>
-            <PencilLine size={14} />
-            Editar publicación
-          </button>
+        {(canEdit || canDelete) && (
+          <div className="content-inline-actions">
+            {canEdit && (
+              <button type="button" className="content-inline-edit-button" onClick={() => onEdit?.(item)}>
+                <PencilLine size={14} />
+                Editar publicación
+              </button>
+            )}
+            {canDelete && (
+              <button type="button" className="content-inline-edit-button is-delete" onClick={() => onDelete?.(item)}>
+                <Trash2 size={14} />
+                Eliminar
+              </button>
+            )}
+          </div>
         )}
 
         <div className="content-actions-pro">

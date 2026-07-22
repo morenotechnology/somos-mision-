@@ -358,4 +358,16 @@ create policy "pastors create publications" on public.publications for insert to
   )
 );
 
+drop policy if exists "editors delete publications" on public.publications;
+create policy "editors delete publications" on public.publications for delete to authenticated using (
+  exists (
+    select 1
+    from public.profiles
+    where id = auth.uid()
+      and (rol = 'admin' or can_publish = true)
+  )
+);
+
+grant delete on public.publications to authenticated;
+
 grant execute on function public.share_publication(bigint, text, text, text, integer) to authenticated;

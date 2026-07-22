@@ -420,6 +420,7 @@ export default function Hub() {
   const [data, setData] = useState({ items: [], coordinations: [], schemaMetrics: {} });
   const [loading, setLoading] = useState(true);
   const [editingPublication, setEditingPublication] = useState(null);
+  const [deletingPublicationId, setDeletingPublicationId] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -490,6 +491,29 @@ export default function Hub() {
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
+  };
+
+  const handleDeletePublication = async (item) => {
+    if (!window.confirm(`¿Eliminar "${item.title}"? Esta acción no se puede deshacer.`)) return;
+    setDeletingPublicationId(item.id);
+    try {
+      await api.publicaciones.delete(item.id);
+      if (String(editingPublication?.id) === String(item.id)) setEditingPublication(null);
+      setData((current) => ({
+        ...current,
+        items: current.items.filter((publication) => String(publication.id) !== String(item.id)),
+        schemaMetrics: {
+          ...current.schemaMetrics,
+          publicaciones: Math.max(Number(current.schemaMetrics.publicaciones || 0) - 1, 0),
+          comunicadosActivos: Math.max(Number(current.schemaMetrics.comunicadosActivos || 0) - 1, 0),
+        },
+      }));
+      toast.success('Publicación eliminada');
+    } catch (error) {
+      toast.error(error.message || 'No se pudo eliminar la publicación');
+    } finally {
+      setDeletingPublicationId(null);
+    }
   };
 
   return (
@@ -625,7 +649,9 @@ export default function Hub() {
                 item={item}
                 delay={i * 0.055}
                 canEdit={canManagePublications}
+                canDelete={canManagePublications && deletingPublicationId !== item.id}
                 onEdit={handleEditPublication}
+                onDelete={handleDeletePublication}
               />
             ))}
           </div>

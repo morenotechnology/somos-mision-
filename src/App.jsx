@@ -63,6 +63,11 @@ function ProtectedRoute({ children }) {
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
+function SuperAdminRoute({ children }) {
+  const currentUser = useAppStore((state) => state.currentUser);
+  return currentUser?.role === 'admin' ? children : <Navigate to="/dashboard" replace />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -116,7 +121,7 @@ export default function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/profile/*" element={<Navigate to="/profile" replace />} />
             <Route path="/perfil" element={<Navigate to="/profile" replace />} />
-            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin" element={<SuperAdminRoute><Admin /></SuperAdminRoute>} />
             <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
           </Route>
 
