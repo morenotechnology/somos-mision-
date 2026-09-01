@@ -1,6 +1,6 @@
 import { ArrowUpRight, LockKeyhole, MessageCircle } from 'lucide-react';
 
-const vipUrl = String(import.meta.env.VITE_VIP_WHATSAPP_URL || '').trim();
+const vipUrl = String(import.meta.env.VITE_VIP_WHATSAPP_URL || 'https://chat.whatsapp.com/G2Al7tjnAao6k1I4swB5mv?s=hd&p=i&mlu=4').trim();
 
 export default function CommunityVipCard() {
   const hasInvite = /^https:\/\/chat\.whatsapp\.com\//i.test(vipUrl);
