@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BookOpen, Trophy, Target, User, Settings,
-  ChevronLeft, Zap, LogOut
+  ChevronLeft, Zap, LogOut, MessageCircle
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import BrandLogo from '../common/BrandLogo';
@@ -19,6 +19,7 @@ const navItems = [
 const adminItems = [
   { to: '/admin', icon: Settings, label: 'Superadmin' },
 ];
+const VIP_WHATSAPP_URL = 'https://chat.whatsapp.com/G2Al7tjnAao6k1I4swB5mv?s=hd&p=i&mlu=4';
 
 export default function Sidebar() {
   const { currentUser, sidebarOpen, toggleSidebar, logout } = useAppStore();
@@ -122,6 +123,25 @@ export default function Sidebar() {
             )}
           </NavLink>
         ))}
+
+        <a
+          href={VIP_WHATSAPP_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all text-[#177245] hover:bg-[#EFFAF2]"
+        >
+          <MessageCircle size={18} strokeWidth={1.8} className="flex-shrink-0" />
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="text-sm font-semibold whitespace-nowrap overflow-hidden"
+              >
+                Comunidad VIP
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </a>
 
         {currentUser?.role === 'admin' && (
           <>

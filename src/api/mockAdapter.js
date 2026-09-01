@@ -77,6 +77,7 @@ function regionFromDistrict(districtId = '') {
 
 const state = {
   comentarios: clone(comentarios),
+  commentReactions: [],
   compartidos: clone(compartidos),
   congregaciones: clone(congregaciones),
   contentItems: clone(contentItems),
@@ -85,8 +86,43 @@ const state = {
   publicaciones: clone(publicaciones),
   reacciones: clone(reacciones),
   seguidores: clone(seguidores),
+  notifications: [],
   users: clone(users),
 };
+
+function normalizeMockComment(row) {
+  const userKey = row.user_id || row.usuario_id;
+  const author = state.users.find((user) => String(user.schemaId || user.id) === String(userKey));
+  const district = districts.find((item) => String(item.id) === String(author?.district));
+  const badge = badges.find((item) => author?.badges?.includes(item.id));
+  const level = Number(row.level || row.authorLevel || author?.level || 1);
+  const districtName = row.districtName || row.authorDistrict || district?.name || author?.district || 'Sin distrito';
+  const currentUserKey = String(state.currentUser?.schemaId || state.currentUser?.id || '');
+  const commentReactions = state.commentReactions.filter((reaction) => (
+    String(reaction.comment_id || reaction.commentId) === String(row.id)
+    && (reaction.type || 'like') === 'like'
+  ));
+
+  return {
+    id: String(row.id),
+    publicationId: String(row.publication_id || row.post_id),
+    userId: userKey,
+    content: row.content || row.contenido || '',
+    createdAt: row.createdAt || row.created_at,
+    authorName: row.authorName || author?.name || 'Miembro de la red',
+    authorAvatar: row.authorAvatar || author?.avatar || '',
+    authorColor: row.authorColor || author?.avatarColor || '#1A237E',
+    level: Number.isFinite(level) && level > 0 ? level : 1,
+    authorLevel: Number.isFinite(level) && level > 0 ? level : 1,
+    districtName,
+    authorDistrict: districtName,
+    badgeName: row.badgeName || row.authorBadge || badge?.name || '',
+    authorBadge: row.authorBadge || row.badgeName || badge?.name || '',
+    parentCommentId: row.parent_comment_id || row.parentCommentId || null,
+    likesCount: commentReactions.length,
+    likedByMe: commentReactions.some((reaction) => String(reaction.user_id || reaction.userId) === currentUserKey),
+  };
+}
 
 function searchRows(rows, params = {}) {
   let result = [...rows];
@@ -547,10 +583,18 @@ export function createMockApi() {
       },
     },
 
+    notifications: {
+      list: (params = {}) => {
+        const userKey = String(state.currentUser?.schemaId || state.currentUser?.id || '');
+        const rows = state.notifications.filter((item) => !item.recipientId || String(item.recipientId) === userKey);
+        return resolve(rows.slice(0, Number(params.limit) || 12));
+      },
+    },
+
     social: {
       comentarios: (params = {}) => resolve(searchRows(state.comentarios, params).filter((row) => (
         !params.publication_id || String(row.post_id || row.publication_id) === String(params.publication_id)
-      )).slice(0, params.limit ? Number(params.limit) : undefined)),
+      )).slice(0, params.limit ? Number(params.limit) : undefined).map(normalizeMockComment)),
       compartidos: (params) => resolve(searchRows(state.compartidos, params)),
       reacciones: (params) => resolve(searchRows(state.reacciones, params)),
       seguidores: (params) => resolve(searchRows(state.seguidores, params)),
@@ -585,14 +629,71 @@ export function createMockApi() {
         if (content) content.likes = likesCount;
         return resolve({ active, likesCount });
       },
-      agregarComentario: (publicationId, content) => {
+      toggleCommentReaction: (commentId, type = 'like') => {
+        const userKey = String(state.currentUser?.schemaId || state.currentUser?.id || '');
+        if (!userKey) throw new ApiError('Inicia sesión para reaccionar', 401);
+        const index = state.commentReactions.findIndex((row) => (
+          String(row.comment_id || row.commentId) === String(commentId)
+          && String(row.user_id || row.userId) === userKey
+          && (row.type || 'like') === type
+        ));
+        const active = index < 0;
+        if (active) {
+          state.commentReactions.unshift({ id: crypto.randomUUID(), comment_id: commentId, user_id: userKey, type, created_at: new Date().toISOString() });
+          const comment = state.comentarios.find((row) => String(row.id) === String(commentId));
+          const authorKey = String(comment?.usuario_id || comment?.user_id || '');
+          if (comment && authorKey && authorKey !== userKey) {
+            const contentItem = state.contentItems.find((item) => String(item.id) === String(comment.post_id || comment.publication_id));
+            const actor = state.users.find((user) => String(user.schemaId || user.id) === userKey);
+            state.notifications.unshift({
+              id: crypto.randomUUID(),
+              recipientId: authorKey,
+              actorName: actor?.name || 'Alguien de la red',
+              type: 'comment_like',
+              createdAt: new Date().toISOString(),
+              read: false,
+              icon: 'heart',
+              color: '#E91E63',
+              title: `${actor?.name || 'Alguien de la red'} indicó que le gusta tu comentario`,
+              desc: `En "${contentItem?.title || 'una publicación'}"`,
+            });
+          }
+        } else {
+          state.commentReactions.splice(index, 1);
+        }
+        const likesCount = state.commentReactions.filter((row) => (
+          String(row.comment_id || row.commentId) === String(commentId) && (row.type || 'like') === 'like'
+        )).length;
+        return resolve({ active, likesCount });
+      },
+      agregarComentario: (publicationId, content, parentCommentId = null) => {
         const userKey = String(state.currentUser?.schemaId || state.currentUser?.id || '');
         const cleanContent = String(content || '').trim();
         if (!userKey) throw new ApiError('Inicia sesión para comentar', 401);
         if (!cleanContent) throw new ApiError('Escribe un comentario antes de publicarlo', 400);
-        const comment = { id: crypto.randomUUID(), post_id: publicationId, usuario_id: userKey, contenido: cleanContent, created_at: new Date().toISOString() };
+        const comment = { id: crypto.randomUUID(), post_id: publicationId, usuario_id: userKey, parent_comment_id: parentCommentId || null, contenido: cleanContent, created_at: new Date().toISOString() };
         state.comentarios.unshift(comment);
-        return resolve(comment);
+        const parent = parentCommentId
+          ? state.comentarios.find((row) => String(row.id) === String(parentCommentId))
+          : null;
+        const parentAuthorKey = String(parent?.usuario_id || parent?.user_id || '');
+        if (parent && parentAuthorKey && parentAuthorKey !== userKey) {
+          const contentItem = state.contentItems.find((item) => String(item.id) === String(publicationId));
+          const actor = state.users.find((user) => String(user.schemaId || user.id) === userKey);
+          state.notifications.unshift({
+            id: crypto.randomUUID(),
+            recipientId: parentAuthorKey,
+            actorName: actor?.name || 'Alguien de la red',
+            type: 'comment_reply',
+            createdAt: new Date().toISOString(),
+            read: false,
+            icon: 'message',
+            color: '#1A237E',
+            title: `${actor?.name || 'Alguien de la red'} respondió a tu comentario`,
+            desc: `En "${contentItem?.title || 'una publicación'}"`,
+          });
+        }
+        return resolve(normalizeMockComment(comment));
       },
       eliminarComentario: (commentId) => {
         const userKey = String(state.currentUser?.schemaId || state.currentUser?.id || '');
@@ -602,7 +703,12 @@ export function createMockApi() {
         if (String(comment.usuario_id || comment.user_id) !== userKey && state.currentUser?.role !== 'admin' && !state.currentUser?.canPublish) {
           throw new ApiError('No tienes permiso para eliminar este comentario', 403);
         }
-        state.comentarios.splice(index, 1);
+        const removedIds = new Set([String(commentId)]);
+        state.comentarios.forEach((row) => {
+          if (String(row.parent_comment_id || row.parentCommentId || '') === String(commentId)) removedIds.add(String(row.id));
+        });
+        state.comentarios = state.comentarios.filter((row) => !removedIds.has(String(row.id)));
+        state.commentReactions = state.commentReactions.filter((row) => !removedIds.has(String(row.comment_id || row.commentId)));
         return resolve({ id: String(commentId), deleted: true });
       },
     },

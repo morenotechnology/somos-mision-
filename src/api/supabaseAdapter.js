@@ -30,6 +30,20 @@ const profileSelect = `
   congregations:congregations(id, nombre, portada_url)
 `;
 
+const commentSelect = `
+  *,
+  profiles:profiles(
+    nombre_completo,
+    avatar,
+    avatar_color,
+    xp,
+    level,
+    district_id,
+    rol,
+    districts:districts(id, name)
+  )
+`;
+
 const PUBLISHER_ACCESS_KEY = 'ADMIN2026MISION';
 const PASTOR_ACCESS_KEY = 'IPUC2026MISION';
 const DEFAULT_PUBLIC_SITE_URL = 'https://somosmisioncolombia.com';
@@ -572,6 +586,24 @@ function normalizeNotification(activity, publicationMap, missionMap) {
   };
 }
 
+function normalizeSocialNotification(row, actorMap, publicationMap) {
+  const actor = actorMap.get(String(row.actor_id || ''));
+  const publication = publicationMap.get(String(row.publication_id || ''));
+  const actorName = actor?.nombre_completo || 'Alguien de la red';
+  const isLike = row.type === 'comment_like';
+  return {
+    id: row.id,
+    time: formatRelativeTime(row.created_at),
+    createdAt: row.created_at,
+    points: 0,
+    read: Boolean(row.read_at),
+    icon: isLike ? 'heart' : 'message',
+    color: isLike ? '#E91E63' : '#1A237E',
+    title: isLike ? `${actorName} indicó que le gusta tu comentario` : `${actorName} respondió a tu comentario`,
+    desc: publication?.title ? `En "${publication.title}"` : 'Revisa la conversación en Noticias.',
+  };
+}
+
 async function getNotifications(client, limit = 12) {
   const sessionBundle = await fetchCurrentSessionBundle(client);
   if (!sessionBundle?.user?.id) return [];
@@ -618,7 +650,33 @@ async function getNotifications(client, limit = 12) {
   const publicationMap = new Map(publicationRows.map((row) => [row.id, row]));
   const missionMap = new Map(missionRows.map((row) => [row.id, row]));
 
-  return activities.map((activity) => normalizeNotification(activity, publicationMap, missionMap));
+  let socialNotifications = [];
+  const socialResult = await client
+    .from('notifications')
+    .select('*')
+    .eq('recipient_id', sessionBundle.user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (!socialResult.error && socialResult.data?.length) {
+    const socialRows = socialResult.data;
+    const actorIds = [...new Set(socialRows.map((row) => row.actor_id).filter(Boolean))];
+    const socialPublicationIds = [...new Set(socialRows.map((row) => row.publication_id).filter(Boolean))];
+    const [actorRows, socialPublicationRows] = await Promise.all([
+      actorIds.length
+        ? client.from('profiles').select('id,nombre_completo').in('id', actorIds)
+        : Promise.resolve({ data: [], error: null }),
+      socialPublicationIds.length
+        ? client.from('publications').select('id,title').in('id', socialPublicationIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+    const actorMap = new Map((actorRows.data || []).map((row) => [String(row.id), row]));
+    const socialPublicationMap = new Map((socialPublicationRows.data || []).map((row) => [String(row.id), row]));
+    socialNotifications = socialRows.map((row) => normalizeSocialNotification(row, actorMap, socialPublicationMap));
+  }
+
+  return [...socialNotifications, ...activities.map((activity) => normalizeNotification(activity, publicationMap, missionMap))]
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+    .slice(0, limit);
 }
 
 async function getProfileStats(client, profileId) {
@@ -895,17 +953,73 @@ async function getPublications(client, params = {}) {
   return filterPublicationsByRegion(rows.map(normalizePublication), params.region);
 }
 
-function normalizeComment(row) {
+function normalizeComment(row, reactionMeta = {}) {
+  const profile = (Array.isArray(row.profiles) ? row.profiles[0] : row.profiles) || row.author || {};
+  const profileBadges = profile.profile_badges || profile.badges || [];
+  const firstBadge = Array.isArray(profileBadges) ? profileBadges[0] : profileBadges;
+  const badgeName = firstBadge?.badges?.name || firstBadge?.name || profile.badge_name || '';
+  const rawLevel = Number(profile.level);
+  const xp = Number(profile.xp || 0);
+  const level = Number.isFinite(rawLevel) && rawLevel > 0
+    ? rawLevel
+    : xp > 0 ? Math.min(Math.floor(xp / 500) + 1, 10) : 1;
+  const districtName = profile.districts?.name || profile.district_name || profile.district_id || 'Sin distrito';
   return {
     id: String(row.id),
-    publicationId: String(row.publication_id),
-    userId: row.user_id,
+    publicationId: String(row.publication_id || row.post_id),
+    userId: row.user_id || row.usuario_id,
     content: row.contenido || row.content || '',
     createdAt: row.created_at,
-    authorName: row.profiles?.nombre_completo || row.author?.nombre_completo || 'Miembro de la red',
-    authorAvatar: row.profiles?.avatar || row.author?.avatar || '',
-    authorColor: row.profiles?.avatar_color || row.author?.avatar_color || '#1A237E',
+    authorName: profile.nombre_completo || 'Miembro de la red',
+    authorAvatar: profile.avatar || profile.avatar_url || '',
+    authorColor: profile.avatar_color || '#1A237E',
+    level,
+    authorLevel: level,
+    districtName,
+    authorDistrict: districtName,
+    badgeName,
+    authorBadge: badgeName,
+    parentCommentId: row.parent_comment_id || row.parentCommentId || null,
+    likesCount: Number(reactionMeta.likesCount || 0),
+    likedByMe: Boolean(reactionMeta.likedByMe),
   };
+}
+
+async function hydrateCommentRows(client, rows = []) {
+  const commentIds = rows.map((row) => row.id).filter(Boolean);
+  const sessionData = await client.auth.getSession();
+  const currentUserId = sessionData.data?.session?.user?.id || null;
+  const reactionMap = new Map();
+
+  if (commentIds.length) {
+    const reactionResult = await client
+      .from('comment_reactions')
+      .select('comment_id,user_id,type')
+      .in('comment_id', commentIds);
+    if (!reactionResult.error) {
+      const reactionRows = reactionResult.data || [];
+      commentIds.forEach((commentId) => {
+        const related = reactionRows.filter((reaction) => (
+          String(reaction.comment_id) === String(commentId) && (reaction.type || 'like') === 'like'
+        ));
+        reactionMap.set(String(commentId), {
+          likesCount: related.length,
+          likedByMe: related.some((reaction) => String(reaction.user_id) === String(currentUserId)),
+        });
+      });
+    }
+  }
+
+  return rows.map((row) => normalizeComment(row, reactionMap.get(String(row.id))));
+}
+
+function isCommentParentSchemaDrift(error) {
+  if (!error) return false;
+  const message = [error.message, error.details, error.hint].filter(Boolean).join(' ').toLowerCase();
+  return error.code === '42703'
+    || error.code === 'PGRST204'
+    || message.includes('parent_comment_id')
+    || message.includes('comment_reactions');
 }
 
 async function getSocialSummary(client, params = {}) {
@@ -1679,10 +1793,16 @@ export function createSupabaseApi() {
 
     social: {
       async comentarios(params = {}) {
-        let query = client.from('comments').select('*').order('created_at', { ascending: false });
+        let query = client.from('comments').select(commentSelect).order('created_at', { ascending: false });
         if (params.publication_id) query = query.eq('publication_id', params.publication_id);
         if (params.limit) query = query.limit(params.limit);
-        return unwrap(await query, 'No se pudieron cargar los comentarios').map(normalizeComment);
+        const result = await query;
+        if (!result.error) return hydrateCommentRows(client, result.data || []);
+
+        let fallbackQuery = client.from('comments').select('*').order('created_at', { ascending: false });
+        if (params.publication_id) fallbackQuery = fallbackQuery.eq('publication_id', params.publication_id);
+        if (params.limit) fallbackQuery = fallbackQuery.limit(params.limit);
+        return hydrateCommentRows(client, unwrap(await fallbackQuery, 'No se pudieron cargar los comentarios'));
       },
 
       async resumen(params = {}) {
@@ -1720,17 +1840,56 @@ export function createSupabaseApi() {
         return { active, likesCount: Number(countResult.count || 0) };
       },
 
-      async agregarComentario(publicationId, content) {
+      async toggleCommentReaction(commentId, type = 'like') {
+        const sessionData = unwrap(await client.auth.getSession(), 'No se pudo recuperar la sesión');
+        const userId = sessionData?.session?.user?.id;
+        if (!userId) throw new ApiError('Inicia sesión para reaccionar', 401);
+
+        const existing = await client
+          .from('comment_reactions')
+          .select('id')
+          .eq('comment_id', commentId)
+          .eq('user_id', userId)
+          .eq('type', type)
+          .maybeSingle();
+        if (existing.error) throw new ApiError(existing.error.message || 'No se pudo consultar tu reacción', existing.error.status || 500, existing.error);
+
+        let active = false;
+        if (existing.data?.id) {
+          unwrap(await client.from('comment_reactions').delete().eq('id', existing.data.id), 'No se pudo quitar la reacción');
+        } else {
+          const insertResult = await client.from('comment_reactions').insert({ comment_id: commentId, user_id: userId, type });
+          if (insertResult.error) throw new ApiError(insertResult.error.message || 'No se pudo guardar la reacción', insertResult.error.status || 500, insertResult.error);
+          active = true;
+        }
+
+        const countResult = await client
+          .from('comment_reactions')
+          .select('id', { count: 'exact', head: true })
+          .eq('comment_id', commentId)
+          .eq('type', 'like');
+        if (countResult.error) throw new ApiError(countResult.error.message || 'No se pudo actualizar la reacción', countResult.error.status || 500, countResult.error);
+        return { active, likesCount: Number(countResult.count || 0) };
+      },
+
+      async agregarComentario(publicationId, content, parentCommentId = null) {
         const sessionData = unwrap(await client.auth.getSession(), 'No se pudo recuperar la sesión');
         const userId = sessionData?.session?.user?.id;
         const cleanContent = String(content || '').trim();
         if (!userId) throw new ApiError('Inicia sesión para comentar', 401);
         if (!cleanContent) throw new ApiError('Escribe un comentario antes de publicarlo', 400);
-        const result = await client
+        let result = await client
           .from('comments')
-          .insert({ publication_id: publicationId, user_id: userId, contenido: cleanContent })
+          .insert({ publication_id: publicationId, user_id: userId, contenido: cleanContent, parent_comment_id: parentCommentId || null })
           .select('*')
           .single();
+        if (result.error && parentCommentId && isCommentParentSchemaDrift(result.error)) {
+          result = await client
+            .from('comments')
+            .insert({ publication_id: publicationId, user_id: userId, contenido: cleanContent })
+            .select('*')
+            .single();
+        }
         return normalizeComment(unwrap(result, 'No se pudo publicar el comentario'));
       },
 

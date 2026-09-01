@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, Share2, Target, Trophy, X, Zap } from 'lucide-react';
+import { Bell, Heart, MessageCircle, Share2, Target, Trophy, X, Zap } from 'lucide-react';
 import { api } from '../../api';
 
 const iconMap = {
   bell: Bell,
+  heart: Heart,
+  message: MessageCircle,
   share: Share2,
   target: Target,
   trophy: Trophy,
@@ -126,7 +128,7 @@ export default function NotificationPanel({ open, onClose }) {
 
             <div className="border-t border-[#E2E8F0] px-4 py-2.5 text-center">
               <span className="text-xs font-semibold text-[#1A237E]">
-                Actividad sincronizada con Supabase
+                Tu actividad reciente, en un solo lugar
               </span>
             </div>
           </motion.div>

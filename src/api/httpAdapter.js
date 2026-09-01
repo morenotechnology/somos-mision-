@@ -79,7 +79,8 @@ export function createHttpApi() {
         return Object.fromEntries(summaries);
       },
       toggleReaction: (publicationId, type = 'like') => apiRequest('/reacciones', { method: 'POST', body: jsonBody({ publication_id: publicationId, type }) }),
-      agregarComentario: (publicationId, content) => apiRequest('/comentarios', { method: 'POST', body: jsonBody({ publication_id: publicationId, contenido: content }) }),
+      agregarComentario: (publicationId, content, parentCommentId = null) => apiRequest('/comentarios', { method: 'POST', body: jsonBody({ publication_id: publicationId, contenido: content, parent_comment_id: parentCommentId }) }),
+      toggleCommentReaction: (commentId, type = 'like') => apiRequest(`/comentarios/${commentId}/reaccion`, { method: 'POST', body: jsonBody({ type }) }),
       eliminarComentario: (commentId) => apiRequest(`/comentarios/${commentId}`, { method: 'DELETE' }),
     },
   };

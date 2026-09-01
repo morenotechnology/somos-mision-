@@ -53,6 +53,16 @@ import coordVulnerable from '../assets/coordinaciones/optimized/POBLACION VULNER
 import coordSorda from '../assets/coordinaciones/optimized/poblacion-sorda.png';
 import coordRestauracion from '../assets/coordinaciones/optimized/restauracion.png';
 
+const VIP_WHATSAPP_URL = 'https://chat.whatsapp.com/G2Al7tjnAao6k1I4swB5mv?s=hd&p=i&mlu=4';
+
+function WhatsAppMark(props) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path fill="currentColor" d="M12.04 2.2a9.7 9.7 0 0 0-8.37 14.58L2.6 21.8l5.15-1.31a9.7 9.7 0 1 0 4.29-18.29Zm0 17.66a7.9 7.9 0 0 1-4.02-1.1l-.29-.18-3.06.78.65-3.01-.2-.31a7.9 7.9 0 1 1 6.92 3.82Zm4.4-5.9c-.24-.12-1.43-.71-1.65-.79-.22-.08-.38-.12-.54.12-.16.24-.62.79-.76.95-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.95-1.2-.72-.64-1.2-1.44-1.34-1.68-.14-.24-.01-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.19-.46-.39-.4-.54-.41h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.51.58.18 1.1.16 1.52.1.46-.07 1.43-.58 1.63-1.14.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28Z" />
+    </svg>
+  );
+}
+
 /* ─── Animation variants ─────────────────────────────────────────────── */
 const fadeUp = (delay = 0, distance = 28) => ({
   initial: { opacity: 0, y: distance },
@@ -297,6 +307,10 @@ function Nav({ onLogin, onRegister, onLearnMore }) {
           <button type="button" className="ln-nav-context" onClick={onLearnMore}>
             SABER MÁS
           </button>
+          <a className="ln-nav-vip" href={VIP_WHATSAPP_URL} target="_blank" rel="noreferrer">
+            <WhatsAppMark />
+            VIP
+          </a>
           <button type="button" id="nav-login" onClick={onLogin} className="ln-btn-ghost">
             Iniciar sesión
           </button>
@@ -413,6 +427,15 @@ function Hero({ metrics, schema, onRegister, onLogin, onLearnMore, previewOnly =
                 <img src={amigosLogo} alt="" />
               </div>
 
+              <a className="ln-mobile-menu-vip" href={VIP_WHATSAPP_URL} target="_blank" rel="noreferrer" onClick={() => setMobileMenuOpen(false)}>
+                <span className="ln-mobile-menu-vip-icon"><WhatsAppMark /></span>
+                <span>
+                  <strong>Comunidad VIP</strong>
+                  <small>Reuniones y capacitaciones de la red</small>
+                </span>
+                <ExternalLink size={15} />
+              </a>
+
               <nav className="ln-mobile-menu-links" aria-label="Secciones de la landing">
                 {menuItems.map((item, index) => (
                   <motion.button
@@ -451,10 +474,17 @@ function Hero({ metrics, schema, onRegister, onLogin, onLearnMore, previewOnly =
         initial={{ opacity: 0, scale: 0.94, y: 26 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-        aria-hidden="true"
       >
         <img src="/hero-map.png" alt="" className="ln-hero-map" />
         <img src={amigosLogo} alt="" className="ln-hero-polaroid is-one is-amigos-logo" />
+        <a className="ln-hero-vip-float" href={VIP_WHATSAPP_URL} target="_blank" rel="noreferrer">
+          <span className="ln-hero-vip-icon"><WhatsAppMark /></span>
+          <span>
+            <small>Comunidad VIP</small>
+            <strong>Únete a la red por WhatsApp</strong>
+          </span>
+          <ArrowRight size={17} />
+        </a>
       </motion.div>
 
       <motion.div className="ln-container ln-hero-inner">
@@ -474,16 +504,14 @@ function Hero({ metrics, schema, onRegister, onLogin, onLearnMore, previewOnly =
         </motion.div>
 
         <motion.div {...fadeUp(0.32)} className="ln-hero-sub">
-          <strong>¡Bienvenido a la Red de los 5.000 Amigos!</strong>
-          <span>En Colombia, vivimos la misión como un estilo de vida: somos una nación que ama a Dios, sirve con pasión y lleva su llamado en el corazón.</span>
-          <span>Esta red conecta iglesias, distritos, coordinaciones, misioneros nacionales y creyentes, para compartir testimonios, historias y noticias que anuncian a Jesucristo. Gracias al trabajo de cada equipo regional, la palabra de Dios llega hasta el último rincón del País.</span>
-          <span>No es solo una campaña: es un compromiso espiritual, y tú puedes sumarte y compartir esta misión con otros.</span>
+          <strong>Haz parte de la red que mueve la misión en Colombia.</strong>
+          <span>Conecta tu iglesia, descubre noticias y comparte contenido oficial con 5.000 amigos que sirven en todo el país.</span>
         </motion.div>
 
         {/* CTAs */}
         <motion.div {...fadeUp(0.42)} className="ln-hero-actions">
           <button id="hero-register" type="button" onClick={onRegister} className="ln-btn-primary ln-btn-lg">
-            Unirme ahora <ArrowRight size={19} strokeWidth={2.3} />
+            Unirme a la red <ArrowRight size={19} strokeWidth={2.3} />
           </button>
           <button id="hero-login" type="button" onClick={onLogin} className="ln-btn-outline ln-btn-lg">
             Iniciar sesión
@@ -669,6 +697,29 @@ function StepsSection() {
               <p>{step.desc}</p>
             </motion.article>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── VIP community invite ───────────────────────────────────────────── */
+function CommunityInviteBand() {
+  return (
+    <section className="ln-community-invite" id="comunidad-vip">
+      <div className="ln-container">
+        <div className="ln-community-invite-inner">
+          <div className="ln-community-invite-copy">
+            <span className="ln-community-invite-icon"><WhatsAppMark /></span>
+            <div>
+              <p>Para socios de la red</p>
+              <h2>La misión también se encuentra en comunidad.</h2>
+              <span>Únete al grupo VIP para recibir reuniones, capacitaciones y avisos importantes.</span>
+            </div>
+          </div>
+          <a href={VIP_WHATSAPP_URL} target="_blank" rel="noreferrer" className="ln-community-invite-action">
+            Entrar a la comunidad <ExternalLink size={16} />
+          </a>
         </div>
       </div>
     </section>
@@ -1196,6 +1247,7 @@ export default function Landing({ previewOnly = false }) {
             <MetricsBand metrics={metrics} />
             <TerritorySection />
             <StepsSection />
+            <CommunityInviteBand />
             <CoordinationsSection coordinations={data.coordinations} />
             <RankingSection topUsers={data.topUsers} onLogin={toLogin} />
             <FinalCTA onRegister={toRegister} />

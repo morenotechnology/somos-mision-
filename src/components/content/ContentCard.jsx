@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle2, Copy, ExternalLink, Heart, MessageCircle, PencilLine, Send, Share2, Smartphone, Star, Trash2, Volume2, VolumeX, X, Zap } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { Award, CheckCircle2, Copy, ExternalLink, Heart, MapPin, MessageCircle, PencilLine, Send, Share2, Smartphone, Star, Trash2, Volume2, VolumeX, X, Zap } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { api } from '../../api';
 import { fetchSocialPreview, getSocialPlatform, isDirectVideoUrl, isPlaceholderImage } from '../../utils/socialPreview';
@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 
 const formatCount = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
 const dateFmt = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short' });
+const VIP_WHATSAPP_URL = 'https://chat.whatsapp.com/G2Al7tjnAao6k1I4swB5mv?s=hd&p=i&mlu=4';
 const formatTone = {
   imagen: '#1A237E',
   video: '#AD1457',
@@ -235,7 +236,10 @@ function ShareConfirmationPortal({ confirmation, loading, onClose, onConfirm }) 
 
 export default function ContentCard({ item, delay = 0, immersive = false, canEdit = false, canDelete = false, onEdit, onDelete }) {
   const { shareContent, sharedContent, currentUser } = useAppStore();
+  const prefersReducedMotion = useReducedMotion();
   const videoRef = useRef(null);
+  const shareActionRef = useRef(null);
+  const commentInputRef = useRef(null);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [failedImages, setFailedImages] = useState([]);
   const [remotePreview, setRemotePreview] = useState(null);
@@ -247,12 +251,14 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
   const [comments, setComments] = useState([]);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
+  const [replyingTo, setReplyingTo] = useState(null);
   const [socialLoading, setSocialLoading] = useState(false);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [mobileGuide, setMobileGuide] = useState(null);
   const [guideLoading, setGuideLoading] = useState(false);
   const [shareConfirm, setShareConfirm] = useState(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const alreadyShared = sharedContent.includes(String(item.id));
   const accent = formatTone[item.format] || '#1A237E';
   const socialPlatform = getSocialPlatform(item.sourcePlatform || item.sourceUrl);
@@ -329,6 +335,24 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
     }
   }, [video]);
 
+  useEffect(() => {
+    if (!shareMenuOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!shareActionRef.current?.contains(event.target)) setShareMenuOpen(false);
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setShareMenuOpen(false);
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [shareMenuOpen]);
+
   const loadComments = async () => {
     if (commentsOpen) {
       setCommentsOpen(false);
@@ -366,21 +390,62 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
     }
   };
 
+  const handleCommentReaction = async (comment) => {
+    if (!currentUser) {
+      toast.error('Inicia sesión para reaccionar');
+      return;
+    }
+    setSocialLoading(true);
+    try {
+      const result = await api.social.toggleCommentReaction(comment.id, 'like');
+      setComments((current) => current.map((row) => (
+        String(row.id) === String(comment.id)
+          ? {
+            ...row,
+            likedByMe: Boolean(result.active),
+            likesCount: Number(result.likesCount ?? Number(row.likesCount || 0) + (result.active ? 1 : -1)),
+          }
+          : row
+      )));
+    } catch (error) {
+      toast.error(error.message || 'No se pudo guardar el me gusta');
+    } finally {
+      setSocialLoading(false);
+    }
+  };
+
+  const handleReplyToComment = (comment) => {
+    setReplyingTo(comment);
+    window.requestAnimationFrame(() => commentInputRef.current?.focus());
+  };
+
   const handleCommentSubmit = async (event) => {
     event.preventDefault();
     const cleanText = commentText.trim();
     if (!cleanText) return;
     setSocialLoading(true);
     try {
-      const created = await api.social.agregarComentario(item.id, cleanText);
+      const created = await api.social.agregarComentario(item.id, cleanText, replyingTo?.id || null);
+      const createdLevel = Number(created?.level || created?.authorLevel || currentUser?.level || 1);
+      const currentUserBadge = typeof currentUser?.badgeName === 'string' ? currentUser.badgeName : '';
       setComments((current) => [{
         ...created,
-        content: created.content || cleanText,
-        authorName: created.authorName === 'Miembro de la red' ? currentUser?.name : created.authorName,
-        authorAvatar: created.authorAvatar || currentUser?.avatar,
-        authorColor: created.authorColor || currentUser?.avatarColor,
+        content: created?.content || cleanText,
+        authorName: created?.authorName && created.authorName !== 'Miembro de la red' ? created.authorName : currentUser?.name || 'Miembro de la red',
+        authorAvatar: created?.authorAvatar || currentUser?.avatar,
+        authorColor: created?.authorColor || currentUser?.avatarColor,
+        level: Number.isFinite(createdLevel) && createdLevel > 0 ? createdLevel : 1,
+        authorLevel: Number.isFinite(createdLevel) && createdLevel > 0 ? createdLevel : 1,
+        districtName: created?.districtName || created?.authorDistrict || currentUser?.districtName || currentUser?.district || 'Sin distrito',
+        authorDistrict: created?.authorDistrict || created?.districtName || currentUser?.districtName || currentUser?.district || 'Sin distrito',
+        badgeName: created?.badgeName || created?.authorBadge || currentUserBadge,
+        authorBadge: created?.authorBadge || created?.badgeName || currentUserBadge,
+        parentCommentId: created?.parentCommentId || replyingTo?.id || null,
+        likesCount: Number(created?.likesCount || 0),
+        likedByMe: Boolean(created?.likedByMe),
       }, ...current]);
       setCommentText('');
+      setReplyingTo(null);
       setSocial((current) => ({ ...current, commentsCount: current.commentsCount + 1 }));
     } catch (error) {
       toast.error(error.message || 'No se pudo publicar el comentario');
@@ -396,8 +461,15 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
     if (!window.confirm('¿Eliminar este comentario?')) return;
     try {
       await api.social.eliminarComentario(comment.id);
-      setComments((current) => current.filter((row) => row.id !== comment.id));
-      setSocial((current) => ({ ...current, commentsCount: Math.max(current.commentsCount - 1, 0) }));
+      const removedIds = new Set([String(comment.id)]);
+      comments.forEach((row) => {
+        if (String(row.parentCommentId || row.parent_comment_id || '') === String(comment.id)) removedIds.add(String(row.id));
+      });
+      setComments((current) => {
+        return current.filter((row) => !removedIds.has(String(row.id)));
+      });
+      setSocial((current) => ({ ...current, commentsCount: Math.max(current.commentsCount - removedIds.size, 0) }));
+      if (String(replyingTo?.id) === String(comment.id)) setReplyingTo(null);
       toast.success('Comentario eliminado');
     } catch (error) {
       toast.error(error.message || 'No se pudo eliminar el comentario');
@@ -423,8 +495,13 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
 
   const getNetworkUrl = (network) => {
     if (network === 'facebook') return item.facebookUrl || (sourceLooksFacebook ? item.sourceUrl : '') || fallbackUrl;
-    if (network === 'instagram') return item.instagramUrl || '';
+    if (network === 'instagram') return item.instagramUrl || fallbackUrl;
     return item.facebookUrl || item.instagramUrl || item.sourceUrl || fallbackUrl;
+  };
+
+  const getNetworkTarget = (network) => {
+    if (network === 'instagram') return item.instagramUrl || 'https://www.instagram.com/';
+    return getNetworkUrl(network);
   };
 
   const getShareMessage = () => {
@@ -439,15 +516,12 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
 
   const openNetworkShare = async (network) => {
     const shareUrl = getNetworkUrl(network);
+    const targetUrl = getNetworkTarget(network);
     const message = getShareMessage();
     const shareText = message.includes(shareUrl) ? message : `${message}\n${shareUrl}`;
     if (network === 'instagram') {
-      if (!shareUrl) {
-        toast.error('Esta publicación no tiene enlace de Instagram asignado');
-        return '';
-      }
       await navigator.clipboard?.writeText(shareText).catch(() => {});
-      window.open(shareUrl, '_blank', 'noopener,noreferrer');
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
       return shareUrl;
     }
 
@@ -472,14 +546,14 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
   };
 
   const handleShare = async (network) => {
-    if (network === 'instagram' && !hasInstagramLink) return;
-    if (network === 'facebook' && !hasFacebookLink) return;
+    setShareMenuOpen(false);
 
     if (isMobileShareDevice() && ['facebook', 'instagram'].includes(network)) {
       setMobileGuide({
         network,
         label: networkNames[network],
         shareUrl: getNetworkUrl(network),
+        targetUrl: getNetworkTarget(network),
       });
       return;
     }
@@ -488,20 +562,8 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
     await askForShareConfirmation(network, shareUrl);
   };
 
-  const handleUnifiedShare = async () => {
-    const preferredNetwork = hasFacebookLink ? 'facebook' : hasInstagramLink ? 'instagram' : 'whatsapp';
-    const shareUrl = getNetworkUrl(preferredNetwork);
-    const message = getShareMessage();
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: item.title, text: message, url: shareUrl });
-        await registerShare(preferredNetwork, shareUrl, { status: 'confirmed', elapsedMs: null });
-      } catch (error) {
-        if (error?.name !== 'AbortError') toast.error('No se pudo compartir esta publicación');
-      }
-      return;
-    }
-    await handleShare(preferredNetwork);
+  const handleUnifiedShare = () => {
+    setShareMenuOpen((current) => !current);
   };
 
   const toggleAudio = () => {
@@ -531,7 +593,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
   const confirmMobileShareGuide = async () => {
     if (!mobileGuide) return;
     setGuideLoading(true);
-    window.open(mobileGuide.shareUrl, '_blank', 'noopener,noreferrer');
+    window.open(mobileGuide.targetUrl || mobileGuide.shareUrl, '_blank', 'noopener,noreferrer');
     try {
       await askForShareConfirmation(mobileGuide.network, mobileGuide.shareUrl);
       setMobileGuide(null);
@@ -685,10 +747,32 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
         )}
 
         {commentsOpen && (
-          <div className="content-comments-panel">
+          <>
+            {immersive && (
+              <button
+                type="button"
+                className="content-comments-backdrop"
+                onClick={() => setCommentsOpen(false)}
+                aria-label="Cerrar comentarios"
+              />
+            )}
+            <motion.div
+              role={immersive ? 'dialog' : undefined}
+              aria-modal={immersive ? 'true' : undefined}
+              aria-label={immersive ? 'Comentarios de la publicación' : undefined}
+              className="content-comments-panel"
+              initial={immersive && !prefersReducedMotion ? { opacity: 0, y: '100%' } : false}
+              animate={immersive ? { opacity: 1, y: 0 } : undefined}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+            >
             <div className="content-comments-head">
-              <strong>Conversación</strong>
-              <span>{social.commentsCount} comentarios</span>
+              <div>
+                <strong>Comentarios</strong>
+                <span>{social.commentsCount} comentarios</span>
+              </div>
+              <button type="button" className="content-comments-close" onClick={() => setCommentsOpen(false)} aria-label="Cerrar comentarios">
+                <X size={18} />
+              </button>
             </div>
             {commentsLoading ? (
               <p className="content-comments-empty">Cargando comentarios...</p>
@@ -697,14 +781,44 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
                 {comments.map((comment) => {
                   const userId = currentUser?.schemaId || currentUser?.id;
                   const canDeleteComment = String(comment.userId) === String(userId) || currentUser?.role === 'admin' || currentUser?.canPublish;
+                  const levelValue = Number(comment.level ?? comment.authorLevel);
+                  const commentLevel = Number.isFinite(levelValue) && levelValue > 0 ? levelValue : 1;
+                  const districtValue = comment.districtName || comment.authorDistrict || comment.district;
+                  const commentDistrict = typeof districtValue === 'string' && districtValue.trim() ? districtValue : 'Sin distrito';
+                  const badgeValue = comment.badgeName || comment.authorBadge || comment.badge;
+                  const commentBadge = typeof badgeValue === 'string' ? badgeValue : badgeValue?.name || '';
+                  const avatarValue = typeof comment.authorAvatar === 'string' ? comment.authorAvatar : '';
+                  const avatarIsImage = /^(https?:\/\/|data:image\/|\/)/i.test(avatarValue);
+                  const commentLikeCount = Number(comment.likesCount || 0);
                   return (
-                    <article key={comment.id} className="content-comment-item">
+                    <article key={comment.id} className={`content-comment-item ${comment.parentCommentId || comment.parent_comment_id ? 'is-reply' : ''}`}>
                       <div className="content-comment-avatar" style={{ background: comment.authorColor || '#1A237E' }}>
-                        {comment.authorAvatar || comment.authorName?.slice(0, 2).toUpperCase() || 'MR'}
+                        {avatarIsImage ? <img src={avatarValue} alt="" loading="lazy" /> : avatarValue || comment.authorName?.slice(0, 2).toUpperCase() || 'MR'}
                       </div>
                       <div className="content-comment-copy">
                         <strong>{comment.authorName || 'Miembro de la red'}</strong>
+                        <div className="content-comment-author-meta">
+                          {commentBadge && <span className="content-comment-badge"><Award size={11} />{commentBadge}</span>}
+                          <span className="content-comment-level">Nivel {commentLevel}</span>
+                        <span className="content-comment-district"><MapPin size={11} />{commentDistrict}</span>
+                        </div>
                         <p>{comment.content}</p>
+                        <div className="content-comment-actions">
+                          <button
+                            type="button"
+                            className={`content-comment-like ${comment.likedByMe ? 'is-liked' : ''}`}
+                            onClick={() => handleCommentReaction(comment)}
+                            disabled={socialLoading}
+                            aria-label={comment.likedByMe ? 'Quitar me gusta del comentario' : 'Dar me gusta al comentario'}
+                            aria-pressed={Boolean(comment.likedByMe)}
+                          >
+                            <Heart size={13} fill={comment.likedByMe ? 'currentColor' : 'none'} />
+                            <span>{commentLikeCount}</span>
+                          </button>
+                          <button type="button" className="content-comment-reply" onClick={() => handleReplyToComment(comment)}>
+                            Responder
+                          </button>
+                        </div>
                       </div>
                       {canDeleteComment && (
                         <button type="button" className="content-comment-delete" onClick={() => handleCommentDelete(comment)} aria-label="Eliminar comentario">
@@ -718,11 +832,34 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
             ) : (
               <p className="content-comments-empty">Sé la primera persona en comentar esta noticia.</p>
             )}
+            {replyingTo && (
+              <div className="content-comment-replying">
+                <span>Respondiendo a <strong>{replyingTo.authorName || 'este miembro'}</strong></span>
+                <button type="button" onClick={() => setReplyingTo(null)} aria-label="Cancelar respuesta">
+                  <X size={13} />
+                </button>
+              </div>
+            )}
             <form className="content-comment-form" onSubmit={handleCommentSubmit}>
-              <input value={commentText} onChange={(event) => setCommentText(event.target.value)} placeholder="Escribe una respuesta..." maxLength={500} />
+              <input
+                ref={commentInputRef}
+                value={commentText}
+                onChange={(event) => setCommentText(event.target.value)}
+                placeholder={replyingTo ? `Responde a ${replyingTo.authorName || 'este comentario'}...` : 'Escribe un comentario...'}
+                maxLength={500}
+              />
               <button type="submit" disabled={socialLoading || !commentText.trim()} aria-label="Publicar comentario"><Send size={15} /></button>
             </form>
-          </div>
+            <a className="content-comments-vip" href={VIP_WHATSAPP_URL} target="_blank" rel="noreferrer">
+              <span className="content-comments-vip-icon"><WhatsAppIcon /></span>
+              <span>
+                <strong>Comunidad VIP</strong>
+                <small>Reuniones y capacitaciones de la red</small>
+              </span>
+              <ExternalLink size={13} />
+            </a>
+            </motion.div>
+          </>
         )}
 
         <div className="content-actions-pro">
@@ -734,9 +871,22 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
               <button type="button" onClick={loadComments} className="content-action-ghost content-action-comments" aria-label="Abrir comentarios" aria-expanded={commentsOpen}>
                 <MessageCircle size={21} />
               </button>
-              <button type="button" onClick={handleUnifiedShare} className="content-action-ghost content-action-share" aria-label="Compartir publicación">
-                <Share2 size={21} />
-              </button>
+              <div ref={shareActionRef} className={`content-share-action ${shareMenuOpen ? 'is-open' : ''}`}>
+                <div className="content-share-menu" aria-hidden={!shareMenuOpen}>
+                  <button type="button" className="content-share-bubble is-facebook" onClick={() => handleShare('facebook')} aria-label="Compartir en Facebook">
+                    <FacebookIcon />
+                  </button>
+                  <button type="button" className="content-share-bubble is-whatsapp" onClick={() => handleShare('whatsapp')} aria-label="Compartir en WhatsApp">
+                    <WhatsAppIcon />
+                  </button>
+                  <button type="button" className="content-share-bubble is-instagram" onClick={() => handleShare('instagram')} aria-label="Compartir en Instagram">
+                    <InstagramIcon />
+                  </button>
+                </div>
+                <button type="button" onClick={handleUnifiedShare} className="content-action-ghost content-action-share" aria-label="Compartir publicación" aria-expanded={shareMenuOpen}>
+                  <Share2 size={21} />
+                </button>
+              </div>
               {item.sourceUrl && (
                 <a href={item.sourceUrl} target="_blank" rel="noreferrer" className="content-action-ghost content-action-original" aria-label="Abrir publicación original">
                   <ExternalLink size={21} />

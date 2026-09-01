@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, LayoutDashboard, BookOpen, Trophy, Target, User, Settings, Zap } from 'lucide-react';
+import { X, LayoutDashboard, BookOpen, Trophy, Target, User, Settings, Zap, MessageCircle, ExternalLink } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import BrandLogo from '../common/BrandLogo';
 
@@ -11,6 +11,7 @@ const navItems = [
   { to: '/missions',  icon: Target,          label: 'Misiones' },
   { to: '/profile',   icon: User,            label: 'Mi Perfil' },
 ];
+const VIP_WHATSAPP_URL = 'https://chat.whatsapp.com/G2Al7tjnAao6k1I4swB5mv?s=hd&p=i&mlu=4';
 
 export default function MobileSidebar() {
   const { mobileSidebarOpen, setMobileSidebar, currentUser } = useAppStore();
@@ -67,6 +68,17 @@ export default function MobileSidebar() {
                   {label}
                 </NavLink>
               ))}
+              <a
+                href={VIP_WHATSAPP_URL}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setMobileSidebar(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-[#8EE9AE] hover:bg-white/5 transition"
+              >
+                <MessageCircle size={18} />
+                <span>Comunidad VIP</span>
+                <ExternalLink size={14} className="ml-auto" />
+              </a>
               {currentUser?.role === 'admin' && (
                 <NavLink
                   to="/admin"
