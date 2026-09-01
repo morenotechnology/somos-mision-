@@ -21,10 +21,11 @@ export async function fetchSocialPreview(sourceUrl = '') {
       if (!response.ok) throw new Error('No se pudo obtener la vista previa del enlace');
       const payload = await response.json();
       const data = payload?.data || {};
+      const imageUrl = typeof data.image === 'string' ? data.image : data.image?.url || '';
       return {
         title: data.title || '',
         description: data.description || '',
-        imageUrl: data.image?.url || data.logo?.url || '',
+        imageUrl: /^https?:\/\//i.test(imageUrl) ? imageUrl : '',
       };
     })
     .catch(() => null);

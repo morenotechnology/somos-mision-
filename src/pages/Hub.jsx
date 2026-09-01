@@ -588,7 +588,7 @@ export default function Hub() {
 
         {loading ? (
           <div className="content-loading-grid is-immersive">
-            {[0, 1, 2].map((item) => <div key={item} className="content-card-skeleton" />)}
+            <div className="content-card-skeleton" />
           </div>
         ) : data.items.length > 0 ? (
           <div className="content-feed-grid is-immersive">

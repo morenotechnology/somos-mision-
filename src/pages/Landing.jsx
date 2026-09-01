@@ -28,6 +28,7 @@ import { formatNumber } from '../utils/helpers';
 import { fetchSocialPreview, getSocialPlatform } from '../utils/socialPreview';
 import BrandLogo from '../components/common/BrandLogo';
 import { LucideIcon } from '../components/common/LucideIcon';
+import SocialCoverFallback from '../components/content/SocialCoverFallback';
 import regionAmazonica from '../assets/regiones/optimized/AMAZONICA_2.png';
 import regionAndina from '../assets/regiones/optimized/ANDINA_1.png';
 import regionCaribe from '../assets/regiones/optimized/CARIBE_1.png';
@@ -939,6 +940,7 @@ function formatPreviewCount(value) {
 function PreviewPost({ item, index, onLogin, onRegister }) {
   const [remotePreview, setRemotePreview] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [failedImages, setFailedImages] = useState([]);
   const platform = getSocialPlatform(item.sourcePlatform || item.sourceUrl);
 
   useEffect(() => {
@@ -953,19 +955,32 @@ function PreviewPost({ item, index, onLogin, onRegister }) {
     return () => { active = false; };
   }, [item.imageUrl, item.sourceUrl]);
 
-  const image = item.imageUrl || remotePreview?.imageUrl || '/hero-map.png';
+  useEffect(() => {
+    setFailedImages([]);
+  }, [item.id, item.imageUrl, item.sourceUrl]);
+
+  const imageCandidates = [item.imageUrl, remotePreview?.imageUrl].filter(Boolean);
+  const image = imageCandidates.find((candidate) => !failedImages.includes(candidate)) || '';
   const title = item.title || remotePreview?.title || 'Una nueva historia de misión';
   const description = item.description || remotePreview?.description || 'Conoce las historias, noticias y acciones que están moviendo la misión en Colombia.';
+
+  const handleImageError = (event) => {
+    const brokenImage = event.currentTarget.currentSrc || event.currentTarget.src;
+    setFailedImages((current) => current.includes(brokenImage) ? current : [...current, brokenImage]);
+    if (!item.sourceUrl || remotePreview?.imageUrl) return;
+    fetchSocialPreview(item.sourceUrl).then((preview) => {
+      if (preview?.imageUrl) setRemotePreview(preview);
+    });
+  };
 
   return (
     <article className="ln-preview-post" style={{ '--preview-index': index }}>
       <div className="ln-preview-post-media">
-        <img
-          src={image}
-          alt={title}
-          onError={(event) => { event.currentTarget.src = '/hero-map.png'; }}
-          loading={index === 0 ? 'eager' : 'lazy'}
-        />
+        {image ? (
+          <img src={image} alt={title} onError={handleImageError} loading={index === 0 ? 'eager' : 'lazy'} />
+        ) : (
+          <SocialCoverFallback item={item} platform={platform} />
+        )}
         <div className="ln-preview-post-shade" />
         <div className="ln-preview-post-topline">
           <span><span className="ln-preview-live-dot" /> {platform.label} · Vista previa</span>
@@ -1030,7 +1045,7 @@ function PreviewNewsSection({ items, loading, onLogin, onRegister, homeOnly = fa
 
         <div className="ln-preview-feed" aria-label="Vista previa de cinco noticias">
           {loading ? (
-            [0, 1, 2].map((item) => <div className="ln-preview-skeleton" key={item} />)
+            <div className="ln-preview-skeleton" />
           ) : items.length ? (
             items.slice(0, 5).map((item, index) => (
               <PreviewPost key={item.id} item={item} index={index} onLogin={onLogin} onRegister={onRegister} />

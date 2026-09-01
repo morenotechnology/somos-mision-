@@ -5,6 +5,7 @@ import { CheckCircle2, Copy, ExternalLink, Heart, MessageCircle, PencilLine, Sen
 import { useAppStore } from '../../store/useAppStore';
 import { api } from '../../api';
 import { fetchSocialPreview, getSocialPlatform } from '../../utils/socialPreview';
+import SocialCoverFallback from './SocialCoverFallback';
 import toast from 'react-hot-toast';
 
 const formatCount = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
@@ -234,7 +235,7 @@ function ShareConfirmationPortal({ confirmation, loading, onClose, onConfirm }) 
 
 export default function ContentCard({ item, delay = 0, immersive = false, canEdit = false, canDelete = false, onEdit, onDelete }) {
   const { shareContent, sharedContent, currentUser } = useAppStore();
-  const [imgErr, setImgErr] = useState(false);
+  const [failedImages, setFailedImages] = useState([]);
   const [remotePreview, setRemotePreview] = useState(null);
   const [social, setSocial] = useState({
     likesCount: Number(item.likes || 0),
@@ -263,6 +264,9 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
     item.instagramUrl ? { network: 'instagram', label: 'Instagram', url: item.instagramUrl } : null,
   ].filter(Boolean);
 
+  const imageCandidates = [item.imageUrl, remotePreview?.imageUrl].filter(Boolean);
+  const image = imageCandidates.find((candidate) => !failedImages.includes(candidate)) || '';
+
   useEffect(() => {
     let active = true;
     setSocial({
@@ -276,6 +280,10 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
     }).catch(() => {});
     return () => { active = false; };
   }, [item.id, item.likes, item.commentsCount, item.likedByMe]);
+
+  useEffect(() => {
+    setFailedImages([]);
+  }, [item.id, item.imageUrl, item.sourceUrl]);
 
   useEffect(() => {
     if (item.imageUrl || !item.sourceUrl) return undefined;
@@ -366,6 +374,17 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
     navigator.clipboard?.writeText(item.copyText)
       .then(() => toast.success('Texto copiado al portapapeles'))
       .catch(() => toast.error('No se pudo copiar'));
+  };
+
+  const handleImageError = (event) => {
+    const brokenImage = event.currentTarget.currentSrc || event.currentTarget.src;
+    if (brokenImage) {
+      setFailedImages((current) => current.includes(brokenImage) ? current : [...current, brokenImage]);
+    }
+    if (!item.sourceUrl || remotePreview?.imageUrl) return;
+    fetchSocialPreview(item.sourceUrl).then((preview) => {
+      if (preview?.imageUrl) setRemotePreview(preview);
+    });
   };
 
   const getNetworkUrl = (network) => {
@@ -486,13 +505,13 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
       style={{ '--content-tone': accent }}
     >
       <div className="content-media-pro">
-        {(item.imageUrl || remotePreview?.imageUrl) && !imgErr ? (
+        {image ? (
           <>
-            <img src={item.imageUrl || remotePreview.imageUrl} alt={item.title} onError={() => setImgErr(true)} loading="lazy" />
+            <img src={image} alt={item.title} onError={handleImageError} loading="lazy" />
             <div className="content-media-overlay" />
           </>
         ) : (
-          <div className="content-media-fallback" />
+          <SocialCoverFallback item={item} platform={socialPlatform} />
         )}
 
         <div className="content-chip-row">

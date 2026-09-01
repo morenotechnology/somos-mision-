@@ -441,6 +441,8 @@ body {
 
 /* ─── App Chrome ────────────────────────────────────────────────────────── */
 .app-content {
+  min-width: 0;
+  overflow-x: hidden;
   padding: 24px;
   padding-bottom: 32px;
 }
@@ -2263,6 +2265,8 @@ body {
   border: 1px solid rgba(10,15,82,0.08);
   border-radius: 20px;
   background: rgba(255,255,255,0.72);
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .content-segment-pro.is-intentional {
@@ -2427,6 +2431,113 @@ body {
   background:
     radial-gradient(circle at 78% 14%, rgba(212,175,55,0.36), transparent 34%),
     linear-gradient(135deg, #080D46, #1A237E);
+}
+
+.social-cover-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  padding: 24px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 84% 16%, rgba(212,175,55,0.34), transparent 29%),
+    linear-gradient(145deg, #080D46 0%, #1A237E 58%, #0B102E 100%);
+}
+
+.social-cover-fallback::before,
+.social-cover-fallback::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 50%;
+}
+
+.social-cover-fallback::before {
+  width: 68%;
+  aspect-ratio: 1;
+  top: -33%;
+  right: -17%;
+}
+
+.social-cover-fallback::after {
+  width: 48%;
+  aspect-ratio: 1;
+  bottom: -30%;
+  left: -17%;
+  border-color: rgba(212,175,55,0.22);
+}
+
+.social-cover-fallback[data-platform='facebook'] {
+  background:
+    radial-gradient(circle at 84% 16%, rgba(24,119,242,0.5), transparent 31%),
+    linear-gradient(145deg, #071A3D 0%, #123E7A 58%, #07132D 100%);
+}
+
+.social-cover-fallback[data-platform='instagram'] {
+  background:
+    radial-gradient(circle at 84% 16%, rgba(225,48,108,0.46), transparent 31%),
+    linear-gradient(145deg, #2D0E36 0%, #7B245C 56%, #160B2C 100%);
+}
+
+.social-cover-fallback-topline,
+.social-cover-fallback-bottomline {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: rgba(255,255,255,0.78);
+  font-size: 0.68rem;
+  font-weight: 850;
+}
+
+.social-cover-fallback-platform {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #fff;
+}
+
+.social-cover-fallback-mark {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  color: rgba(255,255,255,0.9);
+  font-size: clamp(4.5rem, 15vw, 9rem);
+  font-weight: 950;
+  line-height: 0.8;
+  letter-spacing: -0.12em;
+  text-shadow: 0 14px 38px rgba(0,0,0,0.22);
+}
+
+.social-cover-fallback-bottomline {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.social-cover-fallback-bottomline strong {
+  color: #F3CB55;
+  font-size: 0.76rem;
+  font-weight: 950;
+}
+
+.social-cover-fallback-bottomline span {
+  color: rgba(255,255,255,0.68);
+  font-size: 0.67rem;
+}
+
+.content-media-pro > .social-cover-fallback {
+  padding: 20px;
+}
+
+.content-media-pro > .social-cover-fallback .social-cover-fallback-bottomline {
+  display: none;
 }
 
 .content-chip-row {
@@ -3365,8 +3476,8 @@ body {
   }
 
   .content-segment-pro {
-    grid-template-columns: repeat(5, max-content);
-    overflow-x: auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow-x: hidden;
     scrollbar-width: none;
   }
 
@@ -3383,9 +3494,9 @@ body {
   }
 
   .content-segment-pro button {
-    min-width: 86px;
+    min-width: 0;
     min-height: 38px;
-    padding: 0 11px;
+    padding: 0 7px;
   }
 
   .content-segment-pro.is-gold button {
@@ -3900,9 +4011,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  max-width: 100%;
   height: min(730px, calc(100svh - 148px));
   min-height: 560px;
   padding: 0 7px 8px 0;
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
   scroll-snap-type: y mandatory;
@@ -4239,25 +4352,22 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  height: min(760px, calc(100svh - 204px));
-  max-height: min(760px, calc(100svh - 204px));
+  height: auto;
+  max-height: none;
+  min-height: 0;
   padding: 0 4px 4px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scroll-snap-type: y mandatory;
-  scrollbar-color: rgba(243,203,85,0.55) transparent;
-  scrollbar-width: thin;
+  overflow: visible;
 }
 
 .content-card-pro.is-immersive {
-  flex: 0 0 min(748px, calc(100svh - 220px));
-  height: min(748px, calc(100svh - 220px));
-  min-height: 0;
+  flex: 0 0 auto;
+  height: min(748px, calc(100svh - 204px));
+  min-height: min(620px, calc(100svh - 204px));
   border: 0;
   border-radius: 20px;
   background: #050821;
   box-shadow: 0 14px 32px rgba(0,0,0,0.26);
-  scroll-snap-align: start;
+  scroll-snap-align: none;
 }
 
 .content-card-pro.is-immersive::after {
@@ -4510,16 +4620,18 @@ body {
 
   .content-feed-grid.is-immersive,
   .content-loading-grid.is-immersive {
-    height: calc(100svh - 270px);
-    max-height: calc(100svh - 270px);
+    height: auto;
+    max-height: none;
     gap: 10px;
     padding: 0 2px 2px;
+    overflow: visible;
   }
 
   .content-card-pro.is-immersive,
   .content-loading-grid.is-immersive .content-card-skeleton {
-    flex-basis: calc(100svh - 286px);
-    height: calc(100svh - 286px);
+    flex-basis: auto;
+    height: min(748px, calc(100svh - 204px));
+    min-height: calc(100svh - 204px);
     border-radius: 16px;
   }
 
@@ -4694,7 +4806,8 @@ body {
   height: auto;
   min-height: 0;
   padding: 0;
-  overflow: visible;
+  overflow-x: hidden;
+  overflow-y: visible;
   scroll-snap-type: none;
 }
 
