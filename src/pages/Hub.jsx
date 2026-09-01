@@ -399,6 +399,7 @@ export default function Hub() {
   const [coord, setCoord] = useState('');
   const [region, setRegion] = useState('');
   const [sort, setSort] = useState('Recientes');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [data, setData] = useState({ items: [], coordinations: [], schemaMetrics: {} });
   const [loading, setLoading] = useState(true);
   const [editingPublication, setEditingPublication] = useState(null);
@@ -436,6 +437,19 @@ export default function Hub() {
     : filterMode === 'region'
       ? (selectedRegion?.name || 'Todas las regiones')
       : 'Toda la red';
+  const activeFilterCount = [
+    query.trim(),
+    filterMode !== 'all',
+    sort !== 'Recientes',
+  ].filter(Boolean).length;
+
+  const resetFilters = () => {
+    setQuery('');
+    setFilterMode('all');
+    setCoord('');
+    setRegion('');
+    setSort('Recientes');
+  };
 
   const handlePublicationCreated = (item) => {
     setSort('Recientes');
@@ -519,62 +533,90 @@ export default function Hub() {
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.08 }}
-        className="content-toolbar-pro"
+        className={`content-toolbar-pro ${filtersOpen ? 'is-open' : ''}`}
       >
-        <div className="content-search-row">
-          <label className="content-search-pro">
-            <Search size={17} />
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar campaña, testimonio o comunicado..." />
-          </label>
-
-          <label className="content-filter-pro">
+        <div className="content-toolbar-trigger-row">
+          <div className="content-toolbar-context">
+            <span>Explorar noticias</span>
+            <strong>{activeFilterLabel}</strong>
+          </div>
+          <button
+            type="button"
+            className={`content-filters-toggle ${filtersOpen ? 'is-active' : ''}`}
+            onClick={() => setFiltersOpen((value) => !value)}
+            aria-expanded={filtersOpen}
+            aria-controls="noticias-filtros"
+          >
             <Filter size={16} />
-            {filterMode === 'coordination' && (
-              <select value={coord} onChange={(e) => setCoord(e.target.value)}>
-                <option value="">Todas las coordinaciones</option>
-                {filterCoordinations.map((coordination) => <option key={coordination.id} value={coordination.id}>{coordination.name}</option>)}
-              </select>
-            )}
-            {filterMode === 'region' && (
-              <select value={region} onChange={(e) => setRegion(e.target.value)}>
-                <option value="">Todas las regiones</option>
-                {contentRegions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-              </select>
-            )}
-            {filterMode === 'all' && (
-              <select value="" onChange={() => {}} aria-label="Todas las noticias">
-                <option value="">Todas las noticias de la red</option>
-              </select>
-            )}
-          </label>
+            {filtersOpen ? 'Ocultar filtros' : 'Filtros'}
+            {activeFilterCount > 0 && <span>{activeFilterCount}</span>}
+          </button>
         </div>
 
-        <div className="content-segments-stack">
-          <div className="content-segment-pro is-intentional" role="tablist" aria-label="Filtro de contenido">
-            {filterModes.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => {
-                  setFilterMode(option.id);
-                  if (option.id !== 'coordination') setCoord('');
-                  if (option.id !== 'region') setRegion('');
-                }}
-                className={filterMode === option.id ? 'is-active' : ''}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+        {filtersOpen && (
+          <div className="content-toolbar-panel" id="noticias-filtros">
+            <div className="content-search-row">
+              <label className="content-search-pro">
+                <Search size={17} />
+                <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar campaña, testimonio o comunicado..." />
+              </label>
 
-          <div className="content-segment-pro is-gold" role="tablist" aria-label="Orden de contenido">
-            {sorts.map((option) => (
-              <button key={option} type="button" onClick={() => setSort(option)} className={sort === option ? 'is-active' : ''}>
-                {option}
+              <label className="content-filter-pro">
+                <Filter size={16} />
+                {filterMode === 'coordination' && (
+                  <select value={coord} onChange={(e) => setCoord(e.target.value)}>
+                    <option value="">Todas las coordinaciones</option>
+                    {filterCoordinations.map((coordination) => <option key={coordination.id} value={coordination.id}>{coordination.name}</option>)}
+                  </select>
+                )}
+                {filterMode === 'region' && (
+                  <select value={region} onChange={(e) => setRegion(e.target.value)}>
+                    <option value="">Todas las regiones</option>
+                    {contentRegions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+                  </select>
+                )}
+                {filterMode === 'all' && (
+                  <select value="" onChange={() => {}} aria-label="Todas las noticias">
+                    <option value="">Todas las noticias de la red</option>
+                  </select>
+                )}
+              </label>
+            </div>
+
+            <div className="content-segments-stack">
+              <div className="content-segment-pro is-intentional" role="tablist" aria-label="Filtro de contenido">
+                {filterModes.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => {
+                      setFilterMode(option.id);
+                      if (option.id !== 'coordination') setCoord('');
+                      if (option.id !== 'region') setRegion('');
+                    }}
+                    className={filterMode === option.id ? 'is-active' : ''}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="content-segment-pro is-gold" role="tablist" aria-label="Orden de contenido">
+                {sorts.map((option) => (
+                  <button key={option} type="button" onClick={() => setSort(option)} className={sort === option ? 'is-active' : ''}>
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {activeFilterCount > 0 && (
+              <button type="button" className="content-filters-reset" onClick={resetFilters}>
+                <XCircle size={15} /> Limpiar filtros
               </button>
-            ))}
+            )}
           </div>
-        </div>
+        )}
       </motion.section>
 
       <section className="content-feed-section is-immersive-feed">
