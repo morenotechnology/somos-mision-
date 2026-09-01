@@ -1,5 +1,9 @@
 const previewCache = new Map();
 
+export function isPlaceholderImage(value = '') {
+  return !value || /(?:^|\/)hero-map\.png(?:[?#]|$)/i.test(String(value).trim());
+}
+
 export function getSocialPlatform(value = '') {
   const clean = String(value || '').toLowerCase();
   if (clean.includes('instagram.com') || clean === 'instagram') {

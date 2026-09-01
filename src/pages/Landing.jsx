@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { api } from '../api';
 import { formatNumber } from '../utils/helpers';
-import { fetchSocialPreview, getSocialPlatform } from '../utils/socialPreview';
+import { fetchSocialPreview, getSocialPlatform, isPlaceholderImage } from '../utils/socialPreview';
 import BrandLogo from '../components/common/BrandLogo';
 import { LucideIcon } from '../components/common/LucideIcon';
 import SocialCoverFallback from '../components/content/SocialCoverFallback';
@@ -944,7 +944,7 @@ function PreviewPost({ item, index, onLogin, onRegister }) {
   const platform = getSocialPlatform(item.sourcePlatform || item.sourceUrl);
 
   useEffect(() => {
-    if (item.imageUrl || !item.sourceUrl) return undefined;
+    if (!item.sourceUrl || !isPlaceholderImage(item.imageUrl)) return undefined;
     let active = true;
     setPreviewLoading(true);
     fetchSocialPreview(item.sourceUrl)
@@ -959,7 +959,7 @@ function PreviewPost({ item, index, onLogin, onRegister }) {
     setFailedImages([]);
   }, [item.id, item.imageUrl, item.sourceUrl]);
 
-  const imageCandidates = [item.imageUrl, remotePreview?.imageUrl].filter(Boolean);
+  const imageCandidates = [item.imageUrl, remotePreview?.imageUrl].filter((candidate) => !isPlaceholderImage(candidate));
   const image = imageCandidates.find((candidate) => !failedImages.includes(candidate)) || '';
   const title = item.title || remotePreview?.title || 'Una nueva historia de misión';
   const description = item.description || remotePreview?.description || 'Conoce las historias, noticias y acciones que están moviendo la misión en Colombia.';

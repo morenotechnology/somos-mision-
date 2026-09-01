@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Copy, ExternalLink, Heart, MessageCircle, PencilLine, Send, Smartphone, Star, Trash2, X, Zap } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { api } from '../../api';
-import { fetchSocialPreview, getSocialPlatform } from '../../utils/socialPreview';
+import { fetchSocialPreview, getSocialPlatform, isPlaceholderImage } from '../../utils/socialPreview';
 import SocialCoverFallback from './SocialCoverFallback';
 import toast from 'react-hot-toast';
 
@@ -264,7 +264,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
     item.instagramUrl ? { network: 'instagram', label: 'Instagram', url: item.instagramUrl } : null,
   ].filter(Boolean);
 
-  const imageCandidates = [item.imageUrl, remotePreview?.imageUrl].filter(Boolean);
+  const imageCandidates = [item.imageUrl, remotePreview?.imageUrl].filter((candidate) => !isPlaceholderImage(candidate));
   const image = imageCandidates.find((candidate) => !failedImages.includes(candidate)) || '';
 
   useEffect(() => {
@@ -286,7 +286,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
   }, [item.id, item.imageUrl, item.sourceUrl]);
 
   useEffect(() => {
-    if (item.imageUrl || !item.sourceUrl) return undefined;
+    if (!item.sourceUrl || !isPlaceholderImage(item.imageUrl)) return undefined;
     let active = true;
     fetchSocialPreview(item.sourceUrl)
       .then((preview) => {
