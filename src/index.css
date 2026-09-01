@@ -2427,6 +2427,15 @@ body {
   transition: transform 0.55s ease, filter 0.55s ease;
 }
 
+.content-media-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #080D46;
+}
+
 .content-card-pro:hover .content-media-pro img {
   transform: scale(1.07);
   filter: saturate(1.08) contrast(1.04);
@@ -4027,15 +4036,12 @@ body {
   flex-direction: column;
   gap: 14px;
   max-width: 100%;
-  height: min(730px, calc(100svh - 148px));
-  min-height: 560px;
-  padding: 0 7px 8px 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scroll-snap-type: y mandatory;
-  scrollbar-color: rgba(26,35,126,0.34) transparent;
-  scrollbar-width: thin;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  overflow: visible;
+  overscroll-behavior: auto;
+  scroll-snap-type: none;
 }
 
 .ln-preview-post {
@@ -4070,6 +4076,24 @@ body {
   object-position: center;
   filter: saturate(1.06) contrast(1.04);
   transform: scale(1.015);
+}
+
+.ln-preview-post-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #080D46;
+}
+
+html:has(.ln-home-main) {
+  scroll-snap-type: y mandatory;
+}
+
+html:has(.ln-home-main) .ln-preview-post {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .ln-preview-post-shade {
@@ -4364,7 +4388,8 @@ body {
   text-transform: uppercase;
 }
 
-.content-toolbar-context strong {
+.content-toolbar-context strong,
+.content-toolbar-context h2 {
   overflow: hidden;
   color: var(--blue-900);
   font-size: 0.98rem;
@@ -4531,6 +4556,7 @@ body {
 }
 
 .content-card-pro.is-immersive .content-media-overlay {
+  pointer-events: none;
   background:
     linear-gradient(180deg, rgba(5,7,22,0.52), rgba(5,7,22,0.03) 35%, rgba(5,7,22,0.08) 48%, rgba(5,7,22,0.88) 100%),
     radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--content-tone, #1A237E) 38%, transparent), transparent 38%);
@@ -4547,6 +4573,59 @@ body {
   padding: 24px 98px 22px 24px;
   color: #fff;
   background: linear-gradient(180deg, transparent 28%, rgba(4,6,22,0.04) 42%, rgba(4,6,22,0.88) 100%);
+}
+
+.content-card-pro.is-immersive .content-card-body-pro h3 {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  text-wrap: balance;
+}
+
+.content-card-pro.is-immersive .content-card-body-pro > p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.content-card-pro.is-immersive .content-engagement-pro {
+  gap: 13px;
+}
+
+.content-card-pro.is-immersive .content-engagement-label em,
+.content-card-pro.is-immersive .content-engagement-official em {
+  display: none;
+}
+
+.content-card-pro.is-immersive .content-engagement-label b,
+.content-card-pro.is-immersive .content-engagement-stat b {
+  font-weight: 900;
+}
+
+.content-card-pro.is-immersive .content-engagement-label {
+  margin-left: 0;
+}
+
+.content-card-pro.is-immersive .content-engagement-official {
+  margin-left: auto;
+}
+
+.content-card-pro.is-immersive .content-original-link {
+  width: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+  font-size: 0;
+}
+
+.content-card-pro.is-immersive .content-card-body-pro {
+  pointer-events: none;
+}
+
+.content-card-pro.is-immersive .content-card-body-pro > * {
+  pointer-events: auto;
 }
 
 .content-card-pro.is-immersive .content-card-meta-pro > span,
@@ -4574,6 +4653,10 @@ body {
   color: rgba(255,255,255,0.84);
   font-size: 0.91rem;
   line-height: 1.48;
+}
+
+.content-card-pro.is-immersive .content-category-row {
+  display: none;
 }
 
 .content-card-pro.is-immersive .content-engagement-pro button:hover,
@@ -4604,13 +4687,15 @@ body {
 .content-card-pro.is-immersive .content-actions-pro {
   position: absolute;
   right: 18px;
-  bottom: 20px;
+  top: 50%;
+  bottom: auto;
   z-index: 6;
   display: flex;
   flex-direction: column;
   gap: 9px;
   width: 56px;
   padding: 0;
+  transform: translateY(-50%);
 }
 
 .content-card-pro.is-immersive .content-actions-pro .content-action-ghost,
@@ -4770,6 +4855,10 @@ body {
     font-size: 0.9rem;
   }
 
+  .content-toolbar-context h2 {
+    font-size: 0.9rem;
+  }
+
   .content-filters-toggle {
     min-height: 40px;
     padding: 0 12px;
@@ -4803,7 +4892,7 @@ body {
 
   .content-card-pro.is-immersive .content-card-body-pro {
     gap: 9px;
-    padding: 18px 77px 17px 17px;
+    padding: 18px 76px 18px 18px;
   }
 
   .content-card-pro.is-immersive .content-card-body-pro h3 {
@@ -4812,14 +4901,16 @@ body {
 
   .content-card-pro.is-immersive .content-card-body-pro > p {
     font-size: 0.8rem;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
   }
 
   .content-card-pro.is-immersive .content-actions-pro {
     right: 10px;
-    bottom: 16px;
+    top: 50%;
+    bottom: auto;
     gap: 7px;
     width: 48px;
+    transform: translateY(-50%);
   }
 
   .content-card-pro.is-immersive .content-actions-pro .content-action-ghost,
@@ -4827,6 +4918,56 @@ body {
     width: 44px;
     height: 44px;
     min-height: 44px;
+  }
+}
+
+/* The app shell is the only scroll container for authenticated Noticias. */
+.app-main-feed {
+  min-height: 0;
+  scroll-snap-type: y mandatory;
+  scroll-padding-top: 12px;
+  overscroll-behavior-y: contain;
+}
+
+.app-main-feed .content-feed-grid.is-immersive,
+.app-main-feed .content-loading-grid.is-immersive {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+  overscroll-behavior: auto;
+  scroll-snap-type: none;
+  scrollbar-width: auto;
+}
+
+.app-main-feed .content-card-pro.is-immersive,
+.app-main-feed .content-loading-grid.is-immersive .content-card-skeleton {
+  flex-basis: min(780px, calc(100svh - 108px));
+  height: min(780px, calc(100svh - 108px));
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.app-main-feed .content-card-pro.is-immersive .content-card-body-pro {
+  padding: 24px 94px 24px 22px;
+}
+
+.app-main-feed .content-card-pro.is-immersive .content-actions-pro {
+  top: 50%;
+  right: 18px;
+  bottom: auto;
+  transform: translateY(-50%);
+}
+
+@media (max-width: 760px) {
+  .app-main-feed .content-card-pro.is-immersive .content-actions-pro {
+    top: 50%;
+    right: 10px;
+    bottom: auto;
+    transform: translateY(-50%);
+  }
+
+  .app-main-feed .content-card-pro.is-immersive .content-card-body-pro {
+    padding: 18px 76px 18px 18px;
   }
 }
 
@@ -4969,19 +5110,12 @@ body {
 }
 
 .ln-preview-section.is-home-preview .ln-preview-feed {
-  height: min(820px, calc(100svh - 184px));
-  max-height: min(820px, calc(100svh - 184px));
+  height: auto;
+  max-height: none;
   min-height: 0;
   padding: 0;
-  overflow-x: clip;
-  overflow-y: auto;
-  overscroll-behavior-y: contain;
-  scroll-snap-type: y mandatory;
-  scrollbar-width: none;
-}
-
-.ln-preview-section.is-home-preview .ln-preview-feed::-webkit-scrollbar {
-  display: none;
+  overflow: visible;
+  scroll-snap-type: none;
 }
 
 .ln-preview-section.is-home-preview .ln-preview-post,
@@ -5029,12 +5163,11 @@ body {
   }
 
   .ln-preview-section.is-home-preview .ln-preview-feed {
-    height: calc(100svh - 206px);
-    max-height: calc(100svh - 206px);
+    height: auto;
+    max-height: none;
     min-height: 0;
-    overflow-x: clip;
-    overflow-y: auto;
-    scroll-snap-type: y mandatory;
+    overflow: visible;
+    scroll-snap-type: none;
   }
 
   .ln-preview-section.is-home-preview .ln-preview-post,

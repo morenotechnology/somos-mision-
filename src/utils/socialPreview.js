@@ -4,6 +4,10 @@ export function isPlaceholderImage(value = '') {
   return !value || /(?:^|\/)hero-map\.png(?:[?#]|$)/i.test(String(value).trim());
 }
 
+export function isDirectVideoUrl(value = '') {
+  return /^https?:\/\//i.test(String(value || '').trim()) && /\.(?:mp4|webm|ogg|mov|m4v|m3u8)(?:[?#]|$)/i.test(String(value).trim());
+}
+
 export function getSocialPlatform(value = '') {
   const clean = String(value || '').toLowerCase();
   if (clean.includes('instagram.com') || clean === 'instagram') {
@@ -20,16 +24,19 @@ export async function fetchSocialPreview(sourceUrl = '') {
   if (!/^https?:\/\//i.test(cleanUrl)) return null;
   if (previewCache.has(cleanUrl)) return previewCache.get(cleanUrl);
 
-  const request = fetch(`https://api.microlink.io/?url=${encodeURIComponent(cleanUrl)}&screenshot=false&video=false&audio=false`)
+  const request = fetch(`https://api.microlink.io/?url=${encodeURIComponent(cleanUrl)}&screenshot=false&video=true&audio=false`)
     .then(async (response) => {
       if (!response.ok) throw new Error('No se pudo obtener la vista previa del enlace');
       const payload = await response.json();
       const data = payload?.data || {};
       const imageUrl = typeof data.image === 'string' ? data.image : data.image?.url || '';
+      const videoValue = data.video;
+      const videoUrl = typeof videoValue === 'string' ? videoValue : videoValue?.url || '';
       return {
         title: data.title || '',
         description: data.description || '',
         imageUrl: /^https?:\/\//i.test(imageUrl) ? imageUrl : '',
+        videoUrl: isDirectVideoUrl(videoUrl) ? videoUrl : '',
       };
     })
     .catch(() => null);

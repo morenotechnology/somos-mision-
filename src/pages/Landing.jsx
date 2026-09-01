@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { api } from '../api';
 import { formatNumber } from '../utils/helpers';
-import { fetchSocialPreview, getSocialPlatform, isPlaceholderImage } from '../utils/socialPreview';
+import { fetchSocialPreview, getSocialPlatform, isDirectVideoUrl, isPlaceholderImage } from '../utils/socialPreview';
 import BrandLogo from '../components/common/BrandLogo';
 import { LucideIcon } from '../components/common/LucideIcon';
 import SocialCoverFallback from '../components/content/SocialCoverFallback';
@@ -944,7 +944,7 @@ function PreviewPost({ item, index, onLogin, onRegister }) {
   const platform = getSocialPlatform(item.sourcePlatform || item.sourceUrl);
 
   useEffect(() => {
-    if (!item.sourceUrl || !isPlaceholderImage(item.imageUrl)) return undefined;
+    if (!item.sourceUrl || (!isPlaceholderImage(item.imageUrl) && String(item.format || '').toLowerCase() !== 'video')) return undefined;
     let active = true;
     setPreviewLoading(true);
     fetchSocialPreview(item.sourceUrl)
@@ -953,14 +953,23 @@ function PreviewPost({ item, index, onLogin, onRegister }) {
       })
       .finally(() => active && setPreviewLoading(false));
     return () => { active = false; };
-  }, [item.imageUrl, item.sourceUrl]);
+  }, [item.imageUrl, item.sourceUrl, item.format]);
 
   useEffect(() => {
     setFailedImages([]);
   }, [item.id, item.imageUrl, item.sourceUrl]);
 
-  const imageCandidates = [item.imageUrl, remotePreview?.imageUrl].filter((candidate) => !isPlaceholderImage(candidate));
+  const imageCandidates = [item.imageUrl, remotePreview?.imageUrl].filter((candidate) => !isPlaceholderImage(candidate) && !isDirectVideoUrl(candidate));
   const image = imageCandidates.find((candidate) => !failedImages.includes(candidate)) || '';
+  const videoCandidates = [
+    item.videoUrl,
+    item.video_url,
+    item.mediaUrl,
+    item.media_url,
+    String(item.format || '').toLowerCase() === 'video' ? item.imageUrl : '',
+    remotePreview?.videoUrl,
+  ].filter(isDirectVideoUrl);
+  const video = videoCandidates.find((candidate) => !failedImages.includes(candidate)) || '';
   const title = item.title || remotePreview?.title || 'Una nueva historia de misión';
   const description = item.description || remotePreview?.description || 'Conoce las historias, noticias y acciones que están moviendo la misión en Colombia.';
 
@@ -973,10 +982,32 @@ function PreviewPost({ item, index, onLogin, onRegister }) {
     });
   };
 
+  const handleVideoError = (event) => {
+    const brokenVideo = event.currentTarget.currentSrc || event.currentTarget.src;
+    setFailedImages((current) => current.includes(brokenVideo) ? current : [...current, brokenVideo]);
+    if (!item.sourceUrl || remotePreview?.videoUrl) return;
+    fetchSocialPreview(item.sourceUrl).then((preview) => {
+      if (preview?.videoUrl) setRemotePreview(preview);
+    });
+  };
+
   return (
     <article className="ln-preview-post" style={{ '--preview-index': index }}>
       <div className="ln-preview-post-media">
-        {image ? (
+        {video ? (
+          <video
+            className="ln-preview-post-video"
+            src={video}
+            poster={image || undefined}
+            muted
+            loop
+            autoPlay
+            playsInline
+            preload="metadata"
+            aria-label={`Vista previa de video: ${title}`}
+            onError={handleVideoError}
+          />
+        ) : image ? (
           <img src={image} alt={title} onError={handleImageError} loading={index === 0 ? 'eager' : 'lazy'} />
         ) : (
           <SocialCoverFallback item={item} platform={platform} />

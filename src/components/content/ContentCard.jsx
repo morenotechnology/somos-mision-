@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Copy, ExternalLink, Heart, MessageCircle, PencilLine, Send, Smartphone, Star, Trash2, X, Zap } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { api } from '../../api';
-import { fetchSocialPreview, getSocialPlatform, isPlaceholderImage } from '../../utils/socialPreview';
+import { fetchSocialPreview, getSocialPlatform, isDirectVideoUrl, isPlaceholderImage } from '../../utils/socialPreview';
 import SocialCoverFallback from './SocialCoverFallback';
 import toast from 'react-hot-toast';
 
@@ -235,6 +235,7 @@ function ShareConfirmationPortal({ confirmation, loading, onClose, onConfirm }) 
 
 export default function ContentCard({ item, delay = 0, immersive = false, canEdit = false, canDelete = false, onEdit, onDelete }) {
   const { shareContent, sharedContent, currentUser } = useAppStore();
+  const videoRef = useRef(null);
   const [failedImages, setFailedImages] = useState([]);
   const [remotePreview, setRemotePreview] = useState(null);
   const [social, setSocial] = useState({
@@ -264,8 +265,17 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
     item.instagramUrl ? { network: 'instagram', label: 'Instagram', url: item.instagramUrl } : null,
   ].filter(Boolean);
 
-  const imageCandidates = [item.imageUrl, remotePreview?.imageUrl].filter((candidate) => !isPlaceholderImage(candidate));
+  const imageCandidates = [item.imageUrl, remotePreview?.imageUrl].filter((candidate) => !isPlaceholderImage(candidate) && !isDirectVideoUrl(candidate));
   const image = imageCandidates.find((candidate) => !failedImages.includes(candidate)) || '';
+  const videoCandidates = [
+    item.videoUrl,
+    item.video_url,
+    item.mediaUrl,
+    item.media_url,
+    String(item.format || '').toLowerCase() === 'video' ? item.imageUrl : '',
+    remotePreview?.videoUrl,
+  ].filter(isDirectVideoUrl);
+  const video = videoCandidates.find((candidate) => !failedImages.includes(candidate)) || '';
 
   useEffect(() => {
     let active = true;
@@ -286,14 +296,28 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
   }, [item.id, item.imageUrl, item.sourceUrl]);
 
   useEffect(() => {
-    if (!item.sourceUrl || !isPlaceholderImage(item.imageUrl)) return undefined;
+    if (!item.sourceUrl || (!isPlaceholderImage(item.imageUrl) && String(item.format || '').toLowerCase() !== 'video')) return undefined;
     let active = true;
     fetchSocialPreview(item.sourceUrl)
       .then((preview) => {
         if (active && preview) setRemotePreview(preview);
       });
     return () => { active = false; };
-  }, [item.imageUrl, item.sourceUrl]);
+  }, [item.imageUrl, item.sourceUrl, item.format]);
+
+  useEffect(() => {
+    const media = videoRef.current;
+    if (!media || !video || typeof IntersectionObserver === 'undefined') return undefined;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        media.play().catch(() => {});
+      } else {
+        media.pause();
+      }
+    }, { threshold: 0.58 });
+    observer.observe(media);
+    return () => observer.disconnect();
+  }, [video]);
 
   const loadComments = async () => {
     if (commentsOpen) {
@@ -500,12 +524,32 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
       initial={{ opacity: 0, y: 18, scale: 0.98 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ y: -5, scale: 1.01 }}
+      whileHover={immersive ? undefined : { y: -5, scale: 1.01 }}
       className={`content-card-pro ${immersive ? 'is-immersive' : ''} ${alreadyShared ? 'is-shared' : ''}`}
       style={{ '--content-tone': accent }}
     >
       <div className="content-media-pro">
-        {image ? (
+        {video ? (
+          <>
+            <video
+              ref={videoRef}
+              className="content-media-video"
+              src={video}
+              poster={image || undefined}
+              muted
+              loop
+              autoPlay
+              playsInline
+              preload="metadata"
+              aria-label={`Vista previa de video: ${item.title}`}
+              onError={(event) => {
+                const brokenVideo = event.currentTarget.currentSrc || event.currentTarget.src;
+                setFailedImages((current) => current.includes(brokenVideo) ? current : [...current, brokenVideo]);
+              }}
+            />
+            <div className="content-media-overlay" />
+          </>
+        ) : image ? (
           <>
             <img src={image} alt={item.title} onError={handleImageError} loading="lazy" />
             <div className="content-media-overlay" />
@@ -553,14 +597,14 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
         <p>{item.description}</p>
 
         <div className="content-engagement-pro">
-          <span><Send size={12} />{formatCount(item.shares)}</span>
-          <button type="button" className={`content-like-button ${social.likedByMe ? 'is-liked' : ''}`} onClick={handleReaction} disabled={socialLoading} aria-pressed={social.likedByMe}>
-            <Heart size={13} fill={social.likedByMe ? 'currentColor' : 'none'} />{formatCount(social.likesCount)} Me gusta
+          <span className="content-engagement-stat"><Send size={12} /><b>{formatCount(item.shares)}</b></span>
+          <button type="button" className={`content-like-button ${social.likedByMe ? 'is-liked' : ''}`} onClick={handleReaction} disabled={socialLoading} aria-label={`${social.likesCount} Me gusta`} aria-pressed={social.likedByMe}>
+            <Heart size={13} fill={social.likedByMe ? 'currentColor' : 'none'} /><span className="content-engagement-label"><b>{formatCount(social.likesCount)}</b><em> Me gusta</em></span>
           </button>
-          <button type="button" className="content-comments-button" onClick={loadComments} aria-expanded={commentsOpen}>
-            <MessageCircle size={13} />{formatCount(social.commentsCount)} Comentarios
+          <button type="button" className="content-comments-button" onClick={loadComments} aria-label={`${social.commentsCount} Comentarios`} aria-expanded={commentsOpen}>
+            <MessageCircle size={13} /><span className="content-engagement-label"><b>{formatCount(social.commentsCount)}</b><em> Comentarios</em></span>
           </button>
-          <span><CheckCircle2 size={12} />Oficial</span>
+          <span className="content-engagement-official"><CheckCircle2 size={12} /><em>Oficial</em></span>
         </div>
 
         {(originalLinks.length > 0 || item.sourceUrl) && (
@@ -638,8 +682,11 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
         )}
 
         <div className="content-actions-pro">
-          <button type="button" onClick={handleCopy} className="content-action-ghost">
+          <button type="button" onClick={handleCopy} className="content-action-ghost" aria-label="Copiar texto de la publicación">
             <Copy size={14} /> Copiar
+          </button>
+          <button type="button" onClick={loadComments} className="content-action-ghost content-action-comments" aria-label="Abrir comentarios" aria-expanded={commentsOpen}>
+            <MessageCircle size={15} /> Comentarios
           </button>
           <button type="button" onClick={() => handleShare('whatsapp')} className={`content-action-social is-whatsapp ${alreadyShared ? 'is-shared' : ''}`}>
             <WhatsAppIcon />

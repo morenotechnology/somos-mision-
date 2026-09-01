@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import MobileSidebar from './MobileSidebar';
@@ -7,6 +7,8 @@ import { useAppStore } from '../../store/useAppStore';
 
 export default function AppLayout() {
   const { sidebarOpen } = useAppStore();
+  const location = useLocation();
+  const isFeedRoute = ['/noticias', '/hub'].includes(location.pathname);
 
   return (
     <div className="app-shell flex h-screen overflow-hidden">
@@ -24,7 +26,7 @@ export default function AppLayout() {
         style={{ '--sidebar-offset': sidebarOpen ? '260px' : '68px' }}
       >
         <Topbar />
-        <main className="flex-1 overflow-y-auto">
+        <main className={`flex-1 overflow-y-auto ${isFeedRoute ? 'app-main-feed' : ''}`}>
           <div className="main-surface app-content">
             <Outlet />
           </div>

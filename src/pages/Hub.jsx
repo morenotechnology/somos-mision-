@@ -7,13 +7,11 @@ import {
   ImagePlus,
   Link2,
   Loader2,
-  Megaphone,
   PlusCircle,
   Search,
   SearchX,
   Send,
   ShieldCheck,
-  Sparkles,
   WandSparkles,
   XCircle,
 } from 'lucide-react';
@@ -506,20 +504,6 @@ export default function Hub() {
 
   return (
     <div className="content-hub-page is-immersive-feed">
-      <motion.section
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.52, ease: [0.22, 1, 0.36, 1] }}
-        className="content-hub-hero"
-      >
-        <div className="content-hub-hero-copy">
-          <div className="content-hub-orb"><Megaphone size={26} /></div>
-          <p className="content-hub-kicker"><Sparkles size={14} /> Actualidad de la red</p>
-          <h2>Noticias</h2>
-          <span>El feed oficial de Misiones Nacionales: novedades, testimonios y contenidos listos para compartir.</span>
-        </div>
-      </motion.section>
-
       <PastorPublicationComposer
         currentUser={currentUser}
         coordinations={data.coordinations}
@@ -537,8 +521,8 @@ export default function Hub() {
       >
         <div className="content-toolbar-trigger-row">
           <div className="content-toolbar-context">
-            <span>Explorar noticias</span>
-            <strong>{activeFilterLabel}</strong>
+            <span>{activeFilterCount > 0 ? activeFilterLabel : 'Noticias'}</span>
+            <h2>{sort === 'Recientes' ? 'Para ti' : sort}</h2>
           </div>
           <button
             type="button"
@@ -619,15 +603,7 @@ export default function Hub() {
         )}
       </motion.section>
 
-      <section className="content-feed-section is-immersive-feed">
-        <div className="content-feed-head">
-          <div>
-            <p><Megaphone size={13} /> Feed oficial</p>
-            <h3>{sort === 'Recientes' ? 'Lo más reciente' : sort}</h3>
-          </div>
-          <span>{activeFilterLabel}</span>
-        </div>
-
+      <section className="content-feed-section is-immersive-feed" aria-label="Noticias de la red">
         {loading ? (
           <div className="content-loading-grid is-immersive">
             <div className="content-card-skeleton" />
