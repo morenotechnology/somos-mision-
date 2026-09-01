@@ -251,7 +251,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
   const alreadyShared = sharedContent.includes(String(item.id));
   const accent = formatTone[item.format] || '#1A237E';
   const networkNames = { whatsapp: 'WhatsApp', facebook: 'Facebook', instagram: 'Instagram' };
-  const fallbackUrl = `${window.location.origin}/dashboard?contenido=${encodeURIComponent(item.id)}`;
+  const fallbackUrl = `${window.location.origin}/noticias?contenido=${encodeURIComponent(item.id)}`;
   const sourceLooksFacebook = /facebook\.com|fb\.com|fb\.watch/i.test(item.sourceUrl || '');
   const hasInstagramLink = Boolean(item.instagramUrl);
   const hasFacebookLink = Boolean(item.facebookUrl || sourceLooksFacebook);

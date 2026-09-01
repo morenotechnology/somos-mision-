@@ -1092,7 +1092,7 @@ export function createSupabaseApi() {
             email: targetEmail,
             options: {
               shouldCreateUser: false,
-              emailRedirectTo: getAuthRedirectUrl('/dashboard?email_gate=verified'),
+              emailRedirectTo: getAuthRedirectUrl('/noticias?email_gate=verified'),
             },
           }),
           'No se pudo enviar el correo de verificación'
