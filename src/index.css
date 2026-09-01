@@ -4955,6 +4955,49 @@ html:has(.ln-home-main) .ln-preview-post {
   background: #050821;
 }
 
+.app-main-feed .publisher-composer:not(.is-open) {
+  position: absolute;
+  top: 62px;
+  left: 16px;
+  z-index: 19;
+  width: auto;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.app-main-feed .publisher-composer:not(.is-open)::before,
+.app-main-feed .publisher-composer:not(.is-open) .publisher-composer-hero > div {
+  display: none;
+}
+
+.app-main-feed .publisher-composer:not(.is-open) .publisher-composer-hero {
+  display: block;
+  padding: 0;
+}
+
+.app-main-feed .publisher-composer:not(.is-open) .publisher-toggle {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 50%;
+  font-size: 0;
+  box-shadow: 0 12px 26px rgba(0,0,0,0.28);
+}
+
+.app-main-feed .publisher-composer.is-open + .content-toolbar-pro {
+  position: relative;
+  top: auto;
+  right: auto;
+  width: 100%;
+  padding: 0;
+}
+
 .app-main-feed .content-toolbar-pro {
   position: absolute;
   top: 14px;
@@ -5100,6 +5143,11 @@ html:has(.ln-home-main) .ln-preview-post {
   .app-main-feed .content-toolbar-pro {
     top: 12px;
     right: 12px;
+  }
+
+  .app-main-feed .publisher-composer:not(.is-open) {
+    top: 58px;
+    left: 12px;
   }
 
   .app-main-feed .content-toolbar-panel {

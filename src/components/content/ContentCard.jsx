@@ -557,7 +557,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
   return (
     <motion.div
       initial={{ opacity: 0, y: 18, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
       whileHover={immersive ? undefined : { y: -5, scale: 1.01 }}
       className={`content-card-pro ${immersive ? 'is-immersive' : ''} ${alreadyShared ? 'is-shared' : ''}`}
