@@ -113,9 +113,9 @@ export default function Login() {
           transition={{ duration: 0.48, ease: [0.22, 1, 0.36, 1] }}
           className="auth-card"
         >
-          <button type="button" onClick={() => navigate('/saber-mas')} className="auth-back-button">
+          <button type="button" onClick={() => navigate('/')} className="auth-back-button">
             <ArrowLeft size={16} />
-            Volver a Saber más
+            Volver al inicio
           </button>
 
           <div className="auth-mobile-brand">

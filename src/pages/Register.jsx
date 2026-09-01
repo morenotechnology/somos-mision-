@@ -334,9 +334,9 @@ export default function Register() {
       <RegisterBrandPanel />
       <section className="auth-form-panel">
         <motion.div initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.48, ease: [0.22, 1, 0.36, 1] }} className="auth-card auth-card-register">
-          <button type="button" onClick={() => navigate('/saber-mas')} className="auth-back-button">
+          <button type="button" onClick={() => navigate('/')} className="auth-back-button">
             <ArrowLeft size={16} />
-            Volver a Saber más
+            Volver al inicio
           </button>
 
           <div className="auth-mobile-brand">

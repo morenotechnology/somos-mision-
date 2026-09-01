@@ -74,7 +74,7 @@ function HomeRoute() {
   const isAuthenticated = useAppStore((state) => state.isAuthenticated);
 
   if (!authReady) return <PageLoader />;
-  return isAuthenticated ? <Navigate to="/noticias" replace /> : <Navigate to="/saber-mas" replace />;
+  return isAuthenticated ? <Navigate to="/noticias" replace /> : <Landing previewOnly />;
 }
 
 export default function App() {

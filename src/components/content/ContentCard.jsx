@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Copy, ExternalLink, Heart, MessageCircle, PencilLine, Send, Smartphone, Star, Trash2, X, Zap } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { api } from '../../api';
+import { fetchSocialPreview, getSocialPlatform } from '../../utils/socialPreview';
 import toast from 'react-hot-toast';
 
 const formatCount = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
@@ -234,6 +235,7 @@ function ShareConfirmationPortal({ confirmation, loading, onClose, onConfirm }) 
 export default function ContentCard({ item, delay = 0, immersive = false, canEdit = false, canDelete = false, onEdit, onDelete }) {
   const { shareContent, sharedContent, currentUser } = useAppStore();
   const [imgErr, setImgErr] = useState(false);
+  const [remotePreview, setRemotePreview] = useState(null);
   const [social, setSocial] = useState({
     likesCount: Number(item.likes || 0),
     commentsCount: Number(item.commentsCount || 0),
@@ -250,6 +252,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
   const [confirmLoading, setConfirmLoading] = useState(false);
   const alreadyShared = sharedContent.includes(String(item.id));
   const accent = formatTone[item.format] || '#1A237E';
+  const socialPlatform = getSocialPlatform(item.sourcePlatform || item.sourceUrl);
   const networkNames = { whatsapp: 'WhatsApp', facebook: 'Facebook', instagram: 'Instagram' };
   const fallbackUrl = `${window.location.origin}/noticias?contenido=${encodeURIComponent(item.id)}`;
   const sourceLooksFacebook = /facebook\.com|fb\.com|fb\.watch/i.test(item.sourceUrl || '');
@@ -273,6 +276,16 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
     }).catch(() => {});
     return () => { active = false; };
   }, [item.id, item.likes, item.commentsCount, item.likedByMe]);
+
+  useEffect(() => {
+    if (item.imageUrl || !item.sourceUrl) return undefined;
+    let active = true;
+    fetchSocialPreview(item.sourceUrl)
+      .then((preview) => {
+        if (active && preview) setRemotePreview(preview);
+      });
+    return () => { active = false; };
+  }, [item.imageUrl, item.sourceUrl]);
 
   const loadComments = async () => {
     if (commentsOpen) {
@@ -473,9 +486,9 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
       style={{ '--content-tone': accent }}
     >
       <div className="content-media-pro">
-        {item.imageUrl && !imgErr ? (
+        {(item.imageUrl || remotePreview?.imageUrl) && !imgErr ? (
           <>
-            <img src={item.imageUrl} alt={item.title} onError={() => setImgErr(true)} loading="lazy" />
+            <img src={item.imageUrl || remotePreview.imageUrl} alt={item.title} onError={() => setImgErr(true)} loading="lazy" />
             <div className="content-media-overlay" />
           </>
         ) : (
@@ -484,6 +497,9 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
 
         <div className="content-chip-row">
           <span className="content-format-chip">{item.format}</span>
+          {item.sourceUrl && (
+            <span className="content-preview-source-chip">{socialPlatform.label} · Preview</span>
+          )}
           {item.coordinationName && (
             <span className="content-glass-chip">{item.coordinationName}</span>
           )}

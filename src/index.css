@@ -4564,6 +4564,194 @@ body {
   }
 }
 
+/* ─── Public home split ───────────────────────────────────────────────── */
+.ln-nav-context {
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ln-mobile-menu-more {
+  width: 100%;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 13px;
+  padding: 0 14px;
+  border: 1px solid rgba(212,175,55,0.24);
+  border-radius: 12px;
+  color: #F5D66A;
+  background: rgba(212,175,55,0.1);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.ln-more-main {
+  background: #F6F7F3;
+}
+
+.ln-more-intro {
+  padding: clamp(118px, 13vw, 176px) 0 clamp(62px, 8vw, 104px);
+  color: #fff;
+  background:
+    radial-gradient(circle at 84% 10%, rgba(212,175,55,0.36), transparent 28%),
+    linear-gradient(135deg, #080D46 0%, #141B75 58%, #0B102E 100%);
+}
+
+.ln-more-intro p {
+  color: #F3CB55;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+.ln-more-intro h1 {
+  max-width: 720px;
+  margin-top: 12px;
+  color: #fff;
+  font-size: clamp(2.4rem, 7vw, 5.2rem);
+  font-weight: 950;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+
+.ln-more-intro span {
+  display: block;
+  max-width: 640px;
+  margin-top: 16px;
+  color: rgba(255,255,255,0.76);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.ln-preview-post-loading {
+  position: absolute;
+  left: 22px;
+  bottom: 22px;
+  z-index: 2;
+  padding: 7px 9px;
+  border-radius: 9px;
+  color: rgba(255,255,255,0.82);
+  background: rgba(7,12,48,0.58);
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.content-preview-source-chip {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(7,12,48,0.54);
+  font-size: 0.68rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.ln-preview-section.is-home-preview {
+  min-height: 100svh;
+  padding: clamp(54px, 7vw, 88px) 0 70px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 14% 3%, rgba(46,125,50,0.18), transparent 26%),
+    radial-gradient(circle at 90% 4%, rgba(212,175,55,0.18), transparent 27%),
+    #050821;
+}
+
+.ln-preview-section.is-home-preview .ln-container {
+  width: min(900px, calc(100% - 36px));
+  max-width: 900px;
+}
+
+.ln-preview-section.is-home-preview .ln-preview-heading {
+  margin-bottom: 17px;
+}
+
+.ln-preview-section.is-home-preview .ln-preview-heading p {
+  color: #F3CB55;
+}
+
+.ln-preview-section.is-home-preview .ln-preview-heading h2 {
+  color: #fff;
+}
+
+.ln-preview-section.is-home-preview .ln-preview-heading > div > span {
+  color: rgba(255,255,255,0.7);
+}
+
+.ln-preview-section.is-home-preview .ln-preview-page-label {
+  color: #F3CB55;
+}
+
+.ln-preview-section.is-home-preview .ln-preview-feed {
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  overflow: visible;
+  scroll-snap-type: none;
+}
+
+.ln-preview-section.is-home-preview .ln-preview-post,
+.ln-preview-section.is-home-preview .ln-preview-skeleton {
+  flex: 0 0 min(820px, calc(100svh - 112px));
+  min-height: min(820px, calc(100svh - 112px));
+  border-radius: 18px;
+}
+
+.ln-preview-section.is-home-preview .ln-preview-post {
+  box-shadow: 0 20px 46px rgba(0,0,0,0.28);
+}
+
+.ln-preview-section.is-home-preview .ln-preview-bottom-cta {
+  border-color: rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.07);
+}
+
+.ln-preview-section.is-home-preview .ln-preview-bottom-cta strong {
+  color: #fff;
+}
+
+.ln-preview-section.is-home-preview .ln-preview-bottom-cta span {
+  color: rgba(255,255,255,0.66);
+}
+
+@media (max-width: 760px) {
+  .ln-more-intro {
+    padding: 104px 16px 56px;
+  }
+
+  .ln-preview-section.is-home-preview {
+    padding: 54px 0 64px;
+  }
+
+  .ln-preview-section.is-home-preview .ln-container {
+    width: 100%;
+  }
+
+  .ln-preview-section.is-home-preview .ln-preview-heading {
+    margin: 0 16px 14px;
+  }
+
+  .ln-preview-section.is-home-preview .ln-preview-post,
+  .ln-preview-section.is-home-preview .ln-preview-skeleton {
+    flex-basis: calc(100svh - 112px);
+    min-height: calc(100svh - 112px);
+    border-radius: 0;
+  }
+
+  .ln-preview-section.is-home-preview .ln-preview-bottom-cta {
+    margin-right: 16px;
+    margin-left: 16px;
+  }
+}
+
 .auth-success-icon.is-warning {
   background: #FEF3C7;
   color: #B45309;

@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { api } from '../api';
 import { formatNumber } from '../utils/helpers';
+import { fetchSocialPreview, getSocialPlatform } from '../utils/socialPreview';
 import BrandLogo from '../components/common/BrandLogo';
 import { LucideIcon } from '../components/common/LucideIcon';
 import regionAmazonica from '../assets/regiones/optimized/AMAZONICA_2.png';
@@ -266,7 +267,7 @@ const canonicalCoordinations = [
 const coordinationDetails = Object.fromEntries(canonicalCoordinations.map((item) => [item.id, item]));
 
 /* ─── Nav ─────────────────────────────────────────────────────────────── */
-function Nav({ onLogin, onRegister }) {
+function Nav({ onLogin, onRegister, onLearnMore }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 30);
@@ -292,7 +293,9 @@ function Nav({ onLogin, onRegister }) {
           </span>
         </button>
         <nav className="ln-nav-actions" aria-label="Navegación principal">
-          <span className="ln-nav-context">SABER MÁS</span>
+          <button type="button" className="ln-nav-context" onClick={onLearnMore}>
+            SABER MÁS
+          </button>
           <button type="button" id="nav-login" onClick={onLogin} className="ln-btn-ghost">
             Iniciar sesión
           </button>
@@ -306,8 +309,11 @@ function Nav({ onLogin, onRegister }) {
 }
 
 /* ─── Hero ────────────────────────────────────────────────────────────── */
-function Hero({ metrics, schema, onRegister, onLogin }) {
+function Hero({ metrics, schema, onRegister, onLogin, onLearnMore, previewOnly = false }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const menuItems = previewOnly
+    ? [{ label: 'Noticias', target: 'vista-previa' }]
+    : mobileMenuItems;
 
   useEffect(() => {
     if (!mobileMenuOpen) return undefined;
@@ -407,7 +413,7 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
               </div>
 
               <nav className="ln-mobile-menu-links" aria-label="Secciones de la landing">
-                {mobileMenuItems.map((item, index) => (
+                {menuItems.map((item, index) => (
                   <motion.button
                     key={item.target}
                     type="button"
@@ -421,6 +427,10 @@ function Hero({ metrics, schema, onRegister, onLogin }) {
                   </motion.button>
                 ))}
               </nav>
+
+              <button type="button" className="ln-mobile-menu-more" onClick={onLearnMore}>
+                Saber más sobre la red <ArrowRight size={16} />
+              </button>
 
               <div className="ln-mobile-menu-actions">
                 <button type="button" className="ln-btn-outline ln-btn-lg" onClick={() => { setMobileMenuOpen(false); onLogin(); }}>
@@ -927,22 +937,41 @@ function formatPreviewCount(value) {
 }
 
 function PreviewPost({ item, index, onLogin, onRegister }) {
-  const image = item.imageUrl || '/hero-map.png';
+  const [remotePreview, setRemotePreview] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const platform = getSocialPlatform(item.sourcePlatform || item.sourceUrl);
+
+  useEffect(() => {
+    if (item.imageUrl || !item.sourceUrl) return undefined;
+    let active = true;
+    setPreviewLoading(true);
+    fetchSocialPreview(item.sourceUrl)
+      .then((preview) => {
+        if (active && preview) setRemotePreview(preview);
+      })
+      .finally(() => active && setPreviewLoading(false));
+    return () => { active = false; };
+  }, [item.imageUrl, item.sourceUrl]);
+
+  const image = item.imageUrl || remotePreview?.imageUrl || '/hero-map.png';
+  const title = item.title || remotePreview?.title || 'Una nueva historia de misión';
+  const description = item.description || remotePreview?.description || 'Conoce las historias, noticias y acciones que están moviendo la misión en Colombia.';
 
   return (
     <article className="ln-preview-post" style={{ '--preview-index': index }}>
       <div className="ln-preview-post-media">
         <img
           src={image}
-          alt={item.title || 'Publicación de Misiones Nacionales'}
+          alt={title}
           onError={(event) => { event.currentTarget.src = '/hero-map.png'; }}
           loading={index === 0 ? 'eager' : 'lazy'}
         />
         <div className="ln-preview-post-shade" />
         <div className="ln-preview-post-topline">
-          <span><span className="ln-preview-live-dot" /> Noticias de la red</span>
+          <span><span className="ln-preview-live-dot" /> {platform.label} · Vista previa</span>
           <span>{formatPreviewDate(item.createdAt)}</span>
         </div>
+        {previewLoading && <span className="ln-preview-post-loading">Cargando portada…</span>}
       </div>
 
       <div className="ln-preview-post-copy">
@@ -950,8 +979,8 @@ function PreviewPost({ item, index, onLogin, onRegister }) {
           <span>{item.coordinationName || 'Misiones Nacionales'}</span>
           {item.featured && <strong>Destacado</strong>}
         </div>
-        <h3>{item.title || 'Una nueva historia de misión'}</h3>
-        <p>{item.description || 'Conoce las historias, noticias y acciones que están moviendo la misión en Colombia.'}</p>
+        <h3>{title}</h3>
+        <p>{description}</p>
         <div className="ln-preview-post-meta">
           <span>{formatPreviewCount(item.likes)} Me gusta</span>
           <span>{formatPreviewCount(item.commentsCount)} comentarios</span>
@@ -986,15 +1015,15 @@ function PreviewPost({ item, index, onLogin, onRegister }) {
   );
 }
 
-function PreviewNewsSection({ items, loading, onLogin, onRegister }) {
+function PreviewNewsSection({ items, loading, onLogin, onRegister, homeOnly = false }) {
   return (
-    <section className="ln-preview-section" id="vista-previa">
+    <section className={`ln-preview-section ${homeOnly ? 'is-home-preview' : ''}`} id="vista-previa">
       <div className="ln-container">
         <div className="ln-preview-heading">
           <div>
-            <p><Radio size={13} /> Vista previa de la red</p>
-            <h2>Así se ven las noticias por dentro</h2>
-            <span>Desliza para conocer cinco publicaciones recientes. Al entrar, el feed continúa a pantalla completa.</span>
+            <p><Radio size={13} /> {homeOnly ? 'FYP de la red' : 'Vista previa de la red'}</p>
+            <h2>{homeOnly ? 'Noticias de la red' : 'Así se ven las noticias por dentro'}</h2>
+            <span>{homeOnly ? 'Desliza para descubrir cinco publicaciones recientes de Misiones Nacionales.' : 'Desliza para conocer cinco publicaciones recientes. Al entrar, el feed continúa a pantalla completa.'}</span>
           </div>
           <span className="ln-preview-page-label">SABER MÁS</span>
         </div>
@@ -1024,7 +1053,7 @@ function PreviewNewsSection({ items, loading, onLogin, onRegister }) {
 }
 
 /* ─── Root ────────────────────────────────────────────────────────────── */
-export default function Landing() {
+export default function Landing({ previewOnly = false }) {
   const navigate = useNavigate();
   const [data, setData] = useState({
     globalMetrics: null,
@@ -1071,6 +1100,10 @@ export default function Landing() {
   }, []);
 
   useEffect(() => {
+    if (!previewOnly) {
+      setPreviewLoading(false);
+      return undefined;
+    }
     let active = true;
     api.content.list({ sort: 'Recientes', limit: 5 })
       .then((items) => {
@@ -1078,10 +1111,10 @@ export default function Landing() {
       })
       .catch(() => {
         if (active) setPreviewItems([]);
-      })
+    })
       .finally(() => active && setPreviewLoading(false));
     return () => { active = false; };
-  }, []);
+  }, [previewOnly]);
 
   const metrics = data.globalMetrics || {
     totalEmbajadores: 0,
@@ -1093,20 +1126,35 @@ export default function Landing() {
 
   const toLogin = () => navigate('/login');
   const toRegister = () => navigate('/register');
+  const toLearnMore = () => navigate('/saber-mas');
 
   return (
     <div className="ln-page">
-      <Nav onLogin={toLogin} onRegister={toRegister} />
-      <main>
-        <Hero metrics={metrics} schema={schema} onRegister={toRegister} onLogin={toLogin} />
-        <PreviewNewsSection items={previewItems} loading={previewLoading} onLogin={toLogin} onRegister={toRegister} />
-        <PosterFeature onRegister={toRegister} />
-        <MetricsBand metrics={metrics} />
-        <TerritorySection />
-        <StepsSection />
-        <CoordinationsSection coordinations={data.coordinations} />
-        <RankingSection topUsers={data.topUsers} onLogin={toLogin} />
-        <FinalCTA onRegister={toRegister} />
+      <Nav onLogin={toLogin} onRegister={toRegister} onLearnMore={toLearnMore} />
+      <main className={previewOnly ? 'ln-home-main' : 'ln-more-main'}>
+        {previewOnly ? (
+          <>
+            <Hero metrics={metrics} schema={schema} onRegister={toRegister} onLogin={toLogin} onLearnMore={toLearnMore} previewOnly />
+            <PreviewNewsSection items={previewItems} loading={previewLoading} onLogin={toLogin} onRegister={toRegister} homeOnly />
+          </>
+        ) : (
+          <>
+            <section className="ln-more-intro" aria-labelledby="more-page-title">
+              <div className="ln-container">
+                <p>SABER MÁS</p>
+                <h1 id="more-page-title">La misión detrás de la red</h1>
+                <span>Conoce las regiones, coordinaciones y formas de participar en Misiones Nacionales Colombia.</span>
+              </div>
+            </section>
+            <PosterFeature onRegister={toRegister} />
+            <MetricsBand metrics={metrics} />
+            <TerritorySection />
+            <StepsSection />
+            <CoordinationsSection coordinations={data.coordinations} />
+            <RankingSection topUsers={data.topUsers} onLogin={toLogin} />
+            <FinalCTA onRegister={toRegister} />
+          </>
+        )}
       </main>
       <Footer />
     </div>

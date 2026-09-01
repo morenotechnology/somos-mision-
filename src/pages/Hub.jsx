@@ -21,6 +21,7 @@ import ContentCard from '../components/content/ContentCard';
 import EmptyState from '../components/common/EmptyState';
 import { api } from '../api';
 import { useAppStore } from '../store/useAppStore';
+import { fetchSocialPreview } from '../utils/socialPreview';
 import toast from 'react-hot-toast';
 
 const sorts = ['Recientes', 'Populares', 'Destacados'];
@@ -108,19 +109,6 @@ function isInstagramUrl(url = '') {
   return normalizePostUrl(url).toLowerCase().includes('instagram.com');
 }
 
-async function fetchSocialPreview(sourceUrl) {
-  const endpoint = `https://api.microlink.io/?url=${encodeURIComponent(sourceUrl)}&screenshot=false&video=false&audio=false`;
-  const response = await fetch(endpoint);
-  if (!response.ok) throw new Error('No se pudo leer el preview del enlace');
-  const payload = await response.json();
-  const data = payload?.data || {};
-  return {
-    title: data.title || '',
-    description: data.description || '',
-    imageUrl: data.image?.url || data.logo?.url || '',
-  };
-}
-
 function PastorPublicationComposer({ currentUser, coordinations, editingItem = null, onCreated, onUpdated, onCancelEdit }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(publisherInitialState);
@@ -181,6 +169,7 @@ function PastorPublicationComposer({ currentUser, coordinations, editingItem = n
     setPreviewLoading(true);
     try {
       const nextPreview = await fetchSocialPreview(primaryUrl);
+      if (!nextPreview) throw new Error('No se pudo leer el preview del enlace');
       setPreview(nextPreview);
       setForm((current) => ({
         ...current,
