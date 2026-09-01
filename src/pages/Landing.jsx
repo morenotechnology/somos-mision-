@@ -347,7 +347,7 @@ function Hero({ metrics, schema, onRegister, onLogin, onLearnMore, previewOnly =
   };
 
   return (
-    <section className="ln-hero" id="hero">
+    <section className={`ln-hero ${previewOnly ? 'is-home-hero' : ''}`} id="hero">
       <motion.div className="ln-hero-bg" aria-hidden="true">
         <img src="/bg-pueblo.png" alt="" />
         <div className="ln-hero-bg-overlay" />
@@ -504,8 +504,8 @@ function Hero({ metrics, schema, onRegister, onLogin, onLearnMore, previewOnly =
         </motion.div>
 
         <motion.div {...fadeUp(0.32)} className="ln-hero-sub">
-          <strong>Haz parte de la red que mueve la misión en Colombia.</strong>
-          <span>Conecta tu iglesia, descubre noticias y comparte contenido oficial con 5.000 amigos que sirven en todo el país.</span>
+          <strong>Tu lugar en la misión empieza aquí.</strong>
+          <span>Únete a la red que conecta iglesias, noticias y contenido oficial con 5.000 amigos que sirven en todo el país.</span>
         </motion.div>
 
         {/* CTAs */}
@@ -524,6 +524,13 @@ function Hero({ metrics, schema, onRegister, onLogin, onLearnMore, previewOnly =
           <span><Star size={14} strokeWidth={2.2} />{schema.comunicadosActivos} comunicados activos</span>
           <span><Users size={14} strokeWidth={2.2} />{metrics.totalEmbajadores.toLocaleString()} multiplicadores</span>
         </motion.div>
+
+        {previewOnly && (
+          <motion.div {...fadeUp(0.58)} className="ln-hero-join-note">
+            <span>Tu siguiente paso</span>
+            <strong>Únete hoy y lleva la misión contigo.</strong>
+          </motion.div>
+        )}
       </motion.div>
 
       {/* Scroll indicator */}

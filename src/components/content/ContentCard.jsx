@@ -11,6 +11,11 @@ import toast from 'react-hot-toast';
 const formatCount = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
 const dateFmt = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short' });
 const VIP_WHATSAPP_URL = 'https://chat.whatsapp.com/G2Al7tjnAao6k1I4swB5mv?s=hd&p=i&mlu=4';
+const formatVideoTime = (value) => {
+  const seconds = Math.max(0, Math.floor(Number(value) || 0));
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}:${String(seconds % 60).padStart(2, '0')}`;
+};
 const formatTone = {
   imagen: '#1A237E',
   video: '#AD1457',
@@ -241,6 +246,8 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
   const shareActionRef = useRef(null);
   const commentInputRef = useRef(null);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const [videoTime, setVideoTime] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
   const [failedImages, setFailedImages] = useState([]);
   const [remotePreview, setRemotePreview] = useState(null);
   const [social, setSocial] = useState({
@@ -333,6 +340,9 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
       videoRef.current.muted = true;
       videoRef.current.pause();
     }
+    setVideoTime(0);
+    setVideoDuration(0);
+    setAudioEnabled(false);
   }, [video]);
 
   useEffect(() => {
@@ -575,6 +585,14 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
     media.play().catch(() => {});
   };
 
+  const seekVideo = (event) => {
+    const media = videoRef.current;
+    const nextTime = Number(event.currentTarget.value);
+    if (!media || !Number.isFinite(nextTime)) return;
+    media.currentTime = nextTime;
+    setVideoTime(nextTime);
+  };
+
   const registerShare = async (network, shareUrl, shareSignal = {}) => {
     try {
       const payload = await shareContent(item.id, item.xpReward, network, {
@@ -633,12 +651,15 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
               className="content-media-video"
               src={video}
               poster={image || undefined}
-              muted
+              muted={!audioEnabled}
               loop
               autoPlay
               playsInline
               preload="metadata"
               aria-label={`Vista previa de video: ${item.title}`}
+              onLoadedMetadata={(event) => setVideoDuration(Number(event.currentTarget.duration) || 0)}
+              onDurationChange={(event) => setVideoDuration(Number(event.currentTarget.duration) || 0)}
+              onTimeUpdate={(event) => setVideoTime(event.currentTarget.currentTime)}
               onError={(event) => {
                 const brokenVideo = event.currentTarget.currentSrc || event.currentTarget.src;
                 setFailedImages((current) => current.includes(brokenVideo) ? current : [...current, brokenVideo]);
@@ -701,6 +722,25 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
 
         <h3>{item.title}</h3>
         <p>{item.description}</p>
+
+        {video && (
+          <div className="content-video-progress" aria-label="Controles de reproducción del video">
+            <div className="content-video-progress-row">
+              <input
+                type="range"
+                min="0"
+                max={videoDuration || 0}
+                step="0.1"
+                value={Math.min(videoTime, videoDuration || 0)}
+                onChange={seekVideo}
+                disabled={!videoDuration}
+                aria-label="Avanzar o retroceder el video"
+                style={{ '--video-progress': `${videoDuration ? (videoTime / videoDuration) * 100 : 0}%` }}
+              />
+              <span>{formatVideoTime(videoTime)} / {formatVideoTime(videoDuration)}</span>
+            </div>
+          </div>
+        )}
 
         <div className="content-engagement-pro">
           <span className="content-engagement-stat"><Send size={12} /><b>{formatCount(item.shares)}</b></span>
