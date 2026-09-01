@@ -8,6 +8,8 @@ import { useAppStore } from '../store/useAppStore';
 import StatCard from '../components/common/StatCard';
 import MissionCard from '../components/missions/MissionCard';
 import RankingCard from '../components/ranking/RankingCard';
+import ContentCard from '../components/content/ContentCard';
+import CommunityVipCard from '../components/common/CommunityVipCard';
 import { getLevelTitle, xpProgress, formatNumber } from '../utils/helpers';
 import { LucideIcon } from '../components/common/LucideIcon';
 
@@ -18,10 +20,53 @@ const greet = () => {
   return 'Buenas noches';
 };
 
+function RecentNewsSection() {
+  const navigate = useNavigate();
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    api.hub.list({ sort: 'Recientes', limit: 3 })
+      .then((data) => active && setItems(data.items || []))
+      .catch(() => active && setItems([]))
+      .finally(() => active && setLoading(false));
+    return () => { active = false; };
+  }, []);
+
+  return (
+    <section className="home-news-section">
+      <div className="home-news-head">
+        <div><p>Actualidad de la red</p><h2>Últimas noticias</h2></div>
+        <button type="button" onClick={() => navigate('/noticias')}>Ver todo <ArrowRight size={15} /></button>
+      </div>
+      {loading ? (
+        <div className="home-news-loading"><span /><span /><span /></div>
+      ) : items.length ? (
+        <div className="home-news-feed">
+          {items.map((item, index) => <ContentCard key={item.id} item={item} delay={index * 0.05} />)}
+        </div>
+      ) : (
+        <div className="home-news-empty">Aún no hay noticias publicadas.</div>
+      )}
+    </section>
+  );
+}
+
+function HomeExtras() {
+  return (
+    <div className="home-dashboard-extras">
+      <CommunityVipCard />
+      <RecentNewsSection />
+    </div>
+  );
+}
+
 function MultiplicadorDash({ user, weeklyActivity = [], missions = [], topUsers = [], badges = [] }) {
   const navigate = useNavigate();
   const progress = xpProgress(user.xp, user.level);
   const dailyMissions = missions.filter((mission) => mission.type === 'daily').slice(0, 3);
+  const visibleBadges = badges.slice(0, 4);
 
   return (
     <div className="dashboard-page">
@@ -49,7 +94,7 @@ function MultiplicadorDash({ user, weeklyActivity = [], missions = [], topUsers 
       <div className="dashboard-stat-grid">
         <StatCard icon={Share2} label="Compartidos" value={user.shared} color="#1A237E" delay={0.10} />
         <StatCard icon={Target} label="Misiones" value={user.missionsCompleted} color="#D4AF37" delay={0.15} />
-        <StatCard icon={Trophy} label="Insignias" value={badges.length} color="#5C1800" delay={0.20} />
+        <StatCard icon={Trophy} label="Insignias clave" value={visibleBadges.length} color="#5C1800" delay={0.20} />
         <StatCard icon={Flame} label="Racha (días)" value={user.streak} color="#E65100" delay={0.25} />
       </div>
 
@@ -72,9 +117,9 @@ function MultiplicadorDash({ user, weeklyActivity = [], missions = [], topUsers 
       </div>
 
       <div className="dashboard-badges-card">
-        <div className="dashboard-section-header is-tight"><div><p>Reconocimientos</p><h3>Mis insignias</h3></div><span>{badges.length} desbloqueadas</span></div>
+        <div className="dashboard-section-header is-tight"><div><p>Reconocimientos</p><h3>Insignias clave</h3></div><span>{visibleBadges.length} visibles en Inicio</span></div>
         <div className="dashboard-badge-list">
-          {badges.map((badge) => (
+          {visibleBadges.map((badge) => (
             <motion.div key={badge.id} whileHover={{ scale: 1.1, y: -2 }} className="dashboard-badge-item" title={badge.description}>
               <div style={{ background: `${badge.color}20` }}><LucideIcon name={badge.icon} size={16} style={{ color: badge.color }} /></div>
               <span>{badge.name}</span>
@@ -170,7 +215,7 @@ function AdminDash({ metrics = {}, weeklyActivity = [], regionActivity = [], top
   return (
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center gap-2 mb-1"><LayoutDashboard size={20} className="text-[#1A237E]" /><h2 className="text-2xl font-black text-[#0F172A]">Dashboard Nacional</h2></div>
+        <div className="flex items-center gap-2 mb-1"><LayoutDashboard size={20} className="text-[#1A237E]" /><h2 className="text-2xl font-black text-[#0F172A]">Resumen nacional</h2></div>
         <p className="text-[#475569] text-sm">Vista general de toda la red.</p>
       </motion.div>
 
@@ -241,7 +286,7 @@ export default function Dashboard() {
       return (
         <div className="dashboard-error-card">
           <div>
-            <span><RefreshCw size={16} /> Dashboard</span>
+            <span><RefreshCw size={16} /> Inicio</span>
             <h2>No pudimos cargar esta vista</h2>
             <p>{error}</p>
           </div>
@@ -257,9 +302,10 @@ export default function Dashboard() {
   const dashboardUser = payload.user || currentUser;
   const role = String(dashboardUser.role || '').toLowerCase();
 
-  if (role === 'multiplicador') return <MultiplicadorDash user={dashboardUser} weeklyActivity={payload.weeklyActivity} missions={payload.missions} topUsers={payload.topUsers} badges={payload.badges} />;
+  let dashboardView;
+  if (role === 'multiplicador') dashboardView = <MultiplicadorDash user={dashboardUser} weeklyActivity={payload.weeklyActivity} missions={payload.missions} topUsers={payload.topUsers} badges={payload.badges} />;
   if (role.includes('pastor') || role.includes('directivo')) {
-    return (
+    dashboardView = (
       <PastorDash
         user={dashboardUser}
         weeklyActivity={payload.weeklyActivity}
@@ -269,5 +315,6 @@ export default function Dashboard() {
       />
     );
   }
-  return <AdminDash metrics={payload.metrics} weeklyActivity={payload.weeklyActivity} regionActivity={payload.regionActivity} topUsers={payload.topUsers} />;
+  if (!dashboardView) dashboardView = <AdminDash metrics={payload.metrics} weeklyActivity={payload.weeklyActivity} regionActivity={payload.regionActivity} topUsers={payload.topUsers} />;
+  return <>{dashboardView}<HomeExtras /></>;
 }

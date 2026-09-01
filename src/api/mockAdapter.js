@@ -226,6 +226,9 @@ export function createMockApi() {
     schema: () => resolve(schemaTables),
 
     auth: {
+      getSession: async () => resolve(state.currentUser ? { user: state.currentUser, session: { access_token: `local-mock-${state.currentUser.role}`, token_type: 'Bearer' } } : null),
+      onAuthStateChange: () => ({ unsubscribe() {} }),
+      logout: async () => { state.currentUser = null; return resolve(true); },
       login: async (payload) => {
         const user = getUser(payload);
         state.currentUser = user;
@@ -279,6 +282,8 @@ export function createMockApi() {
         state.currentUser = user;
         return resolve({ user, session: { access_token: `local-mock-${user.role}`, token_type: 'Bearer' }, needsEmailConfirmation: false, betaPosition: state.users.length, betaTotal: 500 });
       },
+      resetPassword: async () => resolve(true),
+      updatePassword: async () => resolve(true),
     },
 
     dashboard: {
@@ -543,10 +548,63 @@ export function createMockApi() {
     },
 
     social: {
-      comentarios: (params) => resolve(searchRows(state.comentarios, params)),
+      comentarios: (params = {}) => resolve(searchRows(state.comentarios, params).filter((row) => (
+        !params.publication_id || String(row.post_id || row.publication_id) === String(params.publication_id)
+      )).slice(0, params.limit ? Number(params.limit) : undefined)),
       compartidos: (params) => resolve(searchRows(state.compartidos, params)),
       reacciones: (params) => resolve(searchRows(state.reacciones, params)),
       seguidores: (params) => resolve(searchRows(state.seguidores, params)),
+      resumen: (params = {}) => {
+        const userKey = String(state.currentUser?.schemaId || state.currentUser?.id || '');
+        const ids = [...new Set((params.publicationIds || []).map(String))];
+        return resolve(ids.reduce((result, publicationId) => {
+          const rows = state.reacciones.filter((row) => String(row.post_id || row.publication_id) === publicationId);
+          result[publicationId] = {
+            commentsCount: state.comentarios.filter((row) => String(row.post_id || row.publication_id) === publicationId).length,
+            likedByMe: rows.some((row) => String(row.usuario_id || row.user_id) === userKey && (row.tipo || row.type || 'like') === 'like'),
+          };
+          return result;
+        }, {}));
+      },
+      toggleReaction: (publicationId, type = 'like') => {
+        const userKey = String(state.currentUser?.schemaId || state.currentUser?.id || '');
+        if (!userKey) throw new ApiError('Inicia sesión para reaccionar', 401);
+        const index = state.reacciones.findIndex((row) => (
+          String(row.post_id || row.publication_id) === String(publicationId)
+          && String(row.usuario_id || row.user_id) === userKey
+          && (row.tipo || row.type || 'like') === type
+        ));
+        const active = index < 0;
+        if (active) {
+          state.reacciones.unshift({ id: crypto.randomUUID(), post_id: publicationId, usuario_id: userKey, tipo: type, created_at: new Date().toISOString() });
+        } else {
+          state.reacciones.splice(index, 1);
+        }
+        const likesCount = state.reacciones.filter((row) => String(row.post_id || row.publication_id) === String(publicationId) && (row.tipo || row.type || 'like') === 'like').length;
+        const content = state.contentItems.find((item) => String(item.id) === String(publicationId) || String(`cnt${item.id}`) === String(publicationId));
+        if (content) content.likes = likesCount;
+        return resolve({ active, likesCount });
+      },
+      agregarComentario: (publicationId, content) => {
+        const userKey = String(state.currentUser?.schemaId || state.currentUser?.id || '');
+        const cleanContent = String(content || '').trim();
+        if (!userKey) throw new ApiError('Inicia sesión para comentar', 401);
+        if (!cleanContent) throw new ApiError('Escribe un comentario antes de publicarlo', 400);
+        const comment = { id: crypto.randomUUID(), post_id: publicationId, usuario_id: userKey, contenido: cleanContent, created_at: new Date().toISOString() };
+        state.comentarios.unshift(comment);
+        return resolve(comment);
+      },
+      eliminarComentario: (commentId) => {
+        const userKey = String(state.currentUser?.schemaId || state.currentUser?.id || '');
+        const index = state.comentarios.findIndex((row) => String(row.id) === String(commentId));
+        if (index < 0) throw new ApiError('Comentario no encontrado', 404);
+        const comment = state.comentarios[index];
+        if (String(comment.usuario_id || comment.user_id) !== userKey && state.currentUser?.role !== 'admin' && !state.currentUser?.canPublish) {
+          throw new ApiError('No tienes permiso para eliminar este comentario', 403);
+        }
+        state.comentarios.splice(index, 1);
+        return resolve({ id: String(commentId), deleted: true });
+      },
     },
   };
 }

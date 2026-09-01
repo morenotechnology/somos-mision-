@@ -4,11 +4,12 @@ import { useAppStore } from '../../store/useAppStore';
 import NotificationPanel from '../common/NotificationPanel';
 
 const pageTitles = {
-  '/dashboard': 'Dashboard',
-  '/hub':       'Biblioteca digital',
+  '/dashboard': 'Inicio',
+  '/hub':       'Noticias de la red',
+  '/noticias':  'Noticias de la red',
   '/ranking':   'Ranking Nacional',
-  '/missions':  'Misiones & Recompensas',
-  '/profile':   'Mi Perfil',
+  '/missions':  'Misiones y avance',
+  '/profile':   'Mi perfil',
   '/admin':     'Panel Superadmin',
 };
 

@@ -437,6 +437,7 @@ function normalizePublication(row) {
     xpReward: row.xp_reward,
     shares: row.shares_count,
     likes: row.likes_count,
+    commentsCount: row.comments_count || 0,
     createdAt: row.created_at,
     copyText: row.copy_text,
     imageUrl: row.media_url,
@@ -787,6 +788,7 @@ async function getRankingRows(client, params = {}) {
 
   if (params.region) query = query.eq('region_id', params.region);
   if (params.q) query = query.ilike('nombre_completo', `%${params.q}%`);
+  if (params.role || params.rol) query = query.eq('rol', params.role || params.rol);
   if (params.limit) query = query.limit(params.limit);
 
   const rows = unwrap(await query, 'No se pudo cargar el ranking');
@@ -889,6 +891,42 @@ async function getPublications(client, params = {}) {
 
   const rows = unwrap(result, 'No se pudo cargar el contenido');
   return filterPublicationsByRegion(rows.map(normalizePublication), params.region);
+}
+
+function normalizeComment(row) {
+  return {
+    id: String(row.id),
+    publicationId: String(row.publication_id),
+    userId: row.user_id,
+    content: row.contenido || row.content || '',
+    createdAt: row.created_at,
+    authorName: row.profiles?.nombre_completo || row.author?.nombre_completo || 'Miembro de la red',
+    authorAvatar: row.profiles?.avatar || row.author?.avatar || '',
+    authorColor: row.profiles?.avatar_color || row.author?.avatar_color || '#1A237E',
+  };
+}
+
+async function getSocialSummary(client, params = {}) {
+  const publicationIds = [...new Set((params.publicationIds || []).filter(Boolean).map(String))];
+  if (!publicationIds.length) return {};
+
+  const sessionData = await client.auth.getSession();
+  const userId = sessionData.data?.session?.user?.id || null;
+  const [reactionsResult, commentsResult] = await Promise.all([
+    client.from('reactions').select('publication_id, user_id, type').in('publication_id', publicationIds),
+    client.from('comments').select('publication_id').in('publication_id', publicationIds),
+  ]);
+
+  const reactions = unwrap(reactionsResult, 'No se pudieron cargar las reacciones');
+  const comments = unwrap(commentsResult, 'No se pudieron cargar los comentarios');
+  return publicationIds.reduce((summary, publicationId) => {
+    const publicationReactions = reactions.filter((row) => String(row.publication_id) === publicationId);
+    summary[publicationId] = {
+      commentsCount: comments.filter((row) => String(row.publication_id) === publicationId).length,
+      likedByMe: publicationReactions.some((row) => row.type === 'like' && row.user_id === userId),
+    };
+    return summary;
+  }, {});
 }
 
 async function fetchCurrentSessionBundle(client) {
@@ -1029,10 +1067,15 @@ export function createSupabaseApi() {
       async resetPassword(email) {
         unwrap(
           await client.auth.resetPasswordForEmail(email, {
-            redirectTo: getAuthRedirectUrl('/login'),
+            redirectTo: getAuthRedirectUrl('/reset-password'),
           }),
           'No se pudo enviar el correo de recuperación'
         );
+        return true;
+      },
+
+      async updatePassword(password) {
+        unwrap(await client.auth.updateUser({ password }), 'No se pudo actualizar la contraseña');
         return true;
       },
 
@@ -1636,7 +1679,63 @@ export function createSupabaseApi() {
       async comentarios(params = {}) {
         let query = client.from('comments').select('*').order('created_at', { ascending: false });
         if (params.publication_id) query = query.eq('publication_id', params.publication_id);
-        return unwrap(await query, 'No se pudieron cargar los comentarios');
+        if (params.limit) query = query.limit(params.limit);
+        return unwrap(await query, 'No se pudieron cargar los comentarios').map(normalizeComment);
+      },
+
+      async resumen(params = {}) {
+        return getSocialSummary(client, params);
+      },
+
+      async toggleReaction(publicationId, type = 'like') {
+        const sessionData = unwrap(await client.auth.getSession(), 'No se pudo recuperar la sesión');
+        const userId = sessionData?.session?.user?.id;
+        if (!userId) throw new ApiError('Inicia sesión para reaccionar', 401);
+
+        const existing = await client
+          .from('reactions')
+          .select('id')
+          .eq('publication_id', publicationId)
+          .eq('user_id', userId)
+          .eq('type', type)
+          .maybeSingle();
+        unwrap(existing, 'No se pudo consultar tu reacción');
+
+        let active = false;
+        if (existing.data?.id) {
+          unwrap(await client.from('reactions').delete().eq('id', existing.data.id), 'No se pudo quitar la reacción');
+        } else {
+          unwrap(await client.from('reactions').insert({ publication_id: publicationId, user_id: userId, type }), 'No se pudo guardar la reacción');
+          active = true;
+        }
+
+        const countResult = await client
+          .from('reactions')
+          .select('id', { count: 'exact', head: true })
+          .eq('publication_id', publicationId)
+          .eq('type', 'like');
+        if (countResult.error) throw new ApiError(countResult.error.message || 'No se pudo actualizar la reacción', countResult.error.status || 500, countResult.error);
+        return { active, likesCount: Number(countResult.count || 0) };
+      },
+
+      async agregarComentario(publicationId, content) {
+        const sessionData = unwrap(await client.auth.getSession(), 'No se pudo recuperar la sesión');
+        const userId = sessionData?.session?.user?.id;
+        const cleanContent = String(content || '').trim();
+        if (!userId) throw new ApiError('Inicia sesión para comentar', 401);
+        if (!cleanContent) throw new ApiError('Escribe un comentario antes de publicarlo', 400);
+        const result = await client
+          .from('comments')
+          .insert({ publication_id: publicationId, user_id: userId, contenido: cleanContent })
+          .select('*')
+          .single();
+        return normalizeComment(unwrap(result, 'No se pudo publicar el comentario'));
+      },
+
+      async eliminarComentario(commentId) {
+        const result = await client.from('comments').delete().eq('id', commentId);
+        unwrap(result, 'No se pudo eliminar el comentario');
+        return { id: String(commentId), deleted: true };
       },
 
       async compartidos(params = {}) {

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Copy, ExternalLink, Heart, MessageCircle, PencilLine, Send, Smartphone, Star, Trash2, X, Zap } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
+import { api } from '../../api';
 import toast from 'react-hot-toast';
 
 const formatCount = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
@@ -231,8 +232,18 @@ function ShareConfirmationPortal({ confirmation, loading, onClose, onConfirm }) 
 }
 
 export default function ContentCard({ item, delay = 0, canEdit = false, canDelete = false, onEdit, onDelete }) {
-  const { shareContent, sharedContent } = useAppStore();
+  const { shareContent, sharedContent, currentUser } = useAppStore();
   const [imgErr, setImgErr] = useState(false);
+  const [social, setSocial] = useState({
+    likesCount: Number(item.likes || 0),
+    commentsCount: Number(item.commentsCount || 0),
+    likedByMe: Boolean(item.likedByMe),
+  });
+  const [comments, setComments] = useState([]);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [socialLoading, setSocialLoading] = useState(false);
+  const [commentsLoading, setCommentsLoading] = useState(false);
   const [mobileGuide, setMobileGuide] = useState(null);
   const [guideLoading, setGuideLoading] = useState(false);
   const [shareConfirm, setShareConfirm] = useState(null);
@@ -248,6 +259,95 @@ export default function ContentCard({ item, delay = 0, canEdit = false, canDelet
     hasFacebookLink ? { network: 'facebook', label: 'Facebook', url: item.facebookUrl || item.sourceUrl } : null,
     item.instagramUrl ? { network: 'instagram', label: 'Instagram', url: item.instagramUrl } : null,
   ].filter(Boolean);
+
+  useEffect(() => {
+    let active = true;
+    setSocial({
+      likesCount: Number(item.likes || 0),
+      commentsCount: Number(item.commentsCount || 0),
+      likedByMe: Boolean(item.likedByMe),
+    });
+    Promise.resolve(api.social?.resumen?.({ publicationIds: [item.id] }) || {}).then((summary) => {
+      if (!active || !summary?.[String(item.id)]) return;
+      setSocial((current) => ({ ...current, ...summary[String(item.id)] }));
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [item.id, item.likes, item.commentsCount, item.likedByMe]);
+
+  const loadComments = async () => {
+    if (commentsOpen) {
+      setCommentsOpen(false);
+      return;
+    }
+    setCommentsOpen(true);
+    setCommentsLoading(true);
+    try {
+      const rows = await api.social?.comentarios?.({ publication_id: item.id, limit: 24 });
+      setComments(rows || []);
+    } catch (error) {
+      toast.error(error.message || 'No se pudieron cargar los comentarios');
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  const handleReaction = async () => {
+    if (!currentUser) {
+      toast.error('Inicia sesión para reaccionar');
+      return;
+    }
+    setSocialLoading(true);
+    try {
+      const result = await api.social.toggleReaction(item.id, 'like');
+      setSocial((current) => ({
+        ...current,
+        likedByMe: Boolean(result.active),
+        likesCount: Number(result.likesCount ?? current.likesCount + (result.active ? 1 : -1)),
+      }));
+    } catch (error) {
+      toast.error(error.message || 'No se pudo guardar la reacción');
+    } finally {
+      setSocialLoading(false);
+    }
+  };
+
+  const handleCommentSubmit = async (event) => {
+    event.preventDefault();
+    const cleanText = commentText.trim();
+    if (!cleanText) return;
+    setSocialLoading(true);
+    try {
+      const created = await api.social.agregarComentario(item.id, cleanText);
+      setComments((current) => [{
+        ...created,
+        content: created.content || cleanText,
+        authorName: created.authorName === 'Miembro de la red' ? currentUser?.name : created.authorName,
+        authorAvatar: created.authorAvatar || currentUser?.avatar,
+        authorColor: created.authorColor || currentUser?.avatarColor,
+      }, ...current]);
+      setCommentText('');
+      setSocial((current) => ({ ...current, commentsCount: current.commentsCount + 1 }));
+    } catch (error) {
+      toast.error(error.message || 'No se pudo publicar el comentario');
+    } finally {
+      setSocialLoading(false);
+    }
+  };
+
+  const handleCommentDelete = async (comment) => {
+    const userId = currentUser?.schemaId || currentUser?.id;
+    const canDelete = String(comment.userId) === String(userId) || currentUser?.role === 'admin' || currentUser?.canPublish;
+    if (!canDelete) return;
+    if (!window.confirm('¿Eliminar este comentario?')) return;
+    try {
+      await api.social.eliminarComentario(comment.id);
+      setComments((current) => current.filter((row) => row.id !== comment.id));
+      setSocial((current) => ({ ...current, commentsCount: Math.max(current.commentsCount - 1, 0) }));
+      toast.success('Comentario eliminado');
+    } catch (error) {
+      toast.error(error.message || 'No se pudo eliminar el comentario');
+    }
+  };
 
   const handleCopy = () => {
     navigator.clipboard?.writeText(item.copyText)
@@ -419,8 +519,13 @@ export default function ContentCard({ item, delay = 0, canEdit = false, canDelet
 
         <div className="content-engagement-pro">
           <span><Send size={12} />{formatCount(item.shares)}</span>
-          <span><Heart size={12} />{formatCount(item.likes)}</span>
-          <span><MessageCircle size={12} />Oficial</span>
+          <button type="button" className={`content-like-button ${social.likedByMe ? 'is-liked' : ''}`} onClick={handleReaction} disabled={socialLoading} aria-pressed={social.likedByMe}>
+            <Heart size={13} fill={social.likedByMe ? 'currentColor' : 'none'} />{formatCount(social.likesCount)} Me gusta
+          </button>
+          <button type="button" className="content-comments-button" onClick={loadComments} aria-expanded={commentsOpen}>
+            <MessageCircle size={13} />{formatCount(social.commentsCount)} Comentarios
+          </button>
+          <span><CheckCircle2 size={12} />Oficial</span>
         </div>
 
         {(originalLinks.length > 0 || item.sourceUrl) && (
@@ -453,6 +558,47 @@ export default function ContentCard({ item, delay = 0, canEdit = false, canDelet
                 Eliminar
               </button>
             )}
+          </div>
+        )}
+
+        {commentsOpen && (
+          <div className="content-comments-panel">
+            <div className="content-comments-head">
+              <strong>Conversación</strong>
+              <span>{social.commentsCount} comentarios</span>
+            </div>
+            {commentsLoading ? (
+              <p className="content-comments-empty">Cargando comentarios...</p>
+            ) : comments.length ? (
+              <div className="content-comments-list">
+                {comments.map((comment) => {
+                  const userId = currentUser?.schemaId || currentUser?.id;
+                  const canDeleteComment = String(comment.userId) === String(userId) || currentUser?.role === 'admin' || currentUser?.canPublish;
+                  return (
+                    <article key={comment.id} className="content-comment-item">
+                      <div className="content-comment-avatar" style={{ background: comment.authorColor || '#1A237E' }}>
+                        {comment.authorAvatar || comment.authorName?.slice(0, 2).toUpperCase() || 'MR'}
+                      </div>
+                      <div className="content-comment-copy">
+                        <strong>{comment.authorName || 'Miembro de la red'}</strong>
+                        <p>{comment.content}</p>
+                      </div>
+                      {canDeleteComment && (
+                        <button type="button" className="content-comment-delete" onClick={() => handleCommentDelete(comment)} aria-label="Eliminar comentario">
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="content-comments-empty">Sé la primera persona en comentar esta noticia.</p>
+            )}
+            <form className="content-comment-form" onSubmit={handleCommentSubmit}>
+              <input value={commentText} onChange={(event) => setCommentText(event.target.value)} placeholder="Escribe una respuesta..." maxLength={500} />
+              <button type="submit" disabled={socialLoading || !commentText.trim()} aria-label="Publicar comentario"><Send size={15} /></button>
+            </form>
           </div>
         )}
 

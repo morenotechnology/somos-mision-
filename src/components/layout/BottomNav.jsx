@@ -3,7 +3,7 @@ import { LayoutDashboard, BookOpen, Trophy, Target, User } from 'lucide-react';
 
 const items = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
-  { to: '/hub',       icon: BookOpen,        label: 'Contenido' },
+  { to: '/noticias',   icon: BookOpen,        label: 'Noticias' },
   { to: '/ranking',   icon: Trophy,          label: 'Ranking' },
   { to: '/missions',  icon: Target,          label: 'Misiones' },
   { to: '/profile',   icon: User,            label: 'Perfil' },

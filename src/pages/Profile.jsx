@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AtSign, Award, Briefcase, Building, CalendarDays, CheckCircle2, Edit3, Flame, Lock, MapPin, Save, ShieldCheck, Share2, Sparkles, Target, UserCheck, Zap } from 'lucide-react';
+import { AtSign, Award, Briefcase, Building, CalendarDays, CheckCircle2, Edit3, Flame, Lock, Mail, MapPin, Phone, Save, ShieldCheck, Share2, Sparkles, Target, UserCheck, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAppStore } from '../store/useAppStore';
@@ -20,6 +20,8 @@ export default function Profile() {
   const [badges, setBadges] = useState([]);
   const [weeklyActivity, setWeeklyActivity] = useState([]);
   const [profileSaving, setProfileSaving] = useState(false);
+  const [personalSaving, setPersonalSaving] = useState(false);
+  const [personalForm, setPersonalForm] = useState({ name: '', phone: '', congregation: '' });
   const [profileForm, setProfileForm] = useState({
     hasChurchRole: '',
     position: '',
@@ -47,6 +49,15 @@ export default function Profile() {
     });
   }, [currentUser?.id, currentUser?.hasChurchRole, currentUser?.position, currentUser?.socialUsername]);
 
+  useEffect(() => {
+    if (!currentUser) return;
+    setPersonalForm({
+      name: currentUser.name || '',
+      phone: currentUser.phone || '',
+      congregation: currentUser.congregation || '',
+    });
+  }, [currentUser?.id, currentUser?.name, currentUser?.phone, currentUser?.congregation]);
+
   if (!currentUser) return null;
 
   const user = currentUser;
@@ -60,7 +71,8 @@ export default function Profile() {
   const progress = xpProgress(user.xp, user.level);
   const nextXP = xpToNextLevel(user.level);
   const earnedBadges = user.badges || [];
-  const userBadges = badges.filter((badge) => earnedBadges.includes(badge.id));
+  const visibleBadges = badges.slice(0, 5);
+  const userBadges = visibleBadges.filter((badge) => earnedBadges.includes(badge.id));
   const nextLevel = Math.min(user.level + 1, 10);
   const joinedDate = user.joinedAt
     ? new Date(`${user.joinedAt}T00:00:00`).toLocaleDateString('es-CO', { month: 'short', year: 'numeric' })
@@ -71,6 +83,28 @@ export default function Profile() {
     { action: 'Completaste una misión', xp: 80, time: 'Esta semana', iconName: 'CheckCircle', color: '#22c55e' },
     { action: 'Ganaste una insignia', xp: 100, time: 'Último progreso', iconName: 'Medal', color: '#D4AF37' },
   ];
+
+  const handlePersonalSave = async (event) => {
+    event.preventDefault();
+    if (!personalForm.name.trim()) {
+      toast.error('Escribe tu nombre completo.');
+      return;
+    }
+    setPersonalSaving(true);
+    try {
+      const updatedUser = await api.perfiles.update(user.id, {
+        name: personalForm.name.trim(),
+        phone: personalForm.phone.trim(),
+        congregation: personalForm.congregation.trim(),
+      });
+      setCurrentUser(updatedUser);
+      toast.success('Datos personales actualizados.');
+    } catch (error) {
+      toast.error(error.message || 'No se pudieron guardar tus datos.');
+    } finally {
+      setPersonalSaving(false);
+    }
+  };
 
   const handleProfileCompletion = async (event) => {
     event.preventDefault();
@@ -127,7 +161,7 @@ export default function Profile() {
         <div className="profile-identity-pro">
           <div className="profile-avatar-row">
             <div className="profile-avatar-pro" style={{ background: user.avatarColor }}>{user.avatar}</div>
-            <button className="profile-edit-pro"><Edit3 size={14} /> Editar perfil</button>
+            <button type="button" className="profile-edit-pro" onClick={() => document.getElementById('profile-details')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}><Edit3 size={14} /> Editar perfil</button>
           </div>
 
           <div className="profile-title-row">
@@ -166,6 +200,25 @@ export default function Profile() {
             </div>
           </div>
         </div>
+      </motion.section>
+
+      <motion.section id="profile-details" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="profile-personal-panel">
+        <div className="profile-panel-head">
+          <div>
+            <p><UserCheck size={13} /> Identidad en la red</p>
+            <h3>Datos personales</h3>
+          </div>
+          <span>Visibles solo según tu configuración</span>
+        </div>
+        <form className="profile-personal-form" onSubmit={handlePersonalSave}>
+          <label><span>Nombre completo</span><input value={personalForm.name} onChange={(event) => setPersonalForm((form) => ({ ...form, name: event.target.value }))} autoComplete="name" /></label>
+          <label><span><Mail size={13} /> Correo</span><input value={user.email || ''} readOnly aria-readonly="true" /></label>
+          <label><span><Phone size={13} /> Celular / WhatsApp</span><input value={personalForm.phone} onChange={(event) => setPersonalForm((form) => ({ ...form, phone: event.target.value }))} inputMode="tel" autoComplete="tel" placeholder="Tu número de contacto" /></label>
+          <label><span><Building size={13} /> Congregación</span><input value={personalForm.congregation} onChange={(event) => setPersonalForm((form) => ({ ...form, congregation: event.target.value }))} placeholder="Tu congregación" /></label>
+          <div className="profile-personal-readonly"><span><MapPin size={13} /> Región / distrito</span><strong>{user.regionName} · {user.districtName}</strong></div>
+          <div className="profile-personal-readonly"><span><Briefcase size={13} /> Rol</span><strong>{roleLabel[user.role] || 'Multiplicador'}</strong></div>
+          <div className="profile-personal-actions"><span>Tu información queda centralizada en este perfil.</span><button type="submit" disabled={personalSaving}><Save size={15} />{personalSaving ? 'Guardando...' : 'Guardar datos'}</button></div>
+        </form>
       </motion.section>
 
       <motion.section
@@ -239,9 +292,9 @@ export default function Profile() {
 
           <div className="profile-completion-actions">
             <span>{profileComplete ? 'Datos guardados y activos.' : 'Completa 3 pasos para dejar tu perfil listo.'}</span>
-            <button type="submit" disabled={profileSaving || profileComplete}>
+            <button type="submit" disabled={profileSaving}>
               <Save size={16} />
-              {profileSaving ? 'Guardando...' : profileComplete ? 'Perfil completo' : 'Guardar perfil'}
+              {profileSaving ? 'Guardando...' : profileComplete ? 'Guardar cambios' : 'Guardar perfil'}
             </button>
           </div>
         </form>
@@ -292,12 +345,12 @@ export default function Profile() {
         <div className="profile-panel-head">
           <div>
             <p><Award size={13} /> Logros visibles</p>
-            <h3>Mis insignias</h3>
+            <h3>Insignias clave</h3>
           </div>
-          <span>{userBadges.length}/{badges.length}</span>
+          <span>{userBadges.length}/{visibleBadges.length}</span>
         </div>
         <div className="profile-badges-grid">
-          {badges.map((badge, index) => {
+          {visibleBadges.map((badge, index) => {
             const unlocked = earnedBadges.includes(badge.id);
             return (
               <motion.article

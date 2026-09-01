@@ -20,8 +20,8 @@ export default function NotFound() {
 
   const quickLinks = isAuthenticated
     ? [
-        { label: 'Dashboard', path: '/dashboard', Icon: LayoutDashboard },
-        { label: 'Contenido', path: '/hub', Icon: Search },
+        { label: 'Inicio', path: '/dashboard', Icon: LayoutDashboard },
+        { label: 'Noticias', path: '/noticias', Icon: Search },
         { label: 'Misiones', path: '/missions', Icon: Compass },
       ]
     : [
@@ -73,7 +73,7 @@ export default function NotFound() {
           </button>
           <button type="button" className="not-found-primary" onClick={() => navigate(safeHome, { replace: true })}>
             {isAuthenticated ? <LayoutDashboard size={17} /> : <Home size={17} />}
-            {isAuthenticated ? 'Ir al Dashboard' : 'Ir al inicio'}
+            {isAuthenticated ? 'Ir al Inicio' : 'Ir al inicio'}
           </button>
         </div>
 

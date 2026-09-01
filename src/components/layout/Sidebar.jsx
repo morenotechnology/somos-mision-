@@ -10,7 +10,7 @@ import { getLevelTitle, xpProgress } from '../../utils/helpers';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Inicio'    },
-  { to: '/hub',       icon: BookOpen,        label: 'Contenido' },
+  { to: '/noticias',   icon: BookOpen,        label: 'Noticias'  },
   { to: '/ranking',   icon: Trophy,          label: 'Ranking'   },
   { to: '/missions',  icon: Target,          label: 'Misiones'  },
   { to: '/profile',   icon: User,            label: 'Perfil'    },

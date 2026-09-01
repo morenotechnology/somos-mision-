@@ -29,7 +29,8 @@ export default function Missions() {
   }, [loginFromApi]);
 
   const earnedBadges = currentUser?.badges || [];
-  const userBadges = badges.filter((badge) => earnedBadges.includes(badge.id));
+  const visibleBadges = badges.slice(0, 5);
+  const userBadges = visibleBadges.filter((badge) => earnedBadges.includes(badge.id));
   const filtered = missions.filter((mission) => mission.type === typeMap[tab]);
   const completedMissionIds = new Set(missions.filter((mission) => mission.status === 'completed').map((mission) => mission.id));
   const totalDoneToday = completedMissionIds.size;
@@ -48,7 +49,7 @@ export default function Missions() {
         </div>
         <div className="missions-hero-copy">
           <p className="missions-kicker"><Sparkles size={14} /> Centro de avance</p>
-          <h2>Misiones & Recompensas</h2>
+          <h2>Misiones y recompensas</h2>
           <span>Completa acciones reales, suma XP y desbloquea insignias visibles en tu perfil.</span>
         </div>
         <div className="missions-hero-pulse">
@@ -118,14 +119,14 @@ export default function Missions() {
       <section className="mission-badges-pro">
         <div className="missions-section-head">
           <div>
-            <p><Award size={13} /> Galería de logros</p>
-            <h3>Insignias disponibles</h3>
+            <p><Award size={13} /> Logros del perfil</p>
+            <h3>Insignias clave</h3>
           </div>
-          <span>{userBadges.length}/{badges.length}</span>
+          <span>{userBadges.length}/{visibleBadges.length}</span>
         </div>
-        <p className="mission-badges-intro">Desbloquea insignias completando misiones, compartiendo contenido y elevando tu nivel de impacto.</p>
+        <p className="mission-badges-intro">Tus logros viven en el perfil. Aquí mostramos solo las insignias clave para mantener el avance claro.</p>
         <div className="mission-badge-grid">
-          {badges.map((badge, index) => {
+          {visibleBadges.map((badge, index) => {
             const unlocked = earnedBadges.includes(badge.id);
             return (
               <motion.article

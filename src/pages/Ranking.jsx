@@ -60,7 +60,7 @@ export default function Ranking() {
 
   useEffect(() => {
     let active = true;
-    api.ranking.list({ region: tab === 'Por Región' ? regionFilter : undefined }).then((rows) => {
+    api.ranking.list({ role: 'multiplicador', region: tab === 'Por Región' ? regionFilter : undefined }).then((rows) => {
       if (!active) return;
       setUsers(rows);
     });
@@ -68,6 +68,7 @@ export default function Ranking() {
   }, [tab, regionFilter]);
 
   const top3 = users.slice(0, 3);
+  const remainingUsers = users.slice(3);
   const leader = users[0];
   const totalXp = users.reduce((sum, user) => sum + Number(user.xp || 0), 0);
   const activeRegions = new Set(users.map((user) => user.region).filter(Boolean)).size;
@@ -82,7 +83,7 @@ export default function Ranking() {
       >
         <div className="rank-hero-copy">
           <p className="rank-kicker"><Trophy size={15} /> Muro de honor nacional</p>
-          <h2>La mesa alta de los multiplicadores</h2>
+          <h2>Podio de multiplicadores</h2>
           <span>Reconoce a quienes están moviendo contenido, misiones y avance en toda Colombia.</span>
         </div>
 
@@ -153,18 +154,18 @@ export default function Ranking() {
         </section>
       )}
 
-      <section className="rank-list-panel">
+      {(remainingUsers.length > 0 || !top3.length) && <section className="rank-list-panel">
         <div className="rank-section-head">
           <div>
-            <p><Medal size={13} /> Clasificación completa</p>
-            <h3>{tab === 'Por Región' && regionFilter ? 'Ranking regional' : 'Ranking nacional'}</h3>
+            <p><Medal size={13} /> Después del podio</p>
+            <h3>{tab === 'Por Región' && regionFilter ? 'Multiplicadores de la región' : 'Más multiplicadores'}</h3>
           </div>
           <span>{users.length} perfiles</span>
         </div>
 
         <div className="rank-list-pro">
-          {users.length ? (
-            users.map((user, index) => <RankingCard key={user.id} user={user} position={index + 1} delay={index * 0.045} />)
+          {remainingUsers.length ? (
+            remainingUsers.map((user, index) => <RankingCard key={user.id} user={user} position={index + 4} delay={index * 0.045} />)
           ) : (
             <div className="rank-empty-state">
               <Trophy size={22} />
@@ -173,7 +174,7 @@ export default function Ranking() {
             </div>
           )}
         </div>
-      </section>
+      </section>}
     </div>
   );
 }

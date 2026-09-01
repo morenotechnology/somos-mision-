@@ -9,8 +9,13 @@ export function createHttpApi() {
     schema: () => apiRequest('/schema'),
 
     auth: {
+      getSession: () => Promise.resolve(null),
+      onAuthStateChange: () => ({ unsubscribe() {} }),
+      logout: () => Promise.resolve(true),
       login: (payload) => apiRequest('/auth/login', { method: 'POST', body: jsonBody(payload) }),
       register: (payload) => apiRequest('/auth/register', { method: 'POST', body: jsonBody(payload) }),
+      resetPassword: (email) => apiRequest('/auth/reset-password', { method: 'POST', body: jsonBody({ email }) }),
+      updatePassword: (password) => apiRequest('/auth/update-password', { method: 'POST', body: jsonBody({ password }) }),
     },
 
     dashboard: {
@@ -59,6 +64,23 @@ export function createHttpApi() {
       compartidos: (params) => apiRequest(`/compartidos${toQuery(params)}`),
       reacciones: (params) => apiRequest(`/reacciones${toQuery(params)}`),
       seguidores: (params) => apiRequest(`/seguidores${toQuery(params)}`),
+      resumen: async ({ publicationIds = [] } = {}) => {
+        const summaries = await Promise.all(publicationIds.map(async (publicationId) => {
+          const [reactionRows, commentRows] = await Promise.all([
+            apiRequest(`/reacciones${toQuery({ publication_id: publicationId })}`),
+            apiRequest(`/comentarios${toQuery({ publication_id: publicationId })}`),
+          ]);
+          return [String(publicationId), {
+            likesCount: reactionRows.filter((row) => (row.type || row.tipo || 'like') === 'like').length,
+            commentsCount: commentRows.length,
+            likedByMe: false,
+          }];
+        }));
+        return Object.fromEntries(summaries);
+      },
+      toggleReaction: (publicationId, type = 'like') => apiRequest('/reacciones', { method: 'POST', body: jsonBody({ publication_id: publicationId, type }) }),
+      agregarComentario: (publicationId, content) => apiRequest('/comentarios', { method: 'POST', body: jsonBody({ publication_id: publicationId, contenido: content }) }),
+      eliminarComentario: (commentId) => apiRequest(`/comentarios/${commentId}`, { method: 'DELETE' }),
     },
   };
 }

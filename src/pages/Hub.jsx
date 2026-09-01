@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   AlertCircle,
-  BookOpen,
-  Building2,
   ExternalLink,
   Filter,
   ImagePlus,
@@ -15,18 +13,13 @@ import {
   SearchX,
   Send,
   ShieldCheck,
-  SlidersHorizontal,
   Sparkles,
-  Star,
-  TrendingUp,
   WandSparkles,
   XCircle,
-  Zap,
 } from 'lucide-react';
 import ContentCard from '../components/content/ContentCard';
 import EmptyState from '../components/common/EmptyState';
 import { api } from '../api';
-import { formatNumber } from '../utils/helpers';
 import { useAppStore } from '../store/useAppStore';
 import toast from 'react-hot-toast';
 
@@ -250,7 +243,7 @@ function PastorPublicationComposer({ currentUser, coordinations, editingItem = n
       } else {
         const created = await api.publicaciones.create(publicationPayload);
         onCreated(created);
-        toast.success('Publicación creada en el Hub');
+        toast.success('Publicación creada en Noticias');
       }
       resetForm();
     } catch (error) {
@@ -401,7 +394,7 @@ function PastorPublicationComposer({ currentUser, coordinations, editingItem = n
             </label>
             <button type="submit" disabled={saving}>
               {saving ? <Loader2 size={17} className="spin" /> : <Send size={17} />}
-              {saving ? (isEditing ? 'Guardando...' : 'Publicando...') : (isEditing ? 'Guardar cambios' : 'Publicar en el Hub')}
+              {saving ? (isEditing ? 'Guardando...' : 'Publicando...') : (isEditing ? 'Guardar cambios' : 'Publicar en Noticias')}
             </button>
           </div>
         </motion.form>
@@ -445,14 +438,6 @@ export default function Hub() {
     return () => { active = false; };
   }, [query, filterMode, coord, region, sort]);
 
-  const hubStats = [
-    { label: 'Publicaciones', value: data.schemaMetrics.publicaciones || 0, Icon: BookOpen, color: '#1A237E' },
-    { label: 'Compartidos', value: data.schemaMetrics.compartidos || 0, Icon: Send, color: '#D4AF37' },
-    { label: 'Comunicados', value: data.schemaMetrics.comunicadosActivos || 0, Icon: Megaphone, color: '#5C1800' },
-    { label: 'Congregaciones', value: data.schemaMetrics.congregaciones || 0, Icon: Building2, color: '#2E7D32' },
-  ];
-  const featuredCount = data.items.filter((item) => item.featured).length;
-  const xpAvailable = data.items.reduce((sum, item) => sum + Number(item.xpReward || 0), 0);
   const filterCoordinations = getCanonicalCoordinations(data.coordinations);
   const selectedCoord = filterCoordinations.find((item) => item.id === coord);
   const selectedRegion = contentRegions.find((item) => item.id === region);
@@ -525,27 +510,10 @@ export default function Hub() {
         className="content-hub-hero"
       >
         <div className="content-hub-hero-copy">
-          <div className="content-hub-orb"><BookOpen size={26} /></div>
-          <p className="content-hub-kicker"><Sparkles size={14} /> Contenido nacional</p>
-          <h2>Biblioteca digital</h2>
-          <span>Piezas oficiales listas para copiar, adaptar y compartir desde una sola biblioteca misionera.</span>
-        </div>
-
-        <div className="content-hub-stat-grid">
-          {hubStats.map(({ label, value, Icon, color }, index) => (
-            <motion.article
-              key={label}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.08 + index * 0.045 }}
-              className="content-hub-stat"
-              style={{ '--content-stat-color': color }}
-            >
-              <div><Icon size={17} /></div>
-              <strong>{formatNumber(value)}</strong>
-              <span>{label}</span>
-            </motion.article>
-          ))}
+          <div className="content-hub-orb"><Megaphone size={26} /></div>
+          <p className="content-hub-kicker"><Sparkles size={14} /> Actualidad de la red</p>
+          <h2>Noticias</h2>
+          <span>El feed oficial de Misiones Nacionales: novedades, testimonios y contenidos listos para compartir.</span>
         </div>
       </motion.section>
 
@@ -585,8 +553,8 @@ export default function Hub() {
               </select>
             )}
             {filterMode === 'all' && (
-              <select value="" onChange={() => {}} aria-label="Toda la biblioteca">
-                <option value="">Toda la biblioteca nacional</option>
+              <select value="" onChange={() => {}} aria-label="Todas las noticias">
+                <option value="">Todas las noticias de la red</option>
               </select>
             )}
           </label>
@@ -620,19 +588,11 @@ export default function Hub() {
         </div>
       </motion.section>
 
-      <div className="content-signal-strip">
-        <span><SlidersHorizontal size={14} />{data.items.length} contenido{data.items.length !== 1 ? 's' : ''} encontrado{data.items.length !== 1 ? 's' : ''}</span>
-        <span><Star size={14} />{featuredCount} destacados</span>
-        <span><Zap size={14} />{formatNumber(xpAvailable)} XP disponibles</span>
-        <span><TrendingUp size={14} />{sort}</span>
-        <span><Filter size={14} />{activeFilterLabel}</span>
-      </div>
-
       <section className="content-feed-section">
         <div className="content-feed-head">
           <div>
-            <p><Megaphone size={13} /> Biblioteca oficial</p>
-            <h3>{sort}</h3>
+            <p><Megaphone size={13} /> Feed oficial</p>
+            <h3>{sort === 'Recientes' ? 'Lo más reciente' : sort}</h3>
           </div>
           <span>{activeFilterLabel}</span>
         </div>

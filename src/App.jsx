@@ -9,6 +9,7 @@ const Landing = lazy(() => import('./pages/Landing'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Hub = lazy(() => import('./pages/Hub'));
 const Ranking = lazy(() => import('./pages/Ranking'));
@@ -68,6 +69,14 @@ function SuperAdminRoute({ children }) {
   return currentUser?.role === 'admin' ? children : <Navigate to="/dashboard" replace />;
 }
 
+function HomeRoute() {
+  const authReady = useAppStore((state) => state.authReady);
+  const isAuthenticated = useAppStore((state) => state.isAuthenticated);
+
+  if (!authReady) return <PageLoader />;
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Landing />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -89,9 +98,9 @@ export default function App() {
       />
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/home" element={<Navigate to="/" replace />} />
-          <Route path="/inicio" element={<Navigate to="/" replace />} />
+          <Route path="/" element={<HomeRoute />} />
+          <Route path="/home" element={<HomeRoute />} />
+          <Route path="/inicio" element={<HomeRoute />} />
           <Route path="/login" element={<Login />} />
           <Route path="/ingresar" element={<Navigate to="/login" replace />} />
           <Route path="/signin" element={<Navigate to="/login" replace />} />
@@ -100,6 +109,8 @@ export default function App() {
           <Route path="/crear-cuenta" element={<Navigate to="/register" replace />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/recuperar" element={<Navigate to="/forgot-password" replace />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/restablecer-contrasena" element={<Navigate to="/reset-password" replace />} />
           <Route path="/auth/callback" element={<Login />} />
 
           <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
@@ -108,9 +119,11 @@ export default function App() {
             <Route path="/inicio-app" element={<Navigate to="/dashboard" replace />} />
             <Route path="/hub" element={<Hub />} />
             <Route path="/hub/*" element={<Navigate to="/hub" replace />} />
-            <Route path="/contenido" element={<Navigate to="/hub" replace />} />
-            <Route path="/contenidos" element={<Navigate to="/hub" replace />} />
-            <Route path="/publicaciones" element={<Navigate to="/hub" replace />} />
+            <Route path="/noticias" element={<Hub />} />
+            <Route path="/noticias/*" element={<Navigate to="/noticias" replace />} />
+            <Route path="/contenido" element={<Navigate to="/noticias" replace />} />
+            <Route path="/contenidos" element={<Navigate to="/noticias" replace />} />
+            <Route path="/publicaciones" element={<Navigate to="/noticias" replace />} />
             <Route path="/ranking" element={<Ranking />} />
             <Route path="/ranking/*" element={<Navigate to="/ranking" replace />} />
             <Route path="/hall" element={<Navigate to="/ranking" replace />} />

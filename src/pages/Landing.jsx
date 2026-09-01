@@ -60,7 +60,7 @@ const steps = [
   {
     Icon: BookOpen,
     title: 'Visualiza contenido oficial',
-    desc: 'Publicaciones, comunicados y piezas listas para usar desde un solo hub centralizado.',
+    desc: 'Noticias, comunicados y piezas listas para usar desde un solo centro de contenido.',
     number: '01',
   },
   {
