@@ -2,7 +2,6 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import MobileSidebar from './MobileSidebar';
-import BottomNav from './BottomNav';
 import XPNotification from '../common/XPNotification';
 import { useAppStore } from '../../store/useAppStore';
 
@@ -30,11 +29,6 @@ export default function AppLayout() {
             <Outlet />
           </div>
         </main>
-      </div>
-
-      {/* Mobile bottom nav */}
-      <div className="lg:hidden">
-        <BottomNav />
       </div>
 
       {/* XP notification floating */}
