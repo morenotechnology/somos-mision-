@@ -4924,15 +4924,98 @@ html:has(.ln-home-main) .ln-preview-post {
 /* The app shell is the only scroll container for authenticated Noticias. */
 .app-main-feed {
   min-height: 0;
+  overflow-x: clip;
+  overflow-y: auto;
+  background: #050821;
   scroll-snap-type: y mandatory;
-  scroll-padding-top: 12px;
+  scroll-padding-top: 0;
   overscroll-behavior-y: contain;
+  scrollbar-width: none;
+}
+
+.app-main-feed::-webkit-scrollbar {
+  display: none;
+}
+
+.app-main-feed .app-content {
+  max-width: none;
+  min-height: 100%;
+  padding: 0;
+  overflow-x: clip;
+  background: #050821;
+}
+
+.app-main-feed .content-hub-page.is-immersive-feed {
+  width: 100%;
+  max-width: none;
+  min-height: 100%;
+  margin: 0;
+  gap: 0;
+  padding: 0;
+  background: #050821;
+}
+
+.app-main-feed .content-toolbar-pro {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 20;
+  width: auto;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.app-main-feed .content-toolbar-context {
+  display: none;
+}
+
+.app-main-feed .content-toolbar-panel {
+  position: absolute;
+  top: 52px;
+  right: 0;
+  width: min(360px, calc(100vw - 32px));
+  margin: 0;
+  border-color: rgba(255,255,255,0.16);
+  background: rgba(7,12,48,0.94);
+  box-shadow: 0 24px 58px rgba(0,0,0,0.34);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+}
+
+.app-main-feed .content-filters-toggle {
+  color: #fff;
+  border-color: rgba(255,255,255,0.22);
+  background: rgba(7,12,48,0.66);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.18);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.app-main-feed .content-filters-toggle:hover,
+.app-main-feed .content-filters-toggle.is-active {
+  color: #fff;
+  border-color: rgba(243,203,85,0.54);
+  background: rgba(26,35,126,0.82);
+}
+
+.app-main-feed .content-filters-reset {
+  color: rgba(255,255,255,0.74);
+}
+
+.app-main-feed .content-filters-reset:hover {
+  color: #F8D96B;
+  background: rgba(255,255,255,0.08);
 }
 
 .app-main-feed .content-feed-grid.is-immersive,
 .app-main-feed .content-loading-grid.is-immersive {
+  width: 100%;
+  margin: 0;
+  gap: 0;
   height: auto;
   max-height: none;
+  padding: 0;
   overflow: visible;
   overscroll-behavior: auto;
   scroll-snap-type: none;
@@ -4941,8 +5024,11 @@ html:has(.ln-home-main) .ln-preview-post {
 
 .app-main-feed .content-card-pro.is-immersive,
 .app-main-feed .content-loading-grid.is-immersive .content-card-skeleton {
-  flex-basis: min(780px, calc(100svh - 108px));
-  height: min(780px, calc(100svh - 108px));
+  width: 100%;
+  flex-basis: min(900px, calc(100svh - 68px));
+  height: min(900px, calc(100svh - 68px));
+  border-radius: 0;
+  box-shadow: none;
   scroll-snap-align: start;
   scroll-snap-stop: always;
 }
@@ -4958,7 +5044,69 @@ html:has(.ln-home-main) .ln-preview-post {
   transform: translateY(-50%);
 }
 
+.content-card-pro.is-immersive .content-glass-chip {
+  display: none;
+}
+
+.content-card-pro.is-immersive .content-actions-pro .content-action-like.is-liked {
+  color: #FF8BA3;
+  border-color: rgba(255,139,163,0.5);
+  background: rgba(255,139,163,0.20);
+}
+
+.content-card-pro.is-immersive .content-actions-pro .content-action-original {
+  text-decoration: none;
+}
+
+.content-video-sound-toggle {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 3;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(5,8,33,0.62);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+}
+
+.content-video-sound-toggle:hover {
+  border-color: rgba(243,203,85,0.58);
+  background: rgba(26,35,126,0.82);
+  transform: translateY(-1px);
+}
+
+.content-video-sound-toggle:active {
+  transform: scale(0.98);
+}
+
+.app-main-feed .content-video-sound-toggle {
+  top: 62px;
+  right: 18px;
+}
+
 @media (max-width: 760px) {
+  .app-main-feed .content-toolbar-pro {
+    top: 12px;
+    right: 12px;
+  }
+
+  .app-main-feed .content-toolbar-panel {
+    top: 50px;
+    width: min(360px, calc(100vw - 24px));
+  }
+
   .app-main-feed .content-card-pro.is-immersive .content-actions-pro {
     top: 50%;
     right: 10px;
@@ -4968,6 +5116,13 @@ html:has(.ln-home-main) .ln-preview-post {
 
   .app-main-feed .content-card-pro.is-immersive .content-card-body-pro {
     padding: 18px 76px 18px 18px;
+  }
+
+  .app-main-feed .content-video-sound-toggle {
+    top: 58px;
+    right: 14px;
+    min-height: 32px;
+    padding: 0 10px;
   }
 }
 

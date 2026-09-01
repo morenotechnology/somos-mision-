@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle2, Copy, ExternalLink, Heart, MessageCircle, PencilLine, Send, Smartphone, Star, Trash2, X, Zap } from 'lucide-react';
+import { CheckCircle2, Copy, ExternalLink, Heart, MessageCircle, PencilLine, Send, Share2, Smartphone, Star, Trash2, Volume2, VolumeX, X, Zap } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { api } from '../../api';
 import { fetchSocialPreview, getSocialPlatform, isDirectVideoUrl, isPlaceholderImage } from '../../utils/socialPreview';
@@ -236,6 +236,7 @@ function ShareConfirmationPortal({ confirmation, loading, onClose, onConfirm }) 
 export default function ContentCard({ item, delay = 0, immersive = false, canEdit = false, canDelete = false, onEdit, onDelete }) {
   const { shareContent, sharedContent, currentUser } = useAppStore();
   const videoRef = useRef(null);
+  const [audioEnabled, setAudioEnabled] = useState(false);
   const [failedImages, setFailedImages] = useState([]);
   const [remotePreview, setRemotePreview] = useState(null);
   const [social, setSocial] = useState({
@@ -308,8 +309,10 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
   useEffect(() => {
     const media = videoRef.current;
     if (!media || !video || typeof IntersectionObserver === 'undefined') return undefined;
+    media.muted = !audioEnabled;
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
+        media.muted = !audioEnabled;
         media.play().catch(() => {});
       } else {
         media.pause();
@@ -317,6 +320,13 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
     }, { threshold: 0.58 });
     observer.observe(media);
     return () => observer.disconnect();
+  }, [audioEnabled, video]);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = true;
+      videoRef.current.pause();
+    }
   }, [video]);
 
   const loadComments = async () => {
@@ -478,6 +488,31 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
     await askForShareConfirmation(network, shareUrl);
   };
 
+  const handleUnifiedShare = async () => {
+    const preferredNetwork = hasFacebookLink ? 'facebook' : hasInstagramLink ? 'instagram' : 'whatsapp';
+    const shareUrl = getNetworkUrl(preferredNetwork);
+    const message = getShareMessage();
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: item.title, text: message, url: shareUrl });
+        await registerShare(preferredNetwork, shareUrl, { status: 'confirmed', elapsedMs: null });
+      } catch (error) {
+        if (error?.name !== 'AbortError') toast.error('No se pudo compartir esta publicación');
+      }
+      return;
+    }
+    await handleShare(preferredNetwork);
+  };
+
+  const toggleAudio = () => {
+    const media = videoRef.current;
+    if (!media) return;
+    const nextAudioState = !audioEnabled;
+    media.muted = !nextAudioState;
+    setAudioEnabled(nextAudioState);
+    media.play().catch(() => {});
+  };
+
   const registerShare = async (network, shareUrl, shareSignal = {}) => {
     try {
       const payload = await shareContent(item.id, item.xpReward, network, {
@@ -548,6 +583,15 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
               }}
             />
             <div className="content-media-overlay" />
+            <button
+              type="button"
+              className="content-video-sound-toggle"
+              onClick={toggleAudio}
+              aria-label={audioEnabled ? 'Silenciar video' : 'Activar sonido del video'}
+            >
+              {audioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+              <span>{audioEnabled ? 'Sonido' : 'Activar sonido'}</span>
+            </button>
           </>
         ) : image ? (
           <>
@@ -682,27 +726,48 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
         )}
 
         <div className="content-actions-pro">
-          <button type="button" onClick={handleCopy} className="content-action-ghost" aria-label="Copiar texto de la publicación">
-            <Copy size={14} /> Copiar
-          </button>
-          <button type="button" onClick={loadComments} className="content-action-ghost content-action-comments" aria-label="Abrir comentarios" aria-expanded={commentsOpen}>
-            <MessageCircle size={15} /> Comentarios
-          </button>
-          <button type="button" onClick={() => handleShare('whatsapp')} className={`content-action-social is-whatsapp ${alreadyShared ? 'is-shared' : ''}`}>
-            <WhatsAppIcon />
-            WhatsApp
-          </button>
-          {hasFacebookLink && (
-            <button type="button" onClick={() => handleShare('facebook')} className={`content-action-social is-facebook ${alreadyShared ? 'is-shared' : ''}`}>
-              <FacebookIcon />
-              Facebook
-            </button>
-          )}
-          {hasInstagramLink && (
-            <button type="button" onClick={() => handleShare('instagram')} className={`content-action-social is-instagram ${alreadyShared ? 'is-shared' : ''}`}>
-              <InstagramIcon />
-              Instagram
-            </button>
+          {immersive ? (
+            <>
+              <button type="button" onClick={handleReaction} className={`content-action-ghost content-action-like ${social.likedByMe ? 'is-liked' : ''}`} disabled={socialLoading} aria-label={social.likedByMe ? 'Quitar me gusta' : 'Dar me gusta'} aria-pressed={social.likedByMe}>
+                <Heart size={21} fill={social.likedByMe ? 'currentColor' : 'none'} />
+              </button>
+              <button type="button" onClick={loadComments} className="content-action-ghost content-action-comments" aria-label="Abrir comentarios" aria-expanded={commentsOpen}>
+                <MessageCircle size={21} />
+              </button>
+              <button type="button" onClick={handleUnifiedShare} className="content-action-ghost content-action-share" aria-label="Compartir publicación">
+                <Share2 size={21} />
+              </button>
+              {item.sourceUrl && (
+                <a href={item.sourceUrl} target="_blank" rel="noreferrer" className="content-action-ghost content-action-original" aria-label="Abrir publicación original">
+                  <ExternalLink size={21} />
+                </a>
+              )}
+            </>
+          ) : (
+            <>
+              <button type="button" onClick={handleCopy} className="content-action-ghost" aria-label="Copiar texto de la publicación">
+                <Copy size={14} /> Copiar
+              </button>
+              <button type="button" onClick={loadComments} className="content-action-ghost content-action-comments" aria-label="Abrir comentarios" aria-expanded={commentsOpen}>
+                <MessageCircle size={15} /> Comentarios
+              </button>
+              <button type="button" onClick={() => handleShare('whatsapp')} className={`content-action-social is-whatsapp ${alreadyShared ? 'is-shared' : ''}`}>
+                <WhatsAppIcon />
+                WhatsApp
+              </button>
+              {hasFacebookLink && (
+                <button type="button" onClick={() => handleShare('facebook')} className={`content-action-social is-facebook ${alreadyShared ? 'is-shared' : ''}`}>
+                  <FacebookIcon />
+                  Facebook
+                </button>
+              )}
+              {hasInstagramLink && (
+                <button type="button" onClick={() => handleShare('instagram')} className={`content-action-social is-instagram ${alreadyShared ? 'is-shared' : ''}`}>
+                  <InstagramIcon />
+                  Instagram
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -174,6 +174,7 @@ function PastorPublicationComposer({ currentUser, coordinations, editingItem = n
         title: current.title || nextPreview.title || '',
         description: current.description || nextPreview.description || '',
         imageUrl: current.imageUrl || nextPreview.imageUrl || '',
+        format: current.format === publisherInitialState.format && nextPreview.videoUrl ? 'video' : current.format,
       }));
       toast.success(nextPreview.imageUrl ? 'Vista previa obtenida' : 'Vista previa lista; agrega una imagen si quieres mejorar la portada');
     } catch {
