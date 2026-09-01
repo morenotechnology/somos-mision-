@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, BookOpen, Trophy, Target, User } from 'lucide-react';
 
 const items = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Resumen' },
   { to: '/noticias',   icon: BookOpen,        label: 'Noticias' },
   { to: '/ranking',   icon: Trophy,          label: 'Ranking' },
   { to: '/missions',  icon: Target,          label: 'Misiones' },

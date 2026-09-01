@@ -502,7 +502,7 @@ export default function Hub() {
   };
 
   return (
-    <div className="content-hub-page">
+    <div className="content-hub-page is-immersive-feed">
       <motion.section
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
@@ -588,7 +588,7 @@ export default function Hub() {
         </div>
       </motion.section>
 
-      <section className="content-feed-section">
+      <section className="content-feed-section is-immersive-feed">
         <div className="content-feed-head">
           <div>
             <p><Megaphone size={13} /> Feed oficial</p>
@@ -598,15 +598,16 @@ export default function Hub() {
         </div>
 
         {loading ? (
-          <div className="content-loading-grid">
+          <div className="content-loading-grid is-immersive">
             {[0, 1, 2].map((item) => <div key={item} className="content-card-skeleton" />)}
           </div>
         ) : data.items.length > 0 ? (
-          <div className="content-feed-grid">
+          <div className="content-feed-grid is-immersive">
             {data.items.map((item, i) => (
               <ContentCard
                 key={item.id}
                 item={item}
+                immersive
                 delay={i * 0.055}
                 canEdit={canManagePublications}
                 canDelete={canManagePublications && deletingPublicationId !== item.id}

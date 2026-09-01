@@ -231,7 +231,7 @@ function ShareConfirmationPortal({ confirmation, loading, onClose, onConfirm }) 
   );
 }
 
-export default function ContentCard({ item, delay = 0, canEdit = false, canDelete = false, onEdit, onDelete }) {
+export default function ContentCard({ item, delay = 0, immersive = false, canEdit = false, canDelete = false, onEdit, onDelete }) {
   const { shareContent, sharedContent, currentUser } = useAppStore();
   const [imgErr, setImgErr] = useState(false);
   const [social, setSocial] = useState({
@@ -469,7 +469,7 @@ export default function ContentCard({ item, delay = 0, canEdit = false, canDelet
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ y: -5, scale: 1.01 }}
-      className={`content-card-pro ${alreadyShared ? 'is-shared' : ''}`}
+      className={`content-card-pro ${immersive ? 'is-immersive' : ''} ${alreadyShared ? 'is-shared' : ''}`}
       style={{ '--content-tone': accent }}
     >
       <div className="content-media-pro">

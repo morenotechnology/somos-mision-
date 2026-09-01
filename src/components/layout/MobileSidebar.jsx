@@ -5,7 +5,7 @@ import { useAppStore } from '../../store/useAppStore';
 import BrandLogo from '../common/BrandLogo';
 
 const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Resumen' },
   { to: '/noticias',   icon: BookOpen,        label: 'Noticias' },
   { to: '/ranking',   icon: Trophy,          label: 'Ranking' },
   { to: '/missions',  icon: Target,          label: 'Misiones' },

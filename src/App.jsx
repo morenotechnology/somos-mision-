@@ -74,7 +74,7 @@ function HomeRoute() {
   const isAuthenticated = useAppStore((state) => state.isAuthenticated);
 
   if (!authReady) return <PageLoader />;
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Landing />;
+  return isAuthenticated ? <Navigate to="/noticias" replace /> : <Navigate to="/saber-mas" replace />;
 }
 
 export default function App() {
@@ -101,6 +101,9 @@ export default function App() {
           <Route path="/" element={<HomeRoute />} />
           <Route path="/home" element={<HomeRoute />} />
           <Route path="/inicio" element={<HomeRoute />} />
+          <Route path="/saber-mas" element={<Landing />} />
+          <Route path="/saber-mas/*" element={<Navigate to="/saber-mas" replace />} />
+          <Route path="/conoce-mas" element={<Navigate to="/saber-mas" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/ingresar" element={<Navigate to="/login" replace />} />
           <Route path="/signin" element={<Navigate to="/login" replace />} />

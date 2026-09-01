@@ -7,7 +7,10 @@ import {
   BookOpen,
   Building2,
   CheckCircle2,
+  ExternalLink,
   Globe,
+  Heart,
+  MessageCircle,
   MapPin,
   Menu,
   X,
@@ -289,6 +292,7 @@ function Nav({ onLogin, onRegister }) {
           </span>
         </button>
         <nav className="ln-nav-actions" aria-label="Navegación principal">
+          <span className="ln-nav-context">SABER MÁS</span>
           <button type="button" id="nav-login" onClick={onLogin} className="ln-btn-ghost">
             Iniciar sesión
           </button>
@@ -909,6 +913,116 @@ function Footer() {
   );
 }
 
+function formatPreviewDate(value) {
+  if (!value) return 'Publicado recientemente';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Publicado recientemente';
+  return new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short' }).format(date);
+}
+
+function formatPreviewCount(value) {
+  const count = Number(value || 0);
+  if (count < 1000) return String(count);
+  return `${(count / 1000).toFixed(count >= 10000 ? 0 : 1).replace('.0', '')}K`;
+}
+
+function PreviewPost({ item, index, onLogin, onRegister }) {
+  const image = item.imageUrl || '/hero-map.png';
+
+  return (
+    <article className="ln-preview-post" style={{ '--preview-index': index }}>
+      <div className="ln-preview-post-media">
+        <img
+          src={image}
+          alt={item.title || 'Publicación de Misiones Nacionales'}
+          onError={(event) => { event.currentTarget.src = '/hero-map.png'; }}
+          loading={index === 0 ? 'eager' : 'lazy'}
+        />
+        <div className="ln-preview-post-shade" />
+        <div className="ln-preview-post-topline">
+          <span><span className="ln-preview-live-dot" /> Noticias de la red</span>
+          <span>{formatPreviewDate(item.createdAt)}</span>
+        </div>
+      </div>
+
+      <div className="ln-preview-post-copy">
+        <div className="ln-preview-post-kicker">
+          <span>{item.coordinationName || 'Misiones Nacionales'}</span>
+          {item.featured && <strong>Destacado</strong>}
+        </div>
+        <h3>{item.title || 'Una nueva historia de misión'}</h3>
+        <p>{item.description || 'Conoce las historias, noticias y acciones que están moviendo la misión en Colombia.'}</p>
+        <div className="ln-preview-post-meta">
+          <span>{formatPreviewCount(item.likes)} Me gusta</span>
+          <span>{formatPreviewCount(item.commentsCount)} comentarios</span>
+          <span>{formatPreviewCount(item.shares)} compartidos</span>
+        </div>
+        <button type="button" className="ln-preview-login-cta" onClick={onRegister}>
+          Únete para participar <ArrowRight size={16} />
+        </button>
+      </div>
+
+      <div className="ln-preview-post-rail" aria-label={`Acciones de la publicación ${index + 1}`}>
+        <button type="button" onClick={onLogin} aria-label="Dar me gusta">
+          <Heart size={20} />
+          <span>Me gusta</span>
+        </button>
+        <button type="button" onClick={onLogin} aria-label="Ver comentarios">
+          <MessageCircle size={20} />
+          <span>Comentar</span>
+        </button>
+        <button type="button" onClick={onLogin} aria-label="Compartir publicación">
+          <Share2 size={20} />
+          <span>Compartir</span>
+        </button>
+        {item.sourceUrl && (
+          <a href={item.sourceUrl} target="_blank" rel="noreferrer" aria-label="Abrir publicación original">
+            <ExternalLink size={18} />
+            <span>Original</span>
+          </a>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function PreviewNewsSection({ items, loading, onLogin, onRegister }) {
+  return (
+    <section className="ln-preview-section" id="vista-previa">
+      <div className="ln-container">
+        <div className="ln-preview-heading">
+          <div>
+            <p><Radio size={13} /> Vista previa de la red</p>
+            <h2>Así se ven las noticias por dentro</h2>
+            <span>Desliza para conocer cinco publicaciones recientes. Al entrar, el feed continúa a pantalla completa.</span>
+          </div>
+          <span className="ln-preview-page-label">SABER MÁS</span>
+        </div>
+
+        <div className="ln-preview-feed" aria-label="Vista previa de cinco noticias">
+          {loading ? (
+            [0, 1, 2].map((item) => <div className="ln-preview-skeleton" key={item} />)
+          ) : items.length ? (
+            items.slice(0, 5).map((item, index) => (
+              <PreviewPost key={item.id} item={item} index={index} onLogin={onLogin} onRegister={onRegister} />
+            ))
+          ) : (
+            <div className="ln-preview-empty">Las noticias aparecerán aquí cuando se publique el primer contenido.</div>
+          )}
+        </div>
+
+        <div className="ln-preview-bottom-cta">
+          <div>
+            <strong>¿Quieres ver el feed completo?</strong>
+            <span>Inicia sesión para reaccionar, comentar y compartir con tu iglesia.</span>
+          </div>
+          <button type="button" onClick={onLogin}>Entrar a Noticias <ArrowRight size={16} /></button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ─── Root ────────────────────────────────────────────────────────────── */
 export default function Landing() {
   const navigate = useNavigate();
@@ -918,6 +1032,8 @@ export default function Landing() {
     coordinations: [],
     topUsers: [],
   });
+  const [previewItems, setPreviewItems] = useState([]);
+  const [previewLoading, setPreviewLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -954,6 +1070,19 @@ export default function Landing() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    api.content.list({ sort: 'Recientes', limit: 5 })
+      .then((items) => {
+        if (active) setPreviewItems((items || []).slice(0, 5));
+      })
+      .catch(() => {
+        if (active) setPreviewItems([]);
+      })
+      .finally(() => active && setPreviewLoading(false));
+    return () => { active = false; };
+  }, []);
+
   const metrics = data.globalMetrics || {
     totalEmbajadores: 0,
     contenidosCompartidos: 0,
@@ -970,6 +1099,7 @@ export default function Landing() {
       <Nav onLogin={toLogin} onRegister={toRegister} />
       <main>
         <Hero metrics={metrics} schema={schema} onRegister={toRegister} onLogin={toLogin} />
+        <PreviewNewsSection items={previewItems} loading={previewLoading} onLogin={toLogin} onRegister={toRegister} />
         <PosterFeature onRegister={toRegister} />
         <MetricsBand metrics={metrics} />
         <TerritorySection />

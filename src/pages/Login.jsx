@@ -94,7 +94,7 @@ export default function Login() {
       const result = await api.auth.login({ email, password });
       loginFromApi(result);
       toast.success('Bienvenido de vuelta');
-      navigate('/dashboard');
+      navigate('/noticias');
     } catch (error) {
       toast.error(error.message || 'No se pudo iniciar sesión');
     } finally {
@@ -113,9 +113,9 @@ export default function Login() {
           transition={{ duration: 0.48, ease: [0.22, 1, 0.36, 1] }}
           className="auth-card"
         >
-          <button type="button" onClick={() => navigate('/')} className="auth-back-button">
+          <button type="button" onClick={() => navigate('/saber-mas')} className="auth-back-button">
             <ArrowLeft size={16} />
-            Volver al inicio
+            Volver a Saber más
           </button>
 
           <div className="auth-mobile-brand">

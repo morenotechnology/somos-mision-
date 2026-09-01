@@ -4,7 +4,7 @@ import { useAppStore } from '../../store/useAppStore';
 import NotificationPanel from '../common/NotificationPanel';
 
 const pageTitles = {
-  '/dashboard': 'Inicio',
+  '/dashboard': 'Resumen',
   '/hub':       'Noticias de la red',
   '/noticias':  'Noticias de la red',
   '/ranking':   'Ranking Nacional',

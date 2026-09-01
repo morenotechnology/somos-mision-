@@ -99,7 +99,7 @@ function unwrap(result, fallbackMessage = 'Error de Supabase') {
 function isPublicationSchemaDrift(error) {
   if (!error) return false;
   const message = [error.message, error.details, error.hint].filter(Boolean).join(' ').toLowerCase();
-  const publicationLinkColumns = ['source_url', 'facebook_url', 'instagram_url', 'source_platform'];
+  const publicationLinkColumns = ['source_url', 'facebook_url', 'instagram_url', 'source_platform', 'comments_count'];
 
   return (
     error.code === '42703' ||
@@ -808,6 +808,7 @@ async function getPublications(client, params = {}) {
       xp_reward,
       shares_count,
       likes_count,
+      comments_count,
       copy_text,
       media_url,
       source_url,
@@ -830,6 +831,7 @@ async function getPublications(client, params = {}) {
       xp_reward,
       shares_count,
       likes_count,
+      comments_count,
       copy_text,
       media_url,
       source_url,

@@ -117,7 +117,7 @@ function MultiplicadorDash({ user, weeklyActivity = [], missions = [], topUsers 
       </div>
 
       <div className="dashboard-badges-card">
-        <div className="dashboard-section-header is-tight"><div><p>Reconocimientos</p><h3>Insignias clave</h3></div><span>{visibleBadges.length} visibles en Inicio</span></div>
+        <div className="dashboard-section-header is-tight"><div><p>Reconocimientos</p><h3>Insignias clave</h3></div><span>{visibleBadges.length} visibles en Resumen</span></div>
         <div className="dashboard-badge-list">
           {visibleBadges.map((badge) => (
             <motion.div key={badge.id} whileHover={{ scale: 1.1, y: -2 }} className="dashboard-badge-item" title={badge.description}>
@@ -286,7 +286,7 @@ export default function Dashboard() {
       return (
         <div className="dashboard-error-card">
           <div>
-            <span><RefreshCw size={16} /> Inicio</span>
+            <span><RefreshCw size={16} /> Resumen</span>
             <h2>No pudimos cargar esta vista</h2>
             <p>{error}</p>
           </div>
