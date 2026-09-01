@@ -169,7 +169,7 @@ function PastorPublicationComposer({ currentUser, coordinations, editingItem = n
     setPreviewLoading(true);
     try {
       const nextPreview = await fetchSocialPreview(primaryUrl);
-      if (!nextPreview) throw new Error('No se pudo leer el preview del enlace');
+      if (!nextPreview) throw new Error('No se pudo leer la vista previa del enlace');
       setPreview(nextPreview);
       setForm((current) => ({
         ...current,
@@ -177,9 +177,9 @@ function PastorPublicationComposer({ currentUser, coordinations, editingItem = n
         description: current.description || nextPreview.description || '',
         imageUrl: current.imageUrl || nextPreview.imageUrl || '',
       }));
-      toast.success(nextPreview.imageUrl ? 'Preview obtenido' : 'Preview listo, agrega una imagen si quieres mejorar la portada');
+      toast.success(nextPreview.imageUrl ? 'Vista previa obtenida' : 'Vista previa lista; agrega una imagen si quieres mejorar la portada');
     } catch {
-      toast('La red social bloqueó el preview. Puedes guardar igual agregando título e imagen manual.');
+      toast('La red social bloqueó la vista previa. Puedes guardar igual agregando título e imagen manual.');
     } finally {
       setPreviewLoading(false);
     }
@@ -315,10 +315,10 @@ function PastorPublicationComposer({ currentUser, coordinations, editingItem = n
             </label>
 
             <div className="publisher-fetch-row is-wide">
-              <span>El preview se toma del primer enlace disponible. Si la red bloquea la imagen, puedes cargar una portada manual.</span>
+              <span>La vista previa se toma del primer enlace disponible. Si la red bloquea la imagen, puedes cargar una portada manual.</span>
               <button type="button" onClick={loadPreview} disabled={previewLoading || (!form.facebookUrl && !form.instagramUrl)}>
                 {previewLoading ? <Loader2 size={16} className="spin" /> : <WandSparkles size={16} />}
-                Obtener preview
+                Obtener vista previa
               </button>
             </div>
 

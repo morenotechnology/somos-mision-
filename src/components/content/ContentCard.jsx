@@ -498,7 +498,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
         <div className="content-chip-row">
           <span className="content-format-chip">{item.format}</span>
           {item.sourceUrl && (
-            <span className="content-preview-source-chip">{socialPlatform.label} · Preview</span>
+            <span className="content-preview-source-chip">{socialPlatform.label} · Vista previa</span>
           )}
           {item.coordinationName && (
             <span className="content-glass-chip">{item.coordinationName}</span>
