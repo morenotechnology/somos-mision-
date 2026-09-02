@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard, BookOpen, Trophy, Target, User, Settings,
+  BookOpen, Trophy, Target, User, Settings,
   ChevronLeft, Zap, LogOut, MessageCircle
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
@@ -9,7 +9,6 @@ import BrandLogo from '../common/BrandLogo';
 import { getLevelTitle, xpProgress } from '../../utils/helpers';
 
 const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Resumen'  },
   { to: '/noticias',   icon: BookOpen,        label: 'Noticias'  },
   { to: '/ranking',   icon: Trophy,          label: 'Ranking'   },
   { to: '/missions',  icon: Target,          label: 'Misiones'  },

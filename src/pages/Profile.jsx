@@ -71,7 +71,7 @@ export default function Profile() {
   const progress = xpProgress(user.xp, user.level);
   const nextXP = xpToNextLevel(user.level);
   const earnedBadges = user.badges || [];
-  const visibleBadges = badges.slice(0, 5);
+  const visibleBadges = badges;
   const userBadges = visibleBadges.filter((badge) => earnedBadges.includes(badge.id));
   const nextLevel = Math.min(user.level + 1, 10);
   const joinedDate = user.joinedAt
@@ -345,9 +345,9 @@ export default function Profile() {
         <div className="profile-panel-head">
           <div>
             <p><Award size={13} /> Logros visibles</p>
-            <h3>Insignias clave</h3>
+            <h3>Insignias del perfil</h3>
           </div>
-          <span>{userBadges.length}/{visibleBadges.length}</span>
+          <span>{userBadges.length}/{visibleBadges.length} desbloqueadas</span>
         </div>
         <div className="profile-badges-grid">
           {visibleBadges.map((badge, index) => {

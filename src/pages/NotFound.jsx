@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Compass, Home, LayoutDashboard, MapPinned, Search } from 'lucide-react';
+import { ArrowLeft, BookOpen, Compass, Home, MapPinned, Search } from 'lucide-react';
 import BrandLogo from '../components/common/BrandLogo';
 import { useAppStore } from '../store/useAppStore';
 
@@ -21,7 +21,6 @@ export default function NotFound() {
   const quickLinks = isAuthenticated
     ? [
         { label: 'Noticias', path: '/noticias', Icon: Search },
-        { label: 'Resumen', path: '/dashboard', Icon: LayoutDashboard },
         { label: 'Misiones', path: '/missions', Icon: Compass },
       ]
     : [
@@ -72,7 +71,7 @@ export default function NotFound() {
             Volver
           </button>
           <button type="button" className="not-found-primary" onClick={() => navigate(safeHome, { replace: true })}>
-            {isAuthenticated ? <LayoutDashboard size={17} /> : <Home size={17} />}
+            {isAuthenticated ? <BookOpen size={17} /> : <Home size={17} />}
             {isAuthenticated ? 'Ir a Noticias' : 'Ir al inicio'}
           </button>
         </div>

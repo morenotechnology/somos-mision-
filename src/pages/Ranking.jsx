@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Award, Crown, Filter, Globe2, Medal, Sparkles, Trophy, Users, Zap } from 'lucide-react';
+import { Award, Crown, Filter, Medal, Sparkles, Trophy, Zap } from 'lucide-react';
 import RankingCard from '../components/ranking/RankingCard';
 import { api } from '../api';
+import { useAppStore } from '../store/useAppStore';
 import { formatNumber } from '../utils/helpers';
 
 const tabs = ['Nacional', 'Por Región'];
@@ -12,7 +13,7 @@ const medalConfig = [
   { bg: 'linear-gradient(135deg,#D4956A,#B87333)', shadow: '0 4px 14px rgba(184,115,51,0.35)', Icon: Medal, color: '#B87333', label: '3' },
 ];
 
-function Podium({ top3 }) {
+function Podium({ top3, currentUserKeys }) {
   const order = top3.length >= 3 ? [top3[1], top3[0], top3[2]] : top3;
   const medals = top3.length >= 3 ? [medalConfig[1], medalConfig[0], medalConfig[2]] : medalConfig;
 
@@ -22,13 +23,14 @@ function Podium({ top3 }) {
         const medal = medals[index];
         const MedalIcon = medal.Icon;
         const actualPosition = top3.indexOf(user) + 1;
+        const isCurrentUser = currentUserKeys.has(String(user.id)) || currentUserKeys.has(String(user.schemaId));
         return (
           <motion.article
             key={user.id}
             initial={{ opacity: 0, y: 32, rotate: actualPosition === 1 ? 0 : -2 }}
             animate={{ opacity: 1, y: 0, rotate: actualPosition === 1 ? 0 : -2 }}
             transition={{ delay: index * 0.11 + 0.15, type: 'spring', bounce: 0.36 }}
-            className={`rank-podium-card position-${actualPosition}`}
+            className={`rank-podium-card position-${actualPosition} ${isCurrentUser ? 'is-current-user' : ''}`}
           >
             <div className="rank-podium-orb" style={{ background: medal.bg, boxShadow: medal.shadow }}>
               <MedalIcon size={15} className="text-white" strokeWidth={2.5} />
@@ -38,7 +40,7 @@ function Podium({ top3 }) {
             </div>
             <strong>{user.name.split(' ')[0]}</strong>
             <span><Zap size={12} fill="currentColor" strokeWidth={0} />{formatNumber(user.xp)} XP</span>
-            <small>#{actualPosition}</small>
+            <small>#{actualPosition}{isCurrentUser ? ' · Tú' : ''}</small>
           </motion.article>
         );
       })}
@@ -47,6 +49,7 @@ function Podium({ top3 }) {
 }
 
 export default function Ranking() {
+  const currentUser = useAppStore((state) => state.currentUser);
   const [tab, setTab] = useState('Nacional');
   const [regionFilter, setRegionFilter] = useState('');
   const [regions, setRegions] = useState([]);
@@ -70,8 +73,9 @@ export default function Ranking() {
   const top3 = users.slice(0, 3);
   const remainingUsers = users.slice(3);
   const leader = users[0];
-  const totalXp = users.reduce((sum, user) => sum + Number(user.xp || 0), 0);
-  const activeRegions = new Set(users.map((user) => user.region).filter(Boolean)).size;
+  const currentUserKeys = new Set([currentUser?.id, currentUser?.schemaId].filter(Boolean).map(String));
+  const currentUserPosition = users.findIndex((user) => currentUserKeys.has(String(user.id)) || currentUserKeys.has(String(user.schemaId))) + 1;
+  const currentUserRanking = currentUserPosition > 0 ? users[currentUserPosition - 1] : null;
 
   return (
     <div className="rank-pro-page">
@@ -98,28 +102,13 @@ export default function Ranking() {
             <span><Zap size={14} fill="currentColor" strokeWidth={0} />{formatNumber(leader?.xp || 0)} XP</span>
           </div>
         </div>
-      </motion.section>
 
-      <section className="rank-signal-grid">
-        {[
-          { label: 'Participantes', value: users.length, Icon: Users, tone: '#1A237E' },
-          { label: 'XP visible', value: formatNumber(totalXp), Icon: Zap, tone: '#D4AF37' },
-          { label: 'Regiones', value: activeRegions || regions.length, Icon: Globe2, tone: '#00838F' },
-        ].map((item, index) => (
-          <motion.article
-            key={item.label}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 + index * 0.08 }}
-            className="rank-signal-card"
-            style={{ '--rank-tone': item.tone }}
-          >
-            <item.Icon size={18} />
-            <strong>{item.value}</strong>
-            <span>{item.label}</span>
-          </motion.article>
-        ))}
-      </section>
+        <div className="rank-hero-self">
+          <span>Tu puesto nacional</span>
+          <strong>{currentUserPosition > 0 ? `#${currentUserPosition}` : '—'}</strong>
+          <small>{currentUserRanking ? `${formatNumber(currentUserRanking.xp)} XP · ${users.length} participantes` : 'Participa para entrar al ranking'}</small>
+        </div>
+      </motion.section>
 
       <div className="rank-controls-pro">
         <div className="rank-tab-group">
@@ -150,7 +139,7 @@ export default function Ranking() {
             </div>
             <span>{top3.length} destacados</span>
           </div>
-          <Podium top3={top3} />
+          <Podium top3={top3} currentUserKeys={currentUserKeys} />
         </section>
       )}
 
@@ -165,7 +154,7 @@ export default function Ranking() {
 
         <div className="rank-list-pro">
           {remainingUsers.length ? (
-            remainingUsers.map((user, index) => <RankingCard key={user.id} user={user} position={index + 4} delay={index * 0.045} />)
+            remainingUsers.map((user, index) => <RankingCard key={user.id} user={user} position={index + 4} delay={index * 0.045} isCurrentUser={currentUserKeys.has(String(user.id)) || currentUserKeys.has(String(user.schemaId))} />)
           ) : (
             <div className="rank-empty-state">
               <Trophy size={22} />

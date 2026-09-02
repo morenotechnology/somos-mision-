@@ -830,7 +830,7 @@ async function getMetrics(client) {
 }
 
 async function getRankingRows(client, params = {}) {
-  if (!params.region && !params.q) {
+  if (!params.region && !params.q && !params.role && !params.rol) {
     const publicRanking = await client.rpc('get_public_ranking', { limit_count: params.limit || 10 });
     if (!publicRanking.error) {
       return (publicRanking.data || []).map(normalizePublicRankingRow).filter(Boolean);

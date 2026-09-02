@@ -10,7 +10,6 @@ const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Hub = lazy(() => import('./pages/Hub'));
 const Ranking = lazy(() => import('./pages/Ranking'));
 const Missions = lazy(() => import('./pages/Missions'));
@@ -66,7 +65,7 @@ function ProtectedRoute({ children }) {
 
 function SuperAdminRoute({ children }) {
   const currentUser = useAppStore((state) => state.currentUser);
-  return currentUser?.role === 'admin' ? children : <Navigate to="/dashboard" replace />;
+  return currentUser?.role === 'admin' ? children : <Navigate to="/noticias" replace />;
 }
 
 function HomeRoute() {
@@ -117,9 +116,9 @@ export default function App() {
           <Route path="/auth/callback" element={<Login />} />
 
           <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/dashboard/*" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/inicio-app" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Navigate to="/noticias" replace />} />
+            <Route path="/dashboard/*" element={<Navigate to="/noticias" replace />} />
+            <Route path="/inicio-app" element={<Navigate to="/noticias" replace />} />
             <Route path="/hub" element={<Hub />} />
             <Route path="/hub/*" element={<Navigate to="/hub" replace />} />
             <Route path="/noticias" element={<Hub />} />

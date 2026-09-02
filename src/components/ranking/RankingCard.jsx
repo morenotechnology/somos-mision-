@@ -8,7 +8,7 @@ const medals = [
   { bg: 'linear-gradient(135deg,#D4956A,#B87333)', shadow: '0 4px 12px rgba(184,115,51,0.35)', Icon: Medal },
 ];
 
-export default function RankingCard({ user, position, delay = 0 }) {
+export default function RankingCard({ user, position, delay = 0, isCurrentUser = false }) {
   const medal = position <= 3 ? medals[position - 1] : null;
   const compactName = user.name.split(' ').slice(0, 2).join(' ');
   const levelTitle = getLevelTitle(user.level);
@@ -19,7 +19,7 @@ export default function RankingCard({ user, position, delay = 0 }) {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ y: -3, scale: 1.01 }}
-      className={`ranking-row-pro ${position <= 3 ? 'is-podium' : ''}`}
+      className={`ranking-row-pro ${position <= 3 ? 'is-podium' : ''} ${isCurrentUser ? 'is-current-user' : ''}`}
     >
       <div className="ranking-row-position">
         {medal ? (
@@ -43,7 +43,7 @@ export default function RankingCard({ user, position, delay = 0 }) {
 
       <div className="ranking-row-info">
         <strong>{compactName}</strong>
-        <span>{levelTitle} · Nivel {user.level}</span>
+        <span>{levelTitle} · Nivel {user.level}{isCurrentUser ? ' · Tú' : ''}</span>
       </div>
 
       <div className="ranking-row-xp">

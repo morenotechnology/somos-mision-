@@ -10,6 +10,7 @@ import {
   ExternalLink,
   Globe,
   Heart,
+  Lock,
   MessageCircle,
   MapPin,
   Menu,
@@ -383,7 +384,7 @@ function Hero({ metrics, schema, onRegister, onLogin, onLearnMore, previewOnly =
         <div className="ln-mobile-hero-status">
           <div>
             <span>Misiones Nacionales</span>
-            <strong>{metrics.totalEmbajadores.toLocaleString()} multiplicadores activos</strong>
+            <strong>{previewOnly ? 'Una red para servir juntos' : `${metrics.totalEmbajadores.toLocaleString()} multiplicadores activos`}</strong>
           </div>
         </div>
       </motion.div>
@@ -492,8 +493,12 @@ function Hero({ metrics, schema, onRegister, onLogin, onLearnMore, previewOnly =
           <span className="ln-hero-pill-dot" />
           <BrandLogo decorative className="ln-pill-logo" />
           <span>Misiones Nacionales</span>
-          <span className="ln-hero-pill-sep" />
-          <strong>{metrics.totalEmbajadores.toLocaleString()} multiplicadores activos</strong>
+          {!previewOnly && (
+            <>
+              <span className="ln-hero-pill-sep" />
+              <strong>{metrics.totalEmbajadores.toLocaleString()} multiplicadores activos</strong>
+            </>
+          )}
         </motion.div>
 
         <motion.div {...fadeUp(0.2)} className="ln-hero-headline">
@@ -518,12 +523,14 @@ function Hero({ metrics, schema, onRegister, onLogin, onLearnMore, previewOnly =
           </button>
         </motion.div>
 
-        <motion.div {...fadeUp(0.52)} className="ln-hero-proof">
-          <span><CheckCircle2 size={14} strokeWidth={2.2} />{schema.publicaciones} publicaciones</span>
-          <span><Building2 size={14} strokeWidth={2.2} />{schema.congregaciones} congregaciones</span>
-          <span><Star size={14} strokeWidth={2.2} />{schema.comunicadosActivos} comunicados activos</span>
-          <span><Users size={14} strokeWidth={2.2} />{metrics.totalEmbajadores.toLocaleString()} multiplicadores</span>
-        </motion.div>
+        {!previewOnly && (
+          <motion.div {...fadeUp(0.52)} className="ln-hero-proof">
+            <span><CheckCircle2 size={14} strokeWidth={2.2} />{schema.publicaciones} publicaciones</span>
+            <span><Building2 size={14} strokeWidth={2.2} />{schema.congregaciones} congregaciones</span>
+            <span><Star size={14} strokeWidth={2.2} />{schema.comunicadosActivos} comunicados activos</span>
+            <span><Users size={14} strokeWidth={2.2} />{metrics.totalEmbajadores.toLocaleString()} multiplicadores</span>
+          </motion.div>
+        )}
 
         {previewOnly && (
           <motion.div {...fadeUp(0.58)} className="ln-hero-join-note">
@@ -995,7 +1002,7 @@ function formatPreviewCount(value) {
   return `${(count / 1000).toFixed(count >= 10000 ? 0 : 1).replace('.0', '')}K`;
 }
 
-function PreviewPost({ item, index, onLogin, onRegister }) {
+function PreviewPost({ item, index, onLogin, onRegister, locked = false }) {
   const [remotePreview, setRemotePreview] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [failedImages, setFailedImages] = useState([]);
@@ -1050,7 +1057,7 @@ function PreviewPost({ item, index, onLogin, onRegister }) {
   };
 
   return (
-    <article className="ln-preview-post" style={{ '--preview-index': index }}>
+    <article className={`ln-preview-post ${locked ? 'is-locked-preview' : ''}`} style={{ '--preview-index': index }}>
       <div className="ln-preview-post-media">
         {video ? (
           <video
@@ -1115,6 +1122,19 @@ function PreviewPost({ item, index, onLogin, onRegister }) {
           </a>
         )}
       </div>
+
+      {locked && (
+        <div className="ln-preview-lock-overlay">
+          <div className="ln-preview-lock-panel">
+            <div className="ln-preview-lock-icon"><Lock size={17} /></div>
+            <span>Hay más historias dentro</span>
+            <strong>Entra a la red para ver la siguiente publicación.</strong>
+            <button type="button" onClick={onRegister}>
+              Unirme a la red <ArrowRight size={15} />
+            </button>
+          </div>
+        </div>
+      )}
     </article>
   );
 }
@@ -1127,30 +1147,32 @@ function PreviewNewsSection({ items, loading, onLogin, onRegister, homeOnly = fa
           <div>
             <p><Radio size={13} /> {homeOnly ? 'FYP de la red' : 'Vista previa de la red'}</p>
             <h2>{homeOnly ? 'Noticias de la red' : 'Así se ven las noticias por dentro'}</h2>
-            <span>{homeOnly ? 'Desliza para descubrir cinco publicaciones recientes de Misiones Nacionales.' : 'Desliza para conocer cinco publicaciones recientes. Al entrar, el feed continúa a pantalla completa.'}</span>
+            <span>{homeOnly ? 'Desliza para ver una noticia. La siguiente te espera dentro de la red.' : 'Desliza para conocer cinco publicaciones recientes. Al entrar, el feed continúa a pantalla completa.'}</span>
           </div>
-          <span className="ln-preview-page-label">SABER MÁS</span>
+          {!homeOnly && <span className="ln-preview-page-label">SABER MÁS</span>}
         </div>
 
-        <div className="ln-preview-feed" aria-label="Vista previa de cinco noticias">
+        <div className="ln-preview-feed" aria-label={homeOnly ? 'Vista previa de noticias' : 'Vista previa de cinco noticias'}>
           {loading ? (
             <div className="ln-preview-skeleton" />
           ) : items.length ? (
-            items.slice(0, 5).map((item, index) => (
-              <PreviewPost key={item.id} item={item} index={index} onLogin={onLogin} onRegister={onRegister} />
+            items.slice(0, homeOnly ? 2 : 5).map((item, index) => (
+              <PreviewPost key={item.id} item={item} index={index} onLogin={onLogin} onRegister={onRegister} locked={homeOnly && index === 1} />
             ))
           ) : (
             <div className="ln-preview-empty">Las noticias aparecerán aquí cuando se publique el primer contenido.</div>
           )}
         </div>
 
-        <div className="ln-preview-bottom-cta">
-          <div>
-            <strong>¿Quieres ver el feed completo?</strong>
-            <span>Inicia sesión para reaccionar, comentar y compartir con tu iglesia.</span>
+        {!homeOnly && (
+          <div className="ln-preview-bottom-cta">
+            <div>
+              <strong>¿Quieres ver el feed completo?</strong>
+              <span>Inicia sesión para reaccionar, comentar y compartir con tu iglesia.</span>
+            </div>
+            <button type="button" onClick={onLogin}>Entrar a Noticias <ArrowRight size={16} /></button>
           </div>
-          <button type="button" onClick={onLogin}>Entrar a Noticias <ArrowRight size={16} /></button>
-        </div>
+        )}
       </div>
     </section>
   );

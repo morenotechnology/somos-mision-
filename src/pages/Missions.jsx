@@ -29,7 +29,7 @@ export default function Missions() {
   }, [loginFromApi]);
 
   const earnedBadges = currentUser?.badges || [];
-  const visibleBadges = badges.slice(0, 5);
+  const visibleBadges = badges;
   const userBadges = visibleBadges.filter((badge) => earnedBadges.includes(badge.id));
   const filtered = missions.filter((mission) => mission.type === typeMap[tab]);
   const completedMissionIds = new Set(missions.filter((mission) => mission.status === 'completed').map((mission) => mission.id));
@@ -120,11 +120,11 @@ export default function Missions() {
         <div className="missions-section-head">
           <div>
             <p><Award size={13} /> Logros del perfil</p>
-            <h3>Insignias clave</h3>
+            <h3>Insignias del perfil</h3>
           </div>
-          <span>{userBadges.length}/{visibleBadges.length}</span>
+          <span>{userBadges.length}/{visibleBadges.length} desbloqueadas</span>
         </div>
-        <p className="mission-badges-intro">Tus logros viven en el perfil. Aquí mostramos solo las insignias clave para mantener el avance claro.</p>
+        <p className="mission-badges-intro">Las insignias desbloqueadas se muestran con su color; las pendientes quedan en gris hasta que cumplas el reto.</p>
         <div className="mission-badge-grid">
           {visibleBadges.map((badge, index) => {
             const unlocked = earnedBadges.includes(badge.id);
