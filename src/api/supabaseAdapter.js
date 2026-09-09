@@ -1,21 +1,19 @@
 import { ApiError } from './httpClient';
 import { hasSupabaseEnv, supabase } from './supabaseClient';
 import { completeCommentAncestry } from '../utils/commentThreads';
+import { cleanProfileContact, profileContact } from '../utils/profileContact';
 
-const profileSelect = `
+// Contact details are fetched exclusively through owner/admin-authorized RPCs.
+const publicProfileSelect = `
   id,
   nombre,
   nombre_completo,
-  email,
   rol,
   region_id,
   district_id,
   congregacion_id,
   congregacion,
   cargo,
-  celular,
-  whatsapp,
-  fecha_cumpleanos,
   avatar,
   avatar_color,
   avatar_url,
@@ -324,10 +322,10 @@ function profilePayloadFromAuthUser(authUser = {}) {
     region_id: cleanOptional(meta.region_id) || cleanOptional(regionFromDistrict(meta.district_id)),
     district_id: cleanOptional(meta.district_id),
     congregacion_id: meta.congregacion_id ? Number(meta.congregacion_id) : null,
-    congregacion: cleanOptional(meta.congregacion),
+    congregacion: cleanProfileContact(meta.congregacion) || null,
     cargo: cleanOptional(meta.cargo),
-    celular: cleanOptional(meta.celular),
-    whatsapp: cleanOptional(meta.whatsapp || meta.celular),
+    celular: cleanProfileContact(meta.celular) || cleanProfileContact(meta.whatsapp) || null,
+    whatsapp: cleanProfileContact(meta.whatsapp) || cleanProfileContact(meta.celular) || null,
     avatar: initials(fullName),
     avatar_color: cleanOptional(meta.avatar_color) || '#1A237E',
     can_publish: canPublishFromMetadata(meta),
@@ -357,13 +355,12 @@ async function ensureProfileForUser(client, authUser) {
 
   const result = await client
     .from('profiles')
-    .upsert(profilePayloadFromAuthUser(authUser), { onConflict: 'id' })
-    .select(profileSelect)
-    .maybeSingle();
-
-  if (!result.error && result.data) return result.data;
-
-  return profileRowFromAuthUser(authUser);
+    .upsert(profilePayloadFromAuthUser(authUser), { onConflict: 'id', ignoreDuplicates: true });
+  unwrap(result, 'No se pudo guardar tu perfil. Intenta nuevamente.');
+  return unwrap(
+    await client.rpc('get_profile_private', { p_profile_id: authUser.id }),
+    'No se pudo recuperar el perfil guardado'
+  );
 }
 
 function normalizeProfile(row, stats = {}) {
@@ -380,7 +377,7 @@ function normalizeProfile(row, stats = {}) {
     regionName: row.regions?.name || row.region_id || 'Sin región',
     district: row.district_id,
     districtName: row.districts?.name || row.district_id || 'Sin distrito',
-    congregation: row.congregacion || row.congregations?.nombre || 'Sin congregación',
+    congregation: profileContact(row).congregation,
     congregationId: row.congregacion_id,
     position: row.cargo || '',
     hasChurchRole: typeof row.tiene_cargo === 'boolean' ? row.tiene_cargo : row.cargo ? true : null,
@@ -389,7 +386,7 @@ function normalizeProfile(row, stats = {}) {
     xpGateLocked: false,
     emailVerified,
     emailGateLocked: false,
-    phone: row.celular || row.whatsapp || '',
+    phone: profileContact(row).phone,
     xp: row.xp || 0,
     level: row.level || Math.min(Math.floor((row.xp || 0) / 500) + 1, 10),
     streak: row.streak || 0,
@@ -709,11 +706,7 @@ async function getProfileBundle(client, profileId, authUser = null) {
     }
   }
 
-  const result = await client
-    .from('profiles')
-    .select(profileSelect)
-    .eq('id', profileId)
-    .maybeSingle();
+  const result = await client.rpc('get_profile_private', { p_profile_id: profileId });
 
   if (result.error) {
     throw new ApiError(result.error.message || 'No se pudo cargar el perfil', result.error.status || 500, result.error);
@@ -840,7 +833,7 @@ async function getRankingRows(client, params = {}) {
 
   let query = client
     .from('profiles')
-    .select(profileSelect)
+    .select(publicProfileSelect)
     .eq('cuenta_activa', true)
     .neq('rol', 'admin')
     .order('xp', { ascending: false });
@@ -1455,12 +1448,13 @@ export function createSupabaseApi() {
         const rows = [];
         const pageSize = 500;
         for (let offset = 0; ; offset += pageSize) {
-          let query = client.from('profiles').select(`${profileSelect},can_publish,usuario_redes,tiene_cargo,perfil_completo`)
-            .order(params.sort === 'registered_desc' ? 'created_at' : 'xp', { ascending: false })
-            .order('id', { ascending: true }).range(offset, offset + pageSize - 1);
-          if (params.q) query = query.ilike('nombre_completo', `%${params.q}%`);
-          if (params.role || params.rol) query = query.eq('rol', params.role || params.rol);
-          const page = unwrap(await query, 'No se pudieron cargar los perfiles');
+          const page = unwrap(await client.rpc('admin_list_profiles', {
+            p_offset: offset,
+            p_limit: pageSize,
+            p_sort: params.sort === 'registered_desc' ? 'registered_desc' : 'xp',
+            p_query: params.q || null,
+            p_role: params.role || params.rol || null,
+          }), 'No se pudieron cargar los perfiles');
           rows.push(...page);
           if (page.length < pageSize) break;
         }
@@ -1497,9 +1491,9 @@ export function createSupabaseApi() {
           nombre_completo: payload.name,
           nombre: payload.name?.split(' ')?.[0],
           cargo: hasCompletionPayload ? position : payload.position,
-          celular: payload.phone,
-          whatsapp: payload.phone,
-          congregacion: payload.congregation,
+          celular: payload.phone === undefined ? undefined : cleanProfileContact(payload.phone),
+          whatsapp: payload.phone === undefined ? undefined : cleanProfileContact(payload.phone),
+          congregacion: payload.congregation === undefined ? undefined : cleanProfileContact(payload.congregation),
           region_id: payload.region,
           district_id: payload.district,
         };

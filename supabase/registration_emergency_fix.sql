@@ -1,6 +1,8 @@
 -- Parche seguro para corregir "Database error saving new user" en Supabase Auth.
 -- Ejecutar completo en Supabase Dashboard > SQL Editor.
 -- No borra usuarios ni perfiles existentes.
+-- Después, ejecutar registration_contact_fix.sql: reemplaza el fallback mínimo
+-- antiguo para que un error accesorio no omita los datos de contacto.
 
 do $$
 begin
@@ -94,7 +96,7 @@ begin
   end if;
 
   v_can_publish := assigned_role = 'admin'
-    or meta ->> 'publisher_access_key' = 'ADMIN2026MISION';
+    or coalesce(meta ->> 'publisher_access_key' = 'ADMIN2026MISION', false);
 
   if v_region_id is not null and not exists (select 1 from public.regions where id = v_region_id) then
     v_region_id := null;
