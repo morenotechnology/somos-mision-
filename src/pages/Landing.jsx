@@ -1016,7 +1016,7 @@ export default function Landing({ previewOnly = false }) {
   const toLearnMore = () => navigate('/saber-mas');
 
   return (
-    <div className="ln-page">
+    <div className={`ln-page${previewOnly ? ' is-home-page' : ''}`}>
       <Nav onLogin={toLogin} onRegister={toRegister} onLearnMore={toLearnMore} />
       <main className={previewOnly ? 'ln-home-main' : 'ln-more-main'}>
         {previewOnly ? (
