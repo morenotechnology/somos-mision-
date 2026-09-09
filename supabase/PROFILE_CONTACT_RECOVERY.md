@@ -11,7 +11,9 @@ El frontend además trataba «Sin congregación» como un valor editable real.
 
 ## Orden de despliegue
 
-1. Ejecutar `profile_private_access.sql` y `registration_contact_fix.sql`.
+1. Ejecutar `profile_private_access.sql`, `registration_contact_fix.sql` y
+   `profile_authorization_guard.sql`. Los roles quedan administrados por servidor;
+   las cuentas existentes conservan sus permisos.
 2. Ejecutar `profile_contact_regression.sql`: prueba el trigger con una cuenta
    sintética dentro de una subtransacción revertida; no envía correos ni crea contraseñas.
 3. Desplegar el frontend que utiliza `get_profile_private` y `admin_list_profiles`.
@@ -19,8 +21,10 @@ El frontend además trataba «Sin congregación» como un valor editable real.
    lectura directa de contactos, crea el respaldo protegido y rellena únicamente
    campos ausentes desde datos proporcionados por el usuario. Conserva permisos,
    puntos y fechas. No genera información inexistente.
-5. Verificar cobertura, consulta de superadmin, consulta propia, rechazo de
-   consultas privadas ajenas y lectura pública del ranking/comentarios.
+5. Ejecutar `profile_contact_access_regression.sql`: verifica consulta de
+   superadmin, consulta propia, rechazo de consultas privadas ajenas, lectura
+   social y edición propia con el rol authenticated y RLS. La prueba de edición
+   se revierte sin alterar los datos. Revisar también cobertura final.
 
 Reaplicar siempre `registration_contact_fix.sql` después de scripts de esquema
 históricos que reemplacen `handle_new_user`.

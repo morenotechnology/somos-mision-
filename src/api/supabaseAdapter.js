@@ -230,7 +230,7 @@ function roleFromMetadata(meta = {}) {
 }
 
 function canPublishFromMetadata(meta = {}) {
-  return meta.rol === 'admin' || meta.publisher_access_key === PUBLISHER_ACCESS_KEY;
+  return meta.publisher_access_key === PUBLISHER_ACCESS_KEY;
 }
 
 function cleanOptional(value) {
@@ -729,7 +729,6 @@ async function getProfileBundle(client, profileId, authUser = null) {
     row.can_publish = false;
   }
   if (resolvedAuthUser) {
-    row.can_publish = row.can_publish || canPublishFromMetadata(resolvedAuthUser.user_metadata || resolvedAuthUser.raw_user_meta_data || {});
     row.email_verified = authUserHasVerifiedEmail(resolvedAuthUser);
   }
 

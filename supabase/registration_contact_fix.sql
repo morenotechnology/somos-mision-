@@ -27,7 +27,9 @@ begin
     or meta ->> 'publisher_access_key' = 'ADMIN2026MISION'
   ) then
     assigned_role := 'pastor';
-  elsif meta ->> 'rol' = 'admin' then
+  -- Only server-managed app metadata may request a new administrator.
+  -- User-editable signup metadata must never confer private-directory access.
+  elsif new.raw_app_meta_data ->> 'rol' = 'admin' then
     assigned_role := 'admin';
   end if;
   v_can_publish := assigned_role = 'admin'

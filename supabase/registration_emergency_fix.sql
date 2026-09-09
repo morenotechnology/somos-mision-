@@ -91,7 +91,7 @@ begin
       or meta ->> 'publisher_access_key' = 'ADMIN2026MISION'
     ) then
     assigned_role := 'pastor';
-  elsif meta ->> 'rol' = 'admin' then
+  elsif new.raw_app_meta_data ->> 'rol' = 'admin' then
     assigned_role := 'admin';
   end if;
 

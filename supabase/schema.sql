@@ -328,7 +328,7 @@ begin
     assigned_role := 'pastor';
   end if;
 
-  if meta ->> 'rol' = 'admin' then
+  if new.raw_app_meta_data ->> 'rol' = 'admin' then
     assigned_role := 'admin';
   end if;
 
