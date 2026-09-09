@@ -1,5 +1,6 @@
 import { ApiError } from './httpClient';
 import { hasSupabaseEnv, supabase } from './supabaseClient';
+import { completeCommentAncestry } from '../utils/commentThreads';
 
 const profileSelect = `
   id,
@@ -1073,6 +1074,21 @@ export function createSupabaseApi() {
   return {
     health: async () => ({ app: 'Somos Misión · Supabase', status: 'ok' }),
 
+    community: {
+      async getStats() {
+        const row = unwrap(await client.from('community_stats').select('active_multipliers,updated_at').eq('id', 1).single(), 'No se pudo consultar el contador');
+        return { activeMultipliers: Number(row.active_multipliers), updatedAt: row.updated_at };
+      },
+      subscribe(onChange, onStatus) {
+        const channel = client.channel(`community-count-${crypto.randomUUID()}`)
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'community_stats', filter: 'id=eq.1' }, ({ new: row }) => {
+            onChange({ activeMultipliers: Number(row.active_multipliers), updatedAt: row.updated_at });
+          })
+          .subscribe((status) => onStatus?.(status === 'SUBSCRIBED'));
+        return { unsubscribe: () => client.removeChannel(channel) };
+      },
+    },
+
     bootstrap: async () => {
       const [references, metrics, topUsers, featuredContent] = await Promise.all([
         getReferenceData(client).catch(() => ({ regions: [], districts: [], coordinations: [], badges: [] })),
@@ -1436,13 +1452,20 @@ export function createSupabaseApi() {
 
     perfiles: {
       async list(params = {}) {
-        let query = client.from('profiles').select(profileSelect);
-        if (params.sort === 'registered_desc') query = query.order('created_at', { ascending: false });
-        else query = query.order('xp', { ascending: false });
-        if (params.q) query = query.ilike('nombre_completo', `%${params.q}%`);
-        if (params.role || params.rol) query = query.eq('rol', params.role || params.rol);
-        const rows = unwrap(await query, 'No se pudieron cargar los perfiles');
-        return Promise.all(rows.map(async (row) => normalizeProfile(row, await getProfileStats(client, row.id))));
+        const rows = [];
+        const pageSize = 500;
+        for (let offset = 0; ; offset += pageSize) {
+          let query = client.from('profiles').select(`${profileSelect},can_publish,usuario_redes,tiene_cargo,perfil_completo`)
+            .order(params.sort === 'registered_desc' ? 'created_at' : 'xp', { ascending: false })
+            .order('id', { ascending: true }).range(offset, offset + pageSize - 1);
+          if (params.q) query = query.ilike('nombre_completo', `%${params.q}%`);
+          if (params.role || params.rol) query = query.eq('rol', params.role || params.rol);
+          const page = unwrap(await query, 'No se pudieron cargar los perfiles');
+          rows.push(...page);
+          if (page.length < pageSize) break;
+        }
+        // This directory uses profile columns, not per-user activity histories.
+        return rows.map((row) => normalizeProfile(row));
       },
 
       async get(id) {
@@ -1795,14 +1818,25 @@ export function createSupabaseApi() {
       async comentarios(params = {}) {
         let query = client.from('comments').select(commentSelect).order('created_at', { ascending: false });
         if (params.publication_id) query = query.eq('publication_id', params.publication_id);
-        if (params.limit) query = query.limit(params.limit);
+        if (params.limit) query = query.range(Number(params.offset || 0), Number(params.offset || 0) + Number(params.limit) - 1);
         const result = await query;
-        if (!result.error) return hydrateCommentRows(client, result.data || []);
-
-        let fallbackQuery = client.from('comments').select('*').order('created_at', { ascending: false });
-        if (params.publication_id) fallbackQuery = fallbackQuery.eq('publication_id', params.publication_id);
-        if (params.limit) fallbackQuery = fallbackQuery.limit(params.limit);
-        return hydrateCommentRows(client, unwrap(await fallbackQuery, 'No se pudieron cargar los comentarios'));
+        let pageRows = result.data || [];
+        const selection = result.error ? '*' : commentSelect;
+        if (result.error) {
+          let fallbackQuery = client.from('comments').select('*').order('created_at', { ascending: false });
+          if (params.publication_id) fallbackQuery = fallbackQuery.eq('publication_id', params.publication_id);
+          if (params.limit) fallbackQuery = fallbackQuery.range(Number(params.offset || 0), Number(params.offset || 0) + Number(params.limit) - 1);
+          pageRows = unwrap(await fallbackQuery, 'No se pudieron cargar los comentarios');
+        }
+        const allRows = await completeCommentAncestry(pageRows, async (ids) => {
+          let parents = client.from('comments').select(selection).in('id', ids);
+          if (params.publication_id) parents = parents.eq('publication_id', params.publication_id);
+          return unwrap(await parents, 'No se pudo cargar el hilo del comentario');
+        });
+        const hydrated = await hydrateCommentRows(client, allRows);
+        hydrated.forEach((row, index) => { row.contextOnly = Boolean(allRows[index].contextOnly); });
+        hydrated.pageCount = pageRows.length;
+        return hydrated;
       },
 
       async resumen(params = {}) {

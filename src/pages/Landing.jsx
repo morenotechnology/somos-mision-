@@ -1,26 +1,21 @@
 import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
   Award,
   BookOpen,
-  Building2,
-  CheckCircle2,
   ExternalLink,
   Globe,
   Heart,
   Lock,
   MessageCircle,
   MapPin,
-  Menu,
-  X,
   Send,
   Share2,
   Star,
   Users,
   Zap,
-  ChevronDown,
   TrendingUp,
   Radio,
 } from 'lucide-react';
@@ -30,6 +25,7 @@ import { fetchSocialPreview, getSocialPlatform, isDirectVideoUrl, isPlaceholderI
 import BrandLogo from '../components/common/BrandLogo';
 import { LucideIcon } from '../components/common/LucideIcon';
 import SocialCoverFallback from '../components/content/SocialCoverFallback';
+import HomeHero from '../components/landing/HomeHero';
 import regionAmazonica from '../assets/regiones/optimized/AMAZONICA_2.png';
 import regionAndina from '../assets/regiones/optimized/ANDINA_1.png';
 import regionCaribe from '../assets/regiones/optimized/CARIBE_1.png';
@@ -130,15 +126,6 @@ const territoryStories = [
     image: regionOrinoquia,
     tone: '#B45309',
   },
-];
-
-const mobileMenuItems = [
-  { label: 'Inicio', target: 'hero' },
-  { label: 'Impacto', target: 'metricas' },
-  { label: 'Regiones', target: 'territorio' },
-  { label: 'Cómo funciona', target: 'como-funciona' },
-  { label: 'Coordinaciones', target: 'coordinaciones' },
-  { label: 'Ranking', target: 'ranking' },
 ];
 
 const canonicalCoordinations = [
@@ -280,6 +267,7 @@ const coordinationDetails = Object.fromEntries(canonicalCoordinations.map((item)
 
 /* ─── Nav ─────────────────────────────────────────────────────────────── */
 function Nav({ onLogin, onRegister, onLearnMore }) {
+  const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 30);
@@ -295,7 +283,7 @@ function Nav({ onLogin, onRegister, onLearnMore }) {
       className={`ln-nav ${scrolled ? 'is-scrolled' : ''}`}
     >
       <div className="ln-container ln-nav-inner">
-        <button className="ln-brand" onClick={onRegister} aria-label="Misiones Nacionales">
+        <button className="ln-brand" onClick={() => navigate('/')} aria-label="Misiones Nacionales · Ir al inicio">
           <span className="ln-brand-mark">
             <BrandLogo decorative />
           </span>
@@ -306,7 +294,7 @@ function Nav({ onLogin, onRegister, onLearnMore }) {
         </button>
         <nav className="ln-nav-actions" aria-label="Navegación principal">
           <button type="button" className="ln-nav-context" onClick={onLearnMore}>
-            SABER MÁS
+            Ver más
           </button>
           <a className="ln-nav-vip" href={VIP_WHATSAPP_URL} target="_blank" rel="noreferrer">
             <WhatsAppMark />
@@ -325,233 +313,6 @@ function Nav({ onLogin, onRegister, onLearnMore }) {
 }
 
 /* ─── Hero ────────────────────────────────────────────────────────────── */
-function Hero({ metrics, schema, onRegister, onLogin, onLearnMore, previewOnly = false }) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const menuItems = previewOnly
-    ? [{ label: 'Noticias', target: 'vista-previa' }]
-    : mobileMenuItems;
-
-  useEffect(() => {
-    if (!mobileMenuOpen) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [mobileMenuOpen]);
-
-  const goToSection = (target) => {
-    setMobileMenuOpen(false);
-    window.requestAnimationFrame(() => {
-      document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  };
-
-  return (
-    <section className={`ln-hero ${previewOnly ? 'is-home-hero' : ''}`} id="hero">
-      <motion.div className="ln-hero-bg" aria-hidden="true">
-        <img src="/bg-pueblo.png" alt="" />
-        <div className="ln-hero-bg-overlay" />
-      </motion.div>
-
-      <div className="ln-hero-grain" aria-hidden="true" />
-      <div className="ln-hero-fade-bottom" aria-hidden="true" />
-
-      <motion.div
-        className="ln-mobile-hero-card"
-        initial={{ opacity: 0, y: 22, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <div className="ln-mobile-hero-top">
-          <div className="ln-mobile-hero-brand">
-            <span className="ln-mobile-hero-logo"><BrandLogo decorative /></span>
-            <span>Misiones<br />Nacionales</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(true)}
-            aria-label="Abrir menú"
-            aria-controls="landing-mobile-menu"
-            aria-expanded={mobileMenuOpen}
-            className="ln-mobile-hero-menu"
-          >
-            <Menu size={22} strokeWidth={2.7} />
-          </button>
-        </div>
-        <img src="/hero-map.png" alt="" className="ln-mobile-hero-map" />
-        <img src={amigosLogo} alt="" className="ln-mobile-hero-photo ln-mobile-hero-amigos" />
-        <div className="ln-mobile-hero-status">
-          <div>
-            <span>Misiones Nacionales</span>
-            <strong>{previewOnly ? 'Una red para servir juntos' : `${metrics.totalEmbajadores.toLocaleString()} multiplicadores activos`}</strong>
-          </div>
-        </div>
-      </motion.div>
-
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <>
-            <motion.button
-              type="button"
-              className="ln-mobile-menu-backdrop"
-              aria-label="Cerrar menú"
-              onClick={() => setMobileMenuOpen(false)}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            />
-            <motion.aside
-              id="landing-mobile-menu"
-              className="ln-mobile-menu-panel"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Menú principal"
-              initial={{ opacity: 0, y: -18, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -12, scale: 0.97 }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <div className="ln-mobile-menu-head">
-                <div className="ln-mobile-menu-brand">
-                  <span><BrandLogo decorative /></span>
-                  <strong>Misiones Nacionales</strong>
-                </div>
-                <button type="button" onClick={() => setMobileMenuOpen(false)} aria-label="Cerrar menú">
-                  <X size={20} strokeWidth={2.6} />
-                </button>
-              </div>
-
-              <div className="ln-mobile-menu-feature" aria-hidden="true">
-                <span>Red de los 5.000</span>
-                <strong>12 coordinaciones · 5 regiones · una misión</strong>
-                <img src={amigosLogo} alt="" />
-              </div>
-
-              <a className="ln-mobile-menu-vip" href={VIP_WHATSAPP_URL} target="_blank" rel="noreferrer" onClick={() => setMobileMenuOpen(false)}>
-                <span className="ln-mobile-menu-vip-icon"><WhatsAppMark /></span>
-                <span>
-                  <strong>Comunidad VIP</strong>
-                  <small>Reuniones y capacitaciones de la red</small>
-                </span>
-                <ExternalLink size={15} />
-              </a>
-
-              <nav className="ln-mobile-menu-links" aria-label="Secciones de la landing">
-                {menuItems.map((item, index) => (
-                  <motion.button
-                    key={item.target}
-                    type="button"
-                    onClick={() => goToSection(item.target)}
-                    initial={{ opacity: 0, x: 16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.04 + index * 0.035, duration: 0.26 }}
-                  >
-                    <span>{String(index + 1).padStart(2, '0')}</span>
-                    {item.label}
-                  </motion.button>
-                ))}
-              </nav>
-
-              <button type="button" className="ln-mobile-menu-more" onClick={onLearnMore}>
-                Saber más sobre la red <ArrowRight size={16} />
-              </button>
-
-              <div className="ln-mobile-menu-actions">
-                <button type="button" className="ln-btn-outline ln-btn-lg" onClick={() => { setMobileMenuOpen(false); onLogin(); }}>
-                  Iniciar sesión
-                </button>
-                <button type="button" className="ln-btn-primary ln-btn-lg" onClick={() => { setMobileMenuOpen(false); onRegister(); }}>
-                  Unirme <ArrowRight size={17} strokeWidth={2.4} />
-                </button>
-              </div>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
-
-      <motion.div
-        className="ln-hero-collage"
-        initial={{ opacity: 0, scale: 0.94, y: 26 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <img src="/hero-map.png" alt="" className="ln-hero-map" />
-        <img src={amigosLogo} alt="" className="ln-hero-polaroid is-one is-amigos-logo" />
-        <a className="ln-hero-vip-float" href={VIP_WHATSAPP_URL} target="_blank" rel="noreferrer">
-          <span className="ln-hero-vip-icon"><WhatsAppMark /></span>
-          <span>
-            <small>Comunidad VIP</small>
-            <strong>Únete a la red por WhatsApp</strong>
-          </span>
-          <ArrowRight size={17} />
-        </a>
-      </motion.div>
-
-      <motion.div className="ln-container ln-hero-inner">
-        <motion.div {...fadeUp(0.1)} className="ln-hero-pill">
-          <span className="ln-hero-pill-dot" />
-          <BrandLogo decorative className="ln-pill-logo" />
-          <span>Misiones Nacionales</span>
-          {!previewOnly && (
-            <>
-              <span className="ln-hero-pill-sep" />
-              <strong>{metrics.totalEmbajadores.toLocaleString()} multiplicadores activos</strong>
-            </>
-          )}
-        </motion.div>
-
-        <motion.div {...fadeUp(0.2)} className="ln-hero-headline">
-          <h1 className="ln-hero-hidden-title">Somos Misión Colombia</h1>
-          <div className="ln-hero-logo-headline" aria-hidden="true">
-            <img src={heroBrandLogo} alt="" />
-          </div>
-        </motion.div>
-
-        <motion.div {...fadeUp(0.32)} className="ln-hero-sub">
-          <strong>Tu lugar en la misión empieza aquí.</strong>
-          <span>Únete a la red que conecta iglesias, noticias y contenido oficial con 5.000 amigos que sirven en todo el país.</span>
-        </motion.div>
-
-        {/* CTAs */}
-        <motion.div {...fadeUp(0.42)} className="ln-hero-actions">
-          <button id="hero-register" type="button" onClick={onRegister} className="ln-btn-primary ln-btn-lg">
-            Unirme a la red <ArrowRight size={19} strokeWidth={2.3} />
-          </button>
-          <button id="hero-login" type="button" onClick={onLogin} className="ln-btn-outline ln-btn-lg">
-            Iniciar sesión
-          </button>
-        </motion.div>
-
-        {!previewOnly && (
-          <motion.div {...fadeUp(0.52)} className="ln-hero-proof">
-            <span><CheckCircle2 size={14} strokeWidth={2.2} />{schema.publicaciones} publicaciones</span>
-            <span><Building2 size={14} strokeWidth={2.2} />{schema.congregaciones} congregaciones</span>
-            <span><Star size={14} strokeWidth={2.2} />{schema.comunicadosActivos} comunicados activos</span>
-            <span><Users size={14} strokeWidth={2.2} />{metrics.totalEmbajadores.toLocaleString()} multiplicadores</span>
-          </motion.div>
-        )}
-
-        {previewOnly && (
-          <motion.div {...fadeUp(0.58)} className="ln-hero-join-note">
-            <span>Tu siguiente paso</span>
-            <strong>Únete hoy y lleva la misión contigo.</strong>
-          </motion.div>
-        )}
-      </motion.div>
-
-      {/* Scroll indicator */}
-      <motion.div
-        className="ln-scroll-hint"
-        animate={{ y: [0, 8, 0] }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-        aria-hidden="true"
-      >
-        <ChevronDown size={22} strokeWidth={1.8} />
-      </motion.div>
-    </section>
-  );
-}
 
 /* ─── Official Poster ─────────────────────────────────────────────────── */
 function PosterFeature({ onRegister }) {
@@ -1191,6 +952,7 @@ export default function Landing({ previewOnly = false }) {
   const [previewLoading, setPreviewLoading] = useState(true);
 
   useEffect(() => {
+    if (previewOnly) return undefined;
     let active = true;
     let rankingTimer;
     api.bootstrap()
@@ -1223,7 +985,7 @@ export default function Landing({ previewOnly = false }) {
       active = false;
       if (rankingTimer) window.clearInterval(rankingTimer);
     };
-  }, []);
+  }, [previewOnly]);
 
   useEffect(() => {
     if (!previewOnly) {
@@ -1248,7 +1010,6 @@ export default function Landing({ previewOnly = false }) {
     regionesConectadas: 0,
     xpGenerado: 0,
   };
-  const schema = data.schemaMetrics || { publicaciones: 0, congregaciones: 0, comunicadosActivos: 0 };
 
   const toLogin = () => navigate('/login');
   const toRegister = () => navigate('/register');
@@ -1260,7 +1021,7 @@ export default function Landing({ previewOnly = false }) {
       <main className={previewOnly ? 'ln-home-main' : 'ln-more-main'}>
         {previewOnly ? (
           <>
-            <Hero metrics={metrics} schema={schema} onRegister={toRegister} onLogin={toLogin} onLearnMore={toLearnMore} previewOnly />
+            <HomeHero onRegister={toRegister} onLogin={toLogin} onLearnMore={toLearnMore} />
             <PreviewNewsSection items={previewItems} loading={previewLoading} onLogin={toLogin} onRegister={toRegister} homeOnly />
           </>
         ) : (

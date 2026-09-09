@@ -101,6 +101,7 @@ export default function App() {
           <Route path="/home" element={<HomeRoute />} />
           <Route path="/inicio" element={<HomeRoute />} />
           <Route path="/saber-mas" element={<Landing />} />
+          <Route path="/ver-mas" element={<Navigate to="/saber-mas" replace />} />
           <Route path="/saber-mas/*" element={<Navigate to="/saber-mas" replace />} />
           <Route path="/conoce-mas" element={<Navigate to="/saber-mas" replace />} />
           <Route path="/login" element={<Login />} />

@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Award, CheckCircle2, Copy, ExternalLink, Heart, MapPin, MessageCircle, PencilLine, Send, Share2, Smartphone, Star, Trash2, Volume2, VolumeX, X, Zap } from 'lucide-react';
+import { CheckCircle2, Copy, ExternalLink, Heart, MessageCircle, PencilLine, Send, Share2, Smartphone, Star, Trash2, Volume2, VolumeX, X, Zap } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { api } from '../../api';
 import { fetchSocialPreview, getSocialPlatform, isDirectVideoUrl, isPlaceholderImage } from '../../utils/socialPreview';
 import SocialCoverFallback from './SocialCoverFallback';
+import CommentThreads from './CommentThreads';
+import { commentDescendants } from '../../utils/commentThreads';
 import toast from 'react-hot-toast';
 
 const formatCount = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
@@ -245,6 +247,8 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
   const videoRef = useRef(null);
   const shareActionRef = useRef(null);
   const commentInputRef = useRef(null);
+  const commentsPanelRef = useRef(null);
+  const commentTriggerRef = useRef(null);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [videoTime, setVideoTime] = useState(0);
   const [videoDuration, setVideoDuration] = useState(0);
@@ -261,6 +265,8 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
   const [replyingTo, setReplyingTo] = useState(null);
   const [socialLoading, setSocialLoading] = useState(false);
   const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentsHasMore, setCommentsHasMore] = useState(false);
+  const commentsOffset = useRef(0);
   const [mobileGuide, setMobileGuide] = useState(null);
   const [guideLoading, setGuideLoading] = useState(false);
   const [shareConfirm, setShareConfirm] = useState(null);
@@ -363,21 +369,68 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
     };
   }, [shareMenuOpen]);
 
-  const loadComments = async () => {
+  useEffect(() => {
+    if (!commentsOpen || !immersive) return undefined;
+    const panel = commentsPanelRef.current;
+    const scroller = panel?.closest('.app-main-feed');
+    const previousOverflow = scroller?.style.overflow;
+    if (scroller) scroller.style.overflow = 'hidden';
+    panel?.querySelector('.content-comments-close')?.focus();
+    const handleKey = (event) => {
+      if (event.key === 'Escape') { event.preventDefault(); setCommentsOpen(false); }
+      if (event.key !== 'Tab') return;
+      const focusable = [...panel.querySelectorAll('button:not(:disabled), a[href], input:not(:disabled), textarea:not(:disabled)')];
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    panel?.addEventListener('keydown', handleKey);
+    return () => {
+      if (scroller) scroller.style.overflow = previousOverflow;
+      panel?.removeEventListener('keydown', handleKey);
+      commentTriggerRef.current?.focus();
+    };
+  }, [commentsOpen, immersive]);
+
+  const loadComments = async (event) => {
     if (commentsOpen) {
       setCommentsOpen(false);
       return;
     }
     setCommentsOpen(true);
+    commentTriggerRef.current = event?.currentTarget;
     setCommentsLoading(true);
     try {
-      const rows = await api.social?.comentarios?.({ publication_id: item.id, limit: 24 });
+      const rows = await api.social?.comentarios?.({ publication_id: item.id, limit: 50, offset: 0 });
       setComments(rows || []);
+      commentsOffset.current = rows?.pageCount ?? rows?.length ?? 0;
+      setCommentsHasMore(commentsOffset.current === 50);
     } catch (error) {
       toast.error(error.message || 'No se pudieron cargar los comentarios');
     } finally {
       setCommentsLoading(false);
     }
+  };
+
+  const loadMoreComments = async () => {
+    if (commentsLoading) return;
+    setCommentsLoading(true);
+    try {
+      const rows = await api.social.comentarios({ publication_id: item.id, limit: 50, offset: commentsOffset.current });
+      const pageCount = rows.pageCount ?? rows.length;
+      commentsOffset.current += pageCount;
+      setCommentsHasMore(pageCount === 50);
+      setComments((current) => {
+        const byId = new Map(current.map((row) => [String(row.id), row]));
+        rows.forEach((row) => {
+          const previous = byId.get(String(row.id));
+          byId.set(String(row.id), { ...row, contextOnly: Boolean(row.contextOnly && (!previous || previous.contextOnly)) });
+        });
+        return [...byId.values()];
+      });
+    } catch (error) { toast.error(error.message || 'No se pudieron cargar más comentarios'); }
+    finally { setCommentsLoading(false); }
   };
 
   const handleReaction = async () => {
@@ -432,7 +485,8 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
   const handleCommentSubmit = async (event) => {
     event.preventDefault();
     const cleanText = commentText.trim();
-    if (!cleanText) return;
+    if (!cleanText || socialLoading) return;
+    if (!currentUser) { toast.error('Inicia sesión para comentar'); return; }
     setSocialLoading(true);
     try {
       const created = await api.social.agregarComentario(item.id, cleanText, replyingTo?.id || null);
@@ -455,6 +509,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
         likedByMe: Boolean(created?.likedByMe),
       }, ...current]);
       setCommentText('');
+      commentsOffset.current += 1;
       setReplyingTo(null);
       setSocial((current) => ({ ...current, commentsCount: current.commentsCount + 1 }));
     } catch (error) {
@@ -471,15 +526,14 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
     if (!window.confirm('¿Eliminar este comentario?')) return;
     try {
       await api.social.eliminarComentario(comment.id);
-      const removedIds = new Set([String(comment.id)]);
-      comments.forEach((row) => {
-        if (String(row.parentCommentId || row.parent_comment_id || '') === String(comment.id)) removedIds.add(String(row.id));
-      });
+      const removedIds = commentDescendants(comments, comment.id);
+      const removedPageRows = comments.filter((row) => removedIds.has(String(row.id)) && !row.contextOnly).length;
+      commentsOffset.current = Math.max(0, commentsOffset.current - removedPageRows);
       setComments((current) => {
         return current.filter((row) => !removedIds.has(String(row.id)));
       });
       setSocial((current) => ({ ...current, commentsCount: Math.max(current.commentsCount - removedIds.size, 0) }));
-      if (String(replyingTo?.id) === String(comment.id)) setReplyingTo(null);
+      if (removedIds.has(String(replyingTo?.id))) setReplyingTo(null);
       toast.success('Comentario eliminado');
     } catch (error) {
       toast.error(error.message || 'No se pudo eliminar el comentario');
@@ -797,6 +851,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
               />
             )}
             <motion.div
+              ref={commentsPanelRef}
               role={immersive ? 'dialog' : undefined}
               aria-modal={immersive ? 'true' : undefined}
               aria-label={immersive ? 'Comentarios de la publicación' : undefined}
@@ -814,60 +869,12 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
                 <X size={18} />
               </button>
             </div>
-            {commentsLoading ? (
+            {commentsLoading && !comments.length ? (
               <p className="content-comments-empty">Cargando comentarios...</p>
             ) : comments.length ? (
               <div className="content-comments-list">
-                {comments.map((comment) => {
-                  const userId = currentUser?.schemaId || currentUser?.id;
-                  const canDeleteComment = String(comment.userId) === String(userId) || currentUser?.role === 'admin' || currentUser?.canPublish;
-                  const levelValue = Number(comment.level ?? comment.authorLevel);
-                  const commentLevel = Number.isFinite(levelValue) && levelValue > 0 ? levelValue : 1;
-                  const districtValue = comment.districtName || comment.authorDistrict || comment.district;
-                  const commentDistrict = typeof districtValue === 'string' && districtValue.trim() ? districtValue : 'Sin distrito';
-                  const badgeValue = comment.badgeName || comment.authorBadge || comment.badge;
-                  const commentBadge = typeof badgeValue === 'string' ? badgeValue : badgeValue?.name || '';
-                  const avatarValue = typeof comment.authorAvatar === 'string' ? comment.authorAvatar : '';
-                  const avatarIsImage = /^(https?:\/\/|data:image\/|\/)/i.test(avatarValue);
-                  const commentLikeCount = Number(comment.likesCount || 0);
-                  return (
-                    <article key={comment.id} className={`content-comment-item ${comment.parentCommentId || comment.parent_comment_id ? 'is-reply' : ''}`}>
-                      <div className="content-comment-avatar" style={{ background: comment.authorColor || '#1A237E' }}>
-                        {avatarIsImage ? <img src={avatarValue} alt="" loading="lazy" /> : avatarValue || comment.authorName?.slice(0, 2).toUpperCase() || 'MR'}
-                      </div>
-                      <div className="content-comment-copy">
-                        <strong>{comment.authorName || 'Miembro de la red'}</strong>
-                        <div className="content-comment-author-meta">
-                          {commentBadge && <span className="content-comment-badge"><Award size={11} />{commentBadge}</span>}
-                          <span className="content-comment-level">Nivel {commentLevel}</span>
-                        <span className="content-comment-district"><MapPin size={11} />{commentDistrict}</span>
-                        </div>
-                        <p>{comment.content}</p>
-                        <div className="content-comment-actions">
-                          <button
-                            type="button"
-                            className={`content-comment-like ${comment.likedByMe ? 'is-liked' : ''}`}
-                            onClick={() => handleCommentReaction(comment)}
-                            disabled={socialLoading}
-                            aria-label={comment.likedByMe ? 'Quitar me gusta del comentario' : 'Dar me gusta al comentario'}
-                            aria-pressed={Boolean(comment.likedByMe)}
-                          >
-                            <Heart size={13} fill={comment.likedByMe ? 'currentColor' : 'none'} />
-                            <span>{commentLikeCount}</span>
-                          </button>
-                          <button type="button" className="content-comment-reply" onClick={() => handleReplyToComment(comment)}>
-                            Responder
-                          </button>
-                        </div>
-                      </div>
-                      {canDeleteComment && (
-                        <button type="button" className="content-comment-delete" onClick={() => handleCommentDelete(comment)} aria-label="Eliminar comentario">
-                          <Trash2 size={13} />
-                        </button>
-                      )}
-                    </article>
-                  );
-                })}
+                <CommentThreads comments={comments} currentUser={currentUser} busy={socialLoading} onLike={handleCommentReaction} onReply={handleReplyToComment} onDelete={handleCommentDelete} />
+                {commentsHasMore && <button type="button" className="content-comments-more" disabled={commentsLoading} onClick={loadMoreComments}>{commentsLoading ? 'Cargando…' : 'Ver más comentarios'}</button>}
               </div>
             ) : (
               <p className="content-comments-empty">Sé la primera persona en comentar esta noticia.</p>
@@ -881,8 +888,10 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
               </div>
             )}
             <form className="content-comment-form" onSubmit={handleCommentSubmit}>
-              <input
+              <textarea
                 ref={commentInputRef}
+                aria-label={replyingTo ? 'Escribe tu respuesta' : 'Escribe un comentario'}
+                rows={1}
                 value={commentText}
                 onChange={(event) => setCommentText(event.target.value)}
                 placeholder={replyingTo ? `Responde a ${replyingTo.authorName || 'este comentario'}...` : 'Escribe un comentario...'}

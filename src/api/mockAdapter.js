@@ -12,6 +12,7 @@ import {
   publicaciones,
   reacciones,
   regions,
+  regionActivity,
   schemaMetrics,
   schemaTables,
   seguidores,
@@ -258,6 +259,9 @@ async function resolve(data) {
 export function createMockApi() {
   return {
     health: () => resolve({ app: 'Somos Misión local mock', status: 'ok' }),
+    community: {
+      getStats: () => resolve({ activeMultipliers: state.users.filter((user) => user.role === 'multiplicador' && user.active !== false).length }),
+    },
     bootstrap: () => resolve({ badges, coordinations, districts, globalMetrics, regions, schemaMetrics }),
     schema: () => resolve(schemaTables),
 
@@ -594,7 +598,7 @@ export function createMockApi() {
     social: {
       comentarios: (params = {}) => resolve(searchRows(state.comentarios, params).filter((row) => (
         !params.publication_id || String(row.post_id || row.publication_id) === String(params.publication_id)
-      )).slice(0, params.limit ? Number(params.limit) : undefined).map(normalizeMockComment)),
+      )).slice(Number(params.offset || 0), params.limit ? Number(params.offset || 0) + Number(params.limit) : undefined).map(normalizeMockComment)),
       compartidos: (params) => resolve(searchRows(state.compartidos, params)),
       reacciones: (params) => resolve(searchRows(state.reacciones, params)),
       seguidores: (params) => resolve(searchRows(state.seguidores, params)),

@@ -48,7 +48,7 @@ function normalizeAdminUser(user = {}) {
 }
 
 export default function Admin() {
-  const [tab, setTab] = useState('analytics');
+  const [tab, setTab] = useState('users');
   const [userQuery, setUserQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -164,13 +164,31 @@ export default function Admin() {
           <div className="flex items-center justify-between gap-3 flex-wrap"><p className="text-sm text-[#475569]">{payload.users.length} usuarios registrados</p><span className="text-xs text-[#94A3B8]">Ordenados por fecha de registro</span></div>
           <div className="relative"><Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" /><input className="input-base pl-10" placeholder="Buscar por nombre o correo..." value={userQuery} onChange={(e) => setUserQuery(e.target.value)} /></div>
           <div className="space-y-2">
-            {filteredUsers.map((user, index) => (
-              <motion.div key={user.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.05 }} className="card p-4 flex items-center gap-3">
+            {filteredUsers.map((user) => (
+              <div key={user.id} className="card p-4">
+              <div className="flex items-center gap-3 flex-wrap">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style={{ background: user.avatarColor }}>{user.avatar}</div>
-                <div className="flex-1 min-w-0"><p className="font-semibold text-sm text-[#0F172A] truncate">{user.name}</p><div className="flex items-center gap-2 mt-0.5 flex-wrap"><span className="text-[10px] text-[#94A3B8]">{user.email}</span><span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${roleBadge[user.role] || roleBadge.multiplicador}`}>{roleLabel[user.role] || user.role}</span></div></div>
+                <div className="flex-1 min-w-0"><p className="font-semibold text-sm text-[#0F172A] break-words">{user.name}</p><div className="flex items-center gap-2 mt-0.5 flex-wrap"><span className="text-xs text-[#475569] break-all">{user.email}</span><span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${roleBadge[user.role] || roleBadge.multiplicador}`}>{roleLabel[user.role] || user.role}</span></div></div>
                 <div className="flex items-center gap-1.5 text-xs text-[#475569] whitespace-nowrap"><CalendarDays size={14} className="text-[#1A237E]" /><span><span className="hidden sm:inline">Registrado: </span>{user.registeredAtLabel}</span></div>
                 <div className="hidden md:flex items-center gap-3 text-xs"><span className="font-bold text-[#D4AF37]">{user.xp.toLocaleString()} XP</span><span className="text-[#94A3B8]">Nv. {user.level} — {getLevelTitle(user.level)}</span></div>
-              </motion.div>
+              </div>
+              <details className="mt-3 border-t border-[#E2E8F0] pt-3">
+                <summary className="cursor-pointer text-xs font-semibold text-[#1A237E] py-1">Ver información del usuario</summary>
+                <dl className="grid sm:grid-cols-2 gap-x-6 gap-y-3 mt-3 text-sm">
+                  {[
+                    ['Distrito', user.districtName || user.district || 'Sin registrar'],
+                    ['Iglesia', user.congregation || 'Sin registrar'],
+                    ['WhatsApp', user.phone || 'Sin registrar'],
+                    ['Región', user.regionName || 'Sin registrar'],
+                    ['Cargo', user.position || 'Sin registrar'],
+                    ['Redes sociales', user.socialUsername || 'Sin registrar'],
+                    ['Estado', user.active ? 'Cuenta activa' : 'Cuenta inactiva'],
+                    ['Permiso editorial', user.canPublish ? 'Puede publicar y editar' : 'Solo participación'],
+                    ['Puntos y nivel', `${user.xp.toLocaleString('es-CO')} XP · Nivel ${user.level}`],
+                  ].map(([label, value]) => <div key={label}><dt className="text-xs text-[#475569]">{label}</dt><dd className="mt-1 text-[#0F172A] break-words">{value}</dd></div>)}
+                </dl>
+              </details>
+              </div>
             ))}
             {!filteredUsers.length && <div className="card p-8 text-center text-sm text-[#475569]">No hay usuarios que coincidan con la búsqueda.</div>}
           </div>

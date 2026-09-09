@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, BookOpen, Trophy, Target, User, Settings, Zap, MessageCircle, ExternalLink } from 'lucide-react';
+import { X, BookOpen, Trophy, Target, User, Settings, Zap, MessageCircle, ExternalLink, Info } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import BrandLogo from '../common/BrandLogo';
 
@@ -9,6 +9,7 @@ const navItems = [
   { to: '/ranking',   icon: Trophy,          label: 'Ranking' },
   { to: '/missions',  icon: Target,          label: 'Misiones' },
   { to: '/profile',   icon: User,            label: 'Mi Perfil' },
+  { to: '/saber-mas', icon: Info, label: 'Ver más' },
 ];
 const VIP_WHATSAPP_URL = 'https://chat.whatsapp.com/G2Al7tjnAao6k1I4swB5mv?s=hd&p=i&mlu=4';
 

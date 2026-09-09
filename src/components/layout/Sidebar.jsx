@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Trophy, Target, User, Settings,
-  ChevronLeft, Zap, LogOut, MessageCircle
+  ChevronLeft, Zap, LogOut, MessageCircle, Info
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import BrandLogo from '../common/BrandLogo';
@@ -13,6 +13,7 @@ const navItems = [
   { to: '/ranking',   icon: Trophy,          label: 'Ranking'   },
   { to: '/missions',  icon: Target,          label: 'Misiones'  },
   { to: '/profile',   icon: User,            label: 'Perfil'    },
+  { to: '/saber-mas', icon: Info, label: 'Ver más' },
 ];
 
 const adminItems = [

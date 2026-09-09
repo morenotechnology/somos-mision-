@@ -1,0 +1,58 @@
+/* Flat, dark conversation sheet, matching the supplied social-network reference. */
+.content-card-pro .content-comments-panel { --conversation-muted: #b5b5bc; background: #202023; color: #f5f5f7; border: 0; }
+.content-card-pro.is-immersive .content-comments-panel { background: #202023; color: #f5f5f7; height: min(80%, 650px); max-height: 86%; border-radius: 18px 18px 0 0; }
+.content-card-pro .content-comments-head strong, .content-card-pro.is-immersive .content-comments-head strong { color: #f5f5f7; font-size: 15px; }
+.content-card-pro .content-comments-head span, .content-card-pro.is-immersive .content-comments-head span { color: var(--conversation-muted); font-size: 12px; }
+.content-card-pro .content-comments-head { border-bottom-color: #ffffff14; }
+.content-card-pro .content-comments-close { color: #eeeef2; background: #ffffff0e; border: 0; width: 44px; height: 44px; }
+.content-card-pro .content-comments-close:hover { background: #ffffff1c; transform: none; }
+.content-card-pro .content-comments-list { display: block; padding: 12px 0; overscroll-behavior: contain; scrollbar-color: #606068 #202023; scrollbar-width: thin; }
+.social-thread { padding: 8px 0 18px; }
+.social-comment { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 12px; align-items: start; }
+.social-comment-avatar { width: 38px; height: 38px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 700; }
+.social-comment-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.social-comment-body { min-width: 0; }
+.social-comment-author { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; }
+.social-comment-author strong { color: #c4c4cc; font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
+.social-comment-author > span { color: #f1d27a; font-size: 10px; }
+.social-comment-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 2px 0 6px; font-size: 10px; color: #aeb6c8; }
+.social-comment-meta span { display: inline-flex; align-items: center; gap: 3px; }
+.social-comment-body > p { color: #f5f5f7; font-size: 15px; line-height: 1.48; font-weight: 450; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+.social-comment-mention { color: #b7c9ea; font-size: 13px; }
+.social-comment-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 12px; margin-top: 2px; }
+.social-comment-tools time { font-size: 11px; color: var(--conversation-muted); }
+.social-comment-tools button, .social-thread-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; border: 0; padding: 0; background: transparent; color: var(--conversation-muted); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.social-comment-tools button:hover, .social-thread-toggle:hover { color: #fff; }
+.social-comment-tools button:disabled { opacity: .55; cursor: wait; }
+.social-comment-tools .social-comment-heart { margin-left: auto; min-width: 44px; font-variant-numeric: tabular-nums; }
+.social-comment-tools .social-comment-heart.is-liked { color: #ff829d; }
+.social-comment-tools .social-comment-remove { min-width: 28px; }
+.social-thread-replies { margin-left: 50px; display: grid; gap: 12px; padding-top: 6px; }
+.social-comment--reply { grid-template-columns: 28px minmax(0, 1fr); gap: 9px; }
+.social-comment--reply .social-comment-avatar { width: 28px; height: 28px; font-size: 10px; }
+.social-comment--reply .social-comment-body > p { font-size: 14px; }
+.content-card-pro.is-immersive .social-comment-body > p { display: block; overflow: visible; -webkit-line-clamp: unset; line-clamp: unset; -webkit-box-orient: initial; max-height: none; }
+.social-thread-toggle { margin-left: 50px; gap: 10px; font-size: 11px; }
+.social-thread-toggle > span { width: 24px; height: 1px; background: #707078; }
+.content-card-pro .content-comment-form, .content-card-pro.is-immersive .content-comment-form { background: #202023; border-top: 1px solid #ffffff1f; padding-top: 12px; grid-template-columns: minmax(0, 1fr) 44px; }
+.content-card-pro .content-comment-form textarea { resize: none; field-sizing: content; max-height: 90px; min-height: 44px; min-width: 0; border: 1px solid #ffffff12; border-radius: 12px; padding: 11px 14px; background: #303034; color: #f5f5f7; font: inherit; font-size: 14px; line-height: 1.4; caret-color: #f4cc53; }
+.content-card-pro .content-comment-form textarea::placeholder { color: #b5b5bc; }
+.content-card-pro .content-comment-form button { background: #f4cc53; color: #151820; min-height: 44px; max-height: 48px; align-self: end; }
+.content-card-pro .content-comment-replying { background: #303034; color: #c4c4cc; border-radius: 8px; margin-top: 4px; }
+.content-card-pro .content-comment-replying strong { color: #fff; }
+.content-card-pro .content-comment-replying button { color: #eeeef2; min-width: 36px; min-height: 36px; }
+.content-card-pro .content-comments-vip { color: #c8d6ce; border-color: #ffffff12; padding-top: 7px; margin-top: 8px; }
+.content-card-pro .content-comments-vip small { color: #b5b5bc; }
+.content-card-pro .content-comments-vip-icon { background: #25392f; color: #8fe0b1; }
+.content-card-pro .content-comments-empty, .content-card-pro.is-immersive .content-comments-empty { color: #b5b5bc; }
+.content-comments-panel :focus-visible { outline: 2px solid #f4cc53; outline-offset: 3px; }
+.content-comments-panel ::selection { background: #f4cc53; color: #151820; }
+.content-comments-more { display: block; width: 100%; min-height: 44px; border: 0; background: #303034; color: #f5f5f7; border-radius: 8px; cursor: pointer; font: inherit; font-size: 12px; }
+@media (max-width: 400px) {
+  .social-comment { grid-template-columns: 32px minmax(0, 1fr); gap: 9px; }
+  .social-comment-avatar { width: 32px; height: 32px; }
+  .social-thread-replies, .social-thread-toggle { margin-left: 30px; }
+  .social-comment--reply { grid-template-columns: 25px minmax(0, 1fr); }
+  .social-comment--reply .social-comment-avatar { width: 25px; height: 25px; }
+  .social-comment-tools { gap: 2px 9px; }
+}

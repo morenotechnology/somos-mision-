@@ -7,6 +7,12 @@ export function createHttpApi() {
     health: () => apiRequest('/health'),
     bootstrap: () => apiRequest('/bootstrap'),
     schema: () => apiRequest('/schema'),
+    community: {
+      getStats: async () => {
+        const data = await apiRequest('/bootstrap');
+        return { activeMultipliers: Number(data.globalMetrics?.embajadoresActivos ?? data.globalMetrics?.totalEmbajadores ?? 0) };
+      },
+    },
 
     auth: {
       getSession: () => Promise.resolve(null),
