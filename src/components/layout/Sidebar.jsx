@@ -2,11 +2,12 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Trophy, Target, User, Settings,
-  ChevronLeft, Zap, LogOut, MessageCircle, Info
+  ChevronLeft, Zap, LogOut, MessageCircle, Info, SquarePen
 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import BrandLogo from '../common/BrandLogo';
 import { getLevelTitle, xpProgress } from '../../utils/helpers';
+import { canPublish } from '../../utils/permissions';
 
 const navItems = [
   { to: '/noticias',   icon: BookOpen,        label: 'Noticias'  },
@@ -86,7 +87,7 @@ export default function Sidebar() {
 
       {/* ── Nav ──────────────────────────────────────────────────────── */}
       <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
-        {navItems.map(({ to, icon: Icon, label }, i) => (
+        {[...navItems.slice(0, 1), ...(canPublish(currentUser) ? [{ to: '/publicar', icon: SquarePen, label: 'Publicar' }] : []), ...navItems.slice(1)].map(({ to, icon: Icon, label }, i) => (
           <NavLink key={to} to={to}>
             {({ isActive }) => (
               <motion.div

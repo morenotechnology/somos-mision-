@@ -407,6 +407,13 @@ export function createMockApi() {
       complete: (id) => resolve({ mission: missions.find((mission) => mission.id === id), completed: true }),
     },
 
+    admin: {
+      exportDatabase: () => {
+        if (state.currentUser?.role !== 'admin') throw new ApiError('Solo el superadmin puede exportar.', 403);
+        return resolve({ usuarios: state.users, publicaciones: state.contentItems, misiones: missions });
+      },
+    },
+
     perfiles: {
       list: (params = {}) => {
         const rows = [...state.users].sort((a, b) => (

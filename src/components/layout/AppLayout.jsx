@@ -26,7 +26,7 @@ export default function AppLayout() {
         style={{ '--sidebar-offset': sidebarOpen ? '260px' : '68px' }}
       >
         <Topbar />
-        <main className={`flex-1 overflow-y-auto ${isFeedRoute ? 'app-main-feed' : ''}`}>
+        <main className={`app-main-scroll flex-1 min-h-0 overflow-y-auto ${isFeedRoute ? 'app-main-social' : ''}`}>
           <div className="main-surface app-content">
             <Outlet />
           </div>

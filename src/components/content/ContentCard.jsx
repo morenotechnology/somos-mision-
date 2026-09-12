@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { CheckCircle2, Copy, ExternalLink, Heart, MessageCircle, PencilLine, Send, Share2, Smartphone, Star, Trash2, Volume2, VolumeX, X, Zap } from 'lucide-react';
+import { CheckCircle2, Copy, ExternalLink, Heart, MessageCircle, PencilLine, Send, Share2, Smartphone, Star, Trash2, Volume2, VolumeX, X, Zap, Pause, Play } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { api } from '../../api';
 import { fetchSocialPreview, getSocialPlatform, isDirectVideoUrl, isPlaceholderImage } from '../../utils/socialPreview';
 import SocialCoverFallback from './SocialCoverFallback';
 import CommentThreads from './CommentThreads';
+import SocialPost from './SocialPost';
+import '../../pages/social-feed.css';
 import { commentDescendants } from '../../utils/commentThreads';
 import toast from 'react-hot-toast';
 
@@ -241,10 +243,13 @@ function ShareConfirmationPortal({ confirmation, loading, onClose, onConfirm }) 
   );
 }
 
-export default function ContentCard({ item, delay = 0, immersive = false, canEdit = false, canDelete = false, onEdit, onDelete }) {
+export default function ContentCard({ item, delay = 0, immersive = false, socialFeed = false, canEdit = false, canDelete = false, onEdit, onDelete }) {
   const { shareContent, sharedContent, currentUser } = useAppStore();
   const prefersReducedMotion = useReducedMotion();
   const videoRef = useRef(null);
+  const manualPauseRef = useRef(false);
+  const [videoPaused, setVideoPaused] = useState(true);
+  const dialogComments = immersive || socialFeed;
   const shareActionRef = useRef(null);
   const commentInputRef = useRef(null);
   const commentsPanelRef = useRef(null);
@@ -272,6 +277,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
   const [shareConfirm, setShareConfirm] = useState(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [shareMenuOpen, setShareMenuOpen] = useState(false);
+  const [sharesCount, setSharesCount] = useState(Number(item.shares) || 0);
   const alreadyShared = sharedContent.includes(String(item.id));
   const accent = formatTone[item.format] || '#1A237E';
   const socialPlatform = getSocialPlatform(item.sourcePlatform || item.sourceUrl);
@@ -299,38 +305,30 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
 
   useEffect(() => {
     let active = true;
-    setSocial({
-      likesCount: Number(item.likes || 0),
-      commentsCount: Number(item.commentsCount || 0),
-      likedByMe: Boolean(item.likedByMe),
-    });
     Promise.resolve(api.social?.resumen?.({ publicationIds: [item.id] }) || {}).then((summary) => {
-      if (!active || !summary?.[String(item.id)]) return;
-      setSocial((current) => ({ ...current, ...summary[String(item.id)] }));
+      if (!active) return;
+      setSocial({ likesCount: Number(item.likes || 0), commentsCount: Number(item.commentsCount || 0), likedByMe: Boolean(item.likedByMe), ...summary?.[String(item.id)] });
     }).catch(() => {});
     return () => { active = false; };
   }, [item.id, item.likes, item.commentsCount, item.likedByMe]);
 
   useEffect(() => {
-    setFailedImages([]);
-  }, [item.id, item.imageUrl, item.sourceUrl]);
-
-  useEffect(() => {
-    if (!item.sourceUrl || (!isPlaceholderImage(item.imageUrl) && String(item.format || '').toLowerCase() !== 'video')) return undefined;
+    const directVideo = [item.videoUrl, item.video_url, item.mediaUrl, item.media_url, item.imageUrl].some(isDirectVideoUrl);
+    if (!item.sourceUrl || directVideo || (!isPlaceholderImage(item.imageUrl) && String(item.format || '').toLowerCase() !== 'video')) return undefined;
     let active = true;
     fetchSocialPreview(item.sourceUrl)
       .then((preview) => {
         if (active && preview) setRemotePreview(preview);
       });
     return () => { active = false; };
-  }, [item.imageUrl, item.sourceUrl, item.format]);
+  }, [item.imageUrl, item.sourceUrl, item.format, item.videoUrl, item.video_url, item.mediaUrl, item.media_url]);
 
   useEffect(() => {
     const media = videoRef.current;
     if (!media || !video || typeof IntersectionObserver === 'undefined') return undefined;
     media.muted = !audioEnabled;
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
+      if (entry.intersectionRatio >= 0.58 && !manualPauseRef.current && !document.hidden) {
         media.muted = !audioEnabled;
         media.play().catch(() => {});
       } else {
@@ -338,7 +336,9 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
       }
     }, { threshold: 0.58 });
     observer.observe(media);
-    return () => observer.disconnect();
+    const pauseWhenHidden = () => { if (document.hidden) media.pause(); };
+    document.addEventListener('visibilitychange', pauseWhenHidden);
+    return () => { observer.disconnect(); media.pause(); document.removeEventListener('visibilitychange', pauseWhenHidden); };
   }, [audioEnabled, video]);
 
   useEffect(() => {
@@ -346,9 +346,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
       videoRef.current.muted = true;
       videoRef.current.pause();
     }
-    setVideoTime(0);
-    setVideoDuration(0);
-    setAudioEnabled(false);
+    manualPauseRef.current = false;
   }, [video]);
 
   useEffect(() => {
@@ -370,9 +368,9 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
   }, [shareMenuOpen]);
 
   useEffect(() => {
-    if (!commentsOpen || !immersive) return undefined;
+    if (!commentsOpen || !dialogComments) return undefined;
     const panel = commentsPanelRef.current;
-    const scroller = panel?.closest('.app-main-feed');
+    const scroller = document.querySelector('.app-main-scroll') || panel?.closest('.app-main-feed');
     const previousOverflow = scroller?.style.overflow;
     if (scroller) scroller.style.overflow = 'hidden';
     panel?.querySelector('.content-comments-close')?.focus();
@@ -391,7 +389,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
       panel?.removeEventListener('keydown', handleKey);
       commentTriggerRef.current?.focus();
     };
-  }, [commentsOpen, immersive]);
+  }, [commentsOpen, dialogComments]);
 
   const loadComments = async (event) => {
     if (commentsOpen) {
@@ -655,6 +653,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
         share_latency_ms: shareSignal.elapsedMs ?? null,
       });
       const xp = Number(payload.share?.xp_ganado || 0);
+      setSharesCount(count => Number(payload.content?.shares ?? count + 1));
       const statusText = shareSignal.status === 'verified' ? 'verificado' : 'registrado';
       toast.success(xp > 0 ? `Compartido ${statusText}. +${xp} XP` : `Compartido ${statusText} en ${networkNames[network]}`);
     } catch (error) {
@@ -688,6 +687,127 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
     }
   };
 
+  const commentsPanel = commentsOpen && (
+          <>
+            {dialogComments && (
+              <button
+                type="button"
+                className="content-comments-backdrop"
+                onClick={() => setCommentsOpen(false)}
+                aria-label="Cerrar comentarios"
+              />
+            )}
+            <motion.div
+              ref={commentsPanelRef}
+              role={dialogComments ? 'dialog' : undefined}
+              aria-modal={dialogComments ? 'true' : undefined}
+              aria-label={dialogComments ? 'Comentarios de la publicación' : undefined}
+              className="content-comments-panel"
+              initial={!socialFeed && dialogComments && !prefersReducedMotion ? { opacity: 0, y: '100%' } : false}
+              animate={!socialFeed && dialogComments ? { opacity: 1, y: 0 } : undefined}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+            >
+            <div className="content-comments-head">
+              <div>
+                <strong>Comentarios</strong>
+                <span>{social.commentsCount} {social.commentsCount === 1 ? 'comentario' : 'comentarios'}</span>
+              </div>
+              <button type="button" className="content-comments-close" onClick={() => setCommentsOpen(false)} aria-label="Cerrar comentarios">
+                <X size={18} />
+              </button>
+            </div>
+            {commentsLoading && !comments.length ? (
+              <p className="content-comments-empty">Cargando comentarios...</p>
+            ) : comments.length ? (
+              <div className="content-comments-list">
+                <CommentThreads comments={comments} currentUser={currentUser} busy={socialLoading} onLike={handleCommentReaction} onReply={handleReplyToComment} onDelete={handleCommentDelete} />
+                {commentsHasMore && <button type="button" className="content-comments-more" disabled={commentsLoading} onClick={loadMoreComments}>{commentsLoading ? 'Cargando…' : 'Ver más comentarios'}</button>}
+              </div>
+            ) : (
+              <p className="content-comments-empty">Sé la primera persona en comentar esta noticia.</p>
+            )}
+            {replyingTo && (
+              <div className="content-comment-replying">
+                <span>Respondiendo a <strong>{replyingTo.authorName || 'este miembro'}</strong></span>
+                <button type="button" onClick={() => setReplyingTo(null)} aria-label="Cancelar respuesta">
+                  <X size={13} />
+                </button>
+              </div>
+            )}
+            <form className="content-comment-form" onSubmit={handleCommentSubmit}>
+              <textarea
+                ref={commentInputRef}
+                aria-label={replyingTo ? 'Escribe tu respuesta' : 'Escribe un comentario'}
+                rows={1}
+                value={commentText}
+                onChange={(event) => setCommentText(event.target.value)}
+                placeholder={replyingTo ? `Responde a ${replyingTo.authorName || 'este comentario'}...` : 'Escribe un comentario...'}
+                maxLength={500}
+              />
+              <button type="submit" disabled={socialLoading || !commentText.trim()} aria-label="Publicar comentario"><Send size={15} /></button>
+            </form>
+            <a className="content-comments-vip" href={VIP_WHATSAPP_URL} target="_blank" rel="noreferrer">
+              <span className="content-comments-vip-icon"><WhatsAppIcon /></span>
+              <span>
+                <strong>Comunidad VIP</strong>
+                <small>Reuniones y capacitaciones de la red</small>
+              </span>
+              <ExternalLink size={13} />
+            </a>
+            </motion.div>
+          </>
+        );
+
+  if (socialFeed) return <>
+    <SocialPost
+      item={item}
+      canEdit={canEdit}
+      alreadyShared={alreadyShared}
+      commentsCount={social.commentsCount}
+      onComments={loadComments}
+      originalLinks={originalLinks.length ? originalLinks : item.sourceUrl ? [{ network: 'original', label: socialPlatform.label, url: item.sourceUrl }] : []}
+      media={video ? <>
+        <video ref={videoRef} src={video} poster={image || undefined} muted={!audioEnabled} loop playsInline preload="metadata"
+          onLoadStart={() => { setVideoTime(0); setVideoDuration(0); setAudioEnabled(false); }}
+          aria-label={`Video: ${item.title}`}
+          onLoadedMetadata={event => setVideoDuration(Number(event.currentTarget.duration) || 0)}
+          onDurationChange={event => setVideoDuration(Number(event.currentTarget.duration) || 0)}
+          onTimeUpdate={event => setVideoTime(event.currentTarget.currentTime)}
+          onPlay={() => setVideoPaused(false)} onPause={() => setVideoPaused(true)}
+          onError={event => { const broken = event.currentTarget.currentSrc || event.currentTarget.src; setFailedImages(current => [...new Set([...current, broken])]); }}
+        />
+        <div className="social-video-buttons">
+          <button aria-label={videoPaused ? 'Reproducir video' : 'Pausar video'} onClick={() => {
+            const media = videoRef.current;
+            if (!media) return;
+            if (media.paused) { manualPauseRef.current = false; media.play().catch(() => toast.error('Toca el video para reproducirlo.')); }
+            else { manualPauseRef.current = true; media.pause(); }
+          }}>{videoPaused ? <Play size={18} /> : <Pause size={18} />}</button>
+          <button aria-label={audioEnabled ? 'Silenciar video' : 'Activar sonido del video'} aria-pressed={audioEnabled} onClick={toggleAudio}>{audioEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>
+        </div>
+      </> : image ? <img src={image} alt={item.title} loading="lazy" onError={handleImageError} /> : <SocialCoverFallback item={item} platform={socialPlatform} />}
+      controls={video && <div className="social-video-timeline">
+        <input type="range" min="0" max={videoDuration || 0} step="0.1" value={Math.min(videoTime, videoDuration || 0)} onChange={seekVideo} disabled={!videoDuration} aria-label="Avanzar o retroceder el video" aria-valuetext={`${formatVideoTime(videoTime)} de ${formatVideoTime(videoDuration)}`} />
+        <span>{formatVideoTime(videoTime)} / {formatVideoTime(videoDuration)}</span>
+      </div>}
+      actions={<>
+        <button type="button" onClick={handleReaction} className={social.likedByMe ? 'is-liked' : ''} disabled={socialLoading} aria-label={social.likedByMe ? 'Quitar me gusta' : 'Dar me gusta'} aria-pressed={social.likedByMe}><Heart size={26} fill={social.likedByMe ? 'currentColor' : 'none'} /><span>{formatCount(social.likesCount)}</span></button>
+        <button type="button" onClick={loadComments} aria-label="Abrir comentarios" aria-expanded={commentsOpen}><MessageCircle size={26} /><span>{formatCount(social.commentsCount)}</span></button>
+        <div ref={shareActionRef} className="social-post-share">
+          <button type="button" onClick={handleUnifiedShare} aria-label="Compartir publicación" aria-expanded={shareMenuOpen}><Send size={26} /><span>{formatCount(sharesCount)}</span></button>
+          {shareMenuOpen && <div className="social-share-bubbles" role="group" aria-label="Compartir en redes sociales">
+            <button type="button" className="is-facebook" onClick={() => handleShare('facebook')} aria-label="Compartir en Facebook"><FacebookIcon /></button>
+            <button type="button" className="is-whatsapp" onClick={() => handleShare('whatsapp')} aria-label="Compartir en WhatsApp"><WhatsAppIcon /></button>
+            <button type="button" className="is-instagram" onClick={() => handleShare('instagram')} aria-label="Compartir en Instagram"><InstagramIcon /></button>
+          </div>}
+        </div>
+      </>}
+    />
+    {commentsPanel && createPortal(<div className="content-card-pro social-conversation-layer">{commentsPanel}</div>, document.body)}
+    <MobileShareGuidePortal mobileGuide={mobileGuide} guideLoading={guideLoading} onClose={() => setMobileGuide(null)} onConfirm={confirmMobileShareGuide} />
+    <ShareConfirmationPortal confirmation={shareConfirm} loading={confirmLoading} onClose={() => setShareConfirm(null)} onConfirm={confirmShareRegistration} />
+  </>;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 18, scale: 0.98 }}
@@ -702,6 +822,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
           <>
             <video
               ref={videoRef}
+              onLoadStart={() => { setVideoTime(0); setVideoDuration(0); setAudioEnabled(false); }}
               className="content-media-video"
               src={video}
               poster={image || undefined}
@@ -840,76 +961,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, canEdi
           </div>
         )}
 
-        {commentsOpen && (
-          <>
-            {immersive && (
-              <button
-                type="button"
-                className="content-comments-backdrop"
-                onClick={() => setCommentsOpen(false)}
-                aria-label="Cerrar comentarios"
-              />
-            )}
-            <motion.div
-              ref={commentsPanelRef}
-              role={immersive ? 'dialog' : undefined}
-              aria-modal={immersive ? 'true' : undefined}
-              aria-label={immersive ? 'Comentarios de la publicación' : undefined}
-              className="content-comments-panel"
-              initial={immersive && !prefersReducedMotion ? { opacity: 0, y: '100%' } : false}
-              animate={immersive ? { opacity: 1, y: 0 } : undefined}
-              transition={{ duration: prefersReducedMotion ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }}
-            >
-            <div className="content-comments-head">
-              <div>
-                <strong>Comentarios</strong>
-                <span>{social.commentsCount} comentarios</span>
-              </div>
-              <button type="button" className="content-comments-close" onClick={() => setCommentsOpen(false)} aria-label="Cerrar comentarios">
-                <X size={18} />
-              </button>
-            </div>
-            {commentsLoading && !comments.length ? (
-              <p className="content-comments-empty">Cargando comentarios...</p>
-            ) : comments.length ? (
-              <div className="content-comments-list">
-                <CommentThreads comments={comments} currentUser={currentUser} busy={socialLoading} onLike={handleCommentReaction} onReply={handleReplyToComment} onDelete={handleCommentDelete} />
-                {commentsHasMore && <button type="button" className="content-comments-more" disabled={commentsLoading} onClick={loadMoreComments}>{commentsLoading ? 'Cargando…' : 'Ver más comentarios'}</button>}
-              </div>
-            ) : (
-              <p className="content-comments-empty">Sé la primera persona en comentar esta noticia.</p>
-            )}
-            {replyingTo && (
-              <div className="content-comment-replying">
-                <span>Respondiendo a <strong>{replyingTo.authorName || 'este miembro'}</strong></span>
-                <button type="button" onClick={() => setReplyingTo(null)} aria-label="Cancelar respuesta">
-                  <X size={13} />
-                </button>
-              </div>
-            )}
-            <form className="content-comment-form" onSubmit={handleCommentSubmit}>
-              <textarea
-                ref={commentInputRef}
-                aria-label={replyingTo ? 'Escribe tu respuesta' : 'Escribe un comentario'}
-                rows={1}
-                value={commentText}
-                onChange={(event) => setCommentText(event.target.value)}
-                placeholder={replyingTo ? `Responde a ${replyingTo.authorName || 'este comentario'}...` : 'Escribe un comentario...'}
-                maxLength={500}
-              />
-              <button type="submit" disabled={socialLoading || !commentText.trim()} aria-label="Publicar comentario"><Send size={15} /></button>
-            </form>
-            <a className="content-comments-vip" href={VIP_WHATSAPP_URL} target="_blank" rel="noreferrer">
-              <span className="content-comments-vip-icon"><WhatsAppIcon /></span>
-              <span>
-                <strong>Comunidad VIP</strong>
-                <small>Reuniones y capacitaciones de la red</small>
-              </span>
-              <ExternalLink size={13} />
-            </a>
-            </motion.div>
-          </>
-        )}
+        {commentsPanel}
 
         <div className="content-actions-pro">
           {immersive ? (

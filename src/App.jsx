@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { api } from './api';
 import { useAppStore } from './store/useAppStore';
 import AppLayout from './components/layout/AppLayout';
+import { canPublish, isSuperadmin } from './utils/permissions';
 
 const Landing = lazy(() => import('./pages/Landing'));
 const Login = lazy(() => import('./pages/Login'));
@@ -11,6 +12,7 @@ const Register = lazy(() => import('./pages/Register'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Hub = lazy(() => import('./pages/Hub'));
+const Publish = lazy(() => import('./pages/Publish'));
 const Ranking = lazy(() => import('./pages/Ranking'));
 const Missions = lazy(() => import('./pages/Missions'));
 const Profile = lazy(() => import('./pages/Profile'));
@@ -65,7 +67,12 @@ function ProtectedRoute({ children }) {
 
 function SuperAdminRoute({ children }) {
   const currentUser = useAppStore((state) => state.currentUser);
-  return currentUser?.role === 'admin' ? children : <Navigate to="/noticias" replace />;
+  return isSuperadmin(currentUser) ? children : <Navigate to="/noticias" replace />;
+}
+
+function EditorRoute({ children }) {
+  const currentUser = useAppStore(state => state.currentUser);
+  return canPublish(currentUser) ? children : <Navigate to="/noticias" replace />;
 }
 
 function HomeRoute() {
@@ -127,6 +134,7 @@ export default function App() {
             <Route path="/contenido" element={<Navigate to="/noticias" replace />} />
             <Route path="/contenidos" element={<Navigate to="/noticias" replace />} />
             <Route path="/publicaciones" element={<Navigate to="/noticias" replace />} />
+            <Route path="/publicar" element={<EditorRoute><Publish /></EditorRoute>} />
             <Route path="/ranking" element={<Ranking />} />
             <Route path="/ranking/*" element={<Navigate to="/ranking" replace />} />
             <Route path="/hall" element={<Navigate to="/ranking" replace />} />

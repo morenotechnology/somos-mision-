@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, BookOpen, Trophy, Target, User, Settings, Zap, MessageCircle, ExternalLink, Info } from 'lucide-react';
+import { X, BookOpen, Trophy, Target, User, Settings, Zap, MessageCircle, ExternalLink, Info, SquarePen } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import BrandLogo from '../common/BrandLogo';
+import { canPublish } from '../../utils/permissions';
 
 const navItems = [
   { to: '/noticias',   icon: BookOpen,        label: 'Noticias' },
@@ -54,7 +55,7 @@ export default function MobileSidebar() {
 
             {/* Nav */}
             <nav className="flex-1 px-3 py-4 space-y-1">
-              {navItems.map(({ to, icon: Icon, label }) => (
+              {[...navItems.slice(0, 1), ...(canPublish(currentUser) ? [{ to: '/publicar', icon: SquarePen, label: 'Publicar' }] : []), ...navItems.slice(1)].map(({ to, icon: Icon, label }) => (
                 <NavLink
                   key={to}
                   to={to}

@@ -6,6 +6,7 @@ import NotificationPanel from '../common/NotificationPanel';
 const pageTitles = {
   '/hub':       'Noticias de la red',
   '/noticias':  'Noticias de la red',
+  '/publicar': 'Publicar',
   '/ranking':   'Ranking Nacional',
   '/missions':  'Misiones y avance',
   '/profile':   'Mi perfil',

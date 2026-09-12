@@ -1,0 +1,13 @@
+import evangelismo from '../../assets/coordinaciones/avatars/EVANGELISMO.png';
+import hospitalaria from '../../assets/coordinaciones/avatars/HOSPITALARIA.png';
+import carcelaria from '../../assets/coordinaciones/avatars/CARCELARIA.png';
+import etnicos from '../../assets/coordinaciones/avatars/ETNICOS.png';
+import vulnerable from '../../assets/coordinaciones/avatars/POBLACION VULNERABLE ESPECIALES.png';
+import medios from '../../assets/coordinaciones/avatars/medios-comunicacion.png';
+import estadisticas from '../../assets/coordinaciones/avatars/ESTADISTICAS.png';
+import capacitacion from '../../assets/coordinaciones/avatars/capacitacion-misionera.png';
+import juvenil from '../../assets/coordinaciones/avatars/mision-juvenil.png';
+import instituciones from '../../assets/coordinaciones/avatars/INSTITUCIONES PUBLICAS.png';
+import restauracion from '../../assets/coordinaciones/avatars/restauracion.png';
+import sorda from '../../assets/coordinaciones/avatars/poblacion-sorda.png';
+export const coordinationLogos = { c1: evangelismo, c2: hospitalaria, c3: carcelaria, c4: etnicos, c5: vulnerable, c6: medios, c7: estadisticas, c8: capacitacion, c9: juvenil, c10: instituciones, c11: restauracion, c12: sorda };

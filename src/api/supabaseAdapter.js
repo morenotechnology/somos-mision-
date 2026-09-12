@@ -444,6 +444,7 @@ function normalizePublication(row) {
     category: row.category,
     coordination: row.coordination_id,
     coordinationName: row.coordinations?.name || '',
+    isOfficial: row.is_official !== false,
     format: row.format,
     featured: row.featured,
     xpReward: row.xp_reward,
@@ -1439,6 +1440,24 @@ export function createSupabaseApi() {
           user: sessionBundle?.user || null,
           completedMissionIds: sessionBundle?.completedMissionIds || [],
         };
+      },
+    },
+
+    admin: {
+      async exportDatabase() {
+        const sheets = ['usuarios', 'publicaciones', 'misiones'];
+        const entries = await Promise.all(sheets.map(async (sheet) => {
+          const rows = [];
+          for (let offset = 0; ; offset += 500) {
+            const page = unwrap(await client.rpc('admin_export_rows', {
+              p_sheet: sheet, p_offset: offset, p_limit: 500,
+            }), 'No se pudo exportar la base de datos. Comprueba tu acceso de superadmin.');
+            rows.push(...(page || []));
+            if (!page || page.length < 500) break;
+          }
+          return [sheet, rows];
+        }));
+        return Object.fromEntries(entries);
       },
     },
 

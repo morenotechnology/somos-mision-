@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, BookOpen, Target, BarChart2, Search, Shield, TrendingUp, Star, CalendarDays } from 'lucide-react';
+import { Users, BookOpen, Target, BarChart2, Search, Shield, TrendingUp, Star, CalendarDays, Download, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { api } from '../api';
 import { formatNumber, getLevelTitle } from '../utils/helpers';
+import toast from 'react-hot-toast';
+import './admin-export.css';
 
 const adminTabs = [
   { id: 'analytics', label: 'Analítica', icon: BarChart2 },
@@ -52,12 +54,30 @@ export default function Admin() {
   const [userQuery, setUserQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [exportStatus, setExportStatus] = useState('');
   const [payload, setPayload] = useState({ metrics: null, weeklyActivity: [], regionActivity: [], users: [], content: [], missions: [] });
+
+  const exportDatabase = async () => {
+    if (exporting) return;
+    setExporting(true);
+    setExportStatus('Preparando las tres hojas…');
+    try {
+      if (!api.admin?.exportDatabase) throw new Error('La exportación no está disponible en esta conexión.');
+      const [data, { downloadDatabaseWorkbook }] = await Promise.all([
+        api.admin.exportDatabase(), import('../utils/databaseExport'),
+      ]);
+      await downloadDatabaseWorkbook(data);
+      setExportStatus(`Excel listo: ${data.usuarios.length} usuarios, ${data.publicaciones.length} publicaciones y ${data.misiones.length} misiones.`);
+      toast.success('Excel listo para descargar');
+    } catch (error) {
+      setExportStatus(error.message || 'No pudimos exportar los datos. Intenta de nuevo.');
+      toast.error(error.message || 'No se pudo preparar el Excel');
+    } finally { setExporting(false); }
+  };
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    setLoadError('');
     Promise.all([
       api.dashboard.get(),
       api.perfiles.list({ sort: 'registered_desc' }),
@@ -92,8 +112,10 @@ export default function Admin() {
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between flex-wrap gap-4">
         <div><div className="flex items-center gap-2 mb-1"><Shield size={20} className="text-[#1A237E]" /><h2 className="text-2xl font-black text-[#0F172A]">Panel Superadmin</h2></div><p className="text-[#475569] text-sm">Usuarios, contenido y operación nacional.</p></div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 border border-red-200"><span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" /><span className="text-xs font-semibold text-red-700">Acceso Superadmin</span></div>
+        <button type="button" onClick={exportDatabase} disabled={exporting} className="inline-flex items-center justify-center gap-2 min-h-11 px-5 py-3 rounded-xl bg-[#1A237E] text-white text-sm font-semibold disabled:opacity-60 disabled:cursor-wait hover:bg-[#131b62] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1A237E]">{exporting ? <Loader2 size={18} className="spin" /> : <Download size={18} />}{exporting ? 'Preparando Excel…' : 'Exportar Excel'}</button>
       </motion.div>
+
+      <div className="admin-export-summary"><p>El Excel incluye usuarios y contactos, publicaciones y misiones. Contiene datos personales: compártelo solo con personas autorizadas.</p><p role="status">{exportStatus}</p></div>
 
       {loading && <div className="card p-8 text-center text-sm text-[#475569]">Cargando información del sistema...</div>}
       {loadError && !loading && <div className="card p-5 border-red-200 bg-red-50 text-sm text-red-700">{loadError}</div>}
