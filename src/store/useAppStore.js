@@ -86,7 +86,7 @@ export const useAppStore = create(
 
       completeMission: async (missionId, xpReward = 0) => {
         const { completedMissions, showXP } = get();
-        if (completedMissions.includes(missionId)) return { alreadyCompleted: true };
+        // The server checks the current week; historical IDs cannot block a new award.
         const payload = await api.missions.complete(missionId);
         set({
           currentUser: payload.user,

@@ -1,155 +1,59 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Award, CalendarDays, CheckCircle, Flame, Lock, Sparkles, Target, Trophy, Zap } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Loader2 } from 'lucide-react';
 import MissionCard from '../components/missions/MissionCard';
+import BadgeEmblem from '../components/common/BadgeEmblem';
 import { useAppStore } from '../store/useAppStore';
 import { api } from '../api';
-import { LucideIcon } from '../components/common/LucideIcon';
-import { formatNumber } from '../utils/helpers';
-
-const tabs = ['Diarias', 'Semanales', 'Especiales'];
-const typeMap = { Diarias: 'daily', Semanales: 'weekly', Especiales: 'special' };
+import { weekLabel } from '../utils/missionWeek';
+import './weekly-missions.css';
 
 export default function Missions() {
-  const [tab, setTab] = useState('Diarias');
   const { currentUser, loginFromApi } = useAppStore();
   const [missions, setMissions] = useState([]);
   const [badges, setBadges] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     let active = true;
-    Promise.all([api.missions.list(), api.bootstrap(), api.auth.getSession()])
-      .then(([missionRows, boot, session]) => {
-        if (!active) return;
-        setMissions(missionRows);
-        setBadges(boot.badges || []);
-        if (session?.user) loginFromApi(session);
-      });
+    (async () => {
+      const [missionRows, boot] = await Promise.all([api.missions.list({ type: 'weekly' }), api.bootstrap()]);
+      // The mission sync can award XP, so read the session after it finishes.
+      const session = await api.auth.getSession();
+      if (!active) return;
+      setError('');
+      setMissions(missionRows.filter(row => row.type === 'weekly'));
+      setBadges(boot.badges || []);
+      if (session?.user) loginFromApi(session);
+    })().catch(() => { if (active) setError('No pudimos cargar tu progreso. Intenta de nuevo.'); })
+      .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [loginFromApi]);
+  }, [loginFromApi, retry]);
+
+  useEffect(() => {
+    const refresh = () => { if (!document.hidden) setRetry(value => value + 1); };
+    document.addEventListener('visibilitychange', refresh);
+    // Refresh across Monday midnight without needing to leave the page.
+    const timer = window.setInterval(refresh, 60000);
+    return () => { document.removeEventListener('visibilitychange', refresh); clearInterval(timer); };
+  }, []);
 
   const earnedBadges = currentUser?.badges || [];
-  const visibleBadges = badges;
-  const userBadges = visibleBadges.filter((badge) => earnedBadges.includes(badge.id));
-  const filtered = missions.filter((mission) => mission.type === typeMap[tab]);
-  const completedMissionIds = new Set(missions.filter((mission) => mission.status === 'completed').map((mission) => mission.id));
-  const totalDoneToday = completedMissionIds.size;
-  const totalXPEarned = currentUser?.xp || 0;
-
-  return (
-    <div className="missions-pro-page">
-      <motion.section
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="missions-hero-pro"
-      >
-        <div className="missions-hero-orbit">
-          <Target size={28} />
-        </div>
-        <div className="missions-hero-copy">
-          <p className="missions-kicker"><Sparkles size={14} /> Centro de avance</p>
-          <h2>Misiones y recompensas</h2>
-          <span>Completa acciones reales, suma XP y desbloquea insignias visibles en tu perfil.</span>
-        </div>
-        <div className="missions-hero-pulse">
-          <Flame size={18} />
-          <strong>{formatNumber(totalDoneToday)}</strong>
-          <span>completadas</span>
-        </div>
-      </motion.section>
-
-      <section className="missions-stat-grid">
-        {[
-          { label: 'Completadas', value: formatNumber(totalDoneToday), note: 'Acciones listas', color: '#22c55e', Icon: CheckCircle },
-          { label: 'XP actual', value: formatNumber(totalXPEarned), note: 'Progreso vivo', color: '#D4AF37', Icon: Zap },
-          { label: 'Insignias', value: userBadges.length, note: 'Desbloqueadas', color: '#1A237E', Icon: Award },
-        ].map((item, index) => (
-          <motion.article
-            key={item.label}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.08 + 0.08 }}
-            className="mission-stat-pro"
-            style={{ '--mission-stat-color': item.color }}
-          >
-            <div><item.Icon size={18} /></div>
-            <strong>{item.value}</strong>
-            <span>{item.label}</span>
-            <small>{item.note}</small>
-          </motion.article>
-        ))}
-      </section>
-
-      <div className="missions-tabs-pro" role="tablist" aria-label="Tipos de misiones">
-        {tabs.map((item) => (
-          <button
-            key={item}
-            type="button"
-            onClick={() => setTab(item)}
-            className={tab === item ? 'is-active' : ''}
-          >
-            {item === 'Diarias' && <CalendarDays size={14} />}
-            {item === 'Semanales' && <Flame size={14} />}
-            {item === 'Especiales' && <Trophy size={14} />}
-            {item}
-          </button>
-        ))}
-      </div>
-
-      <section className="missions-list-pro">
-        <div className="missions-section-head">
-          <div>
-            <p><Target size={13} /> Ruta seleccionada</p>
-            <h3>{tab}</h3>
-          </div>
-          <span>{filtered.length} disponibles</span>
-        </div>
-        {filtered.length ? (
-          filtered.map((mission, index) => <MissionCard key={mission.id} mission={mission} delay={index * 0.07} />)
-        ) : (
-          <div className="missions-empty-pro">
-            <Target size={22} />
-            <strong>No hay misiones en esta categoría</strong>
-            <span>Cuando el equipo nacional active nuevas acciones, aparecerán aquí.</span>
-          </div>
-        )}
-      </section>
-
-      <section className="mission-badges-pro">
-        <div className="missions-section-head">
-          <div>
-            <p><Award size={13} /> Logros del perfil</p>
-            <h3>Insignias del perfil</h3>
-          </div>
-          <span>{userBadges.length}/{visibleBadges.length} desbloqueadas</span>
-        </div>
-        <p className="mission-badges-intro">Las insignias desbloqueadas se muestran con su color; las pendientes quedan en gris hasta que cumplas el reto.</p>
-        <div className="mission-badge-grid">
-          {visibleBadges.map((badge, index) => {
-            const unlocked = earnedBadges.includes(badge.id);
-            return (
-              <motion.article
-                key={badge.id}
-                initial={{ opacity: 0, scale: 0.88, y: 12 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ delay: index * 0.045 }}
-                whileHover={unlocked ? { scale: 1.04, y: -3 } : { y: -2 }}
-                className={`mission-badge-pro ${unlocked ? 'is-unlocked' : 'is-locked'}`}
-                style={{ '--badge-tone': badge.color }}
-              >
-                <div>
-                  {unlocked ? <LucideIcon name={badge.icon} size={19} /> : <Lock size={17} />}
-                </div>
-                <strong>{badge.name}</strong>
-                <span>{badge.description}</span>
-                <small><Zap size={10} fill="currentColor" strokeWidth={0} />+{badge.xp} XP</small>
-                {unlocked && <em><CheckCircle size={10} />Desbloqueada</em>}
-              </motion.article>
-            );
-          })}
-        </div>
-      </section>
-    </div>
-  );
+  const done = missions.filter(mission => mission.status === 'completed').length;
+  return <div className="weekly-page">
+    <header className="weekly-heading"><h2>Pequeñas acciones.<br /><span>Una gran misión.</span></h2><p>Elige una coordinación y comparte una publicación. Así de fácil.</p></header>
+    <section aria-labelledby="weekly-title" className="weekly-section">
+      <div className="weekly-section-heading"><div><h3 id="weekly-title">Misiones semanales</h3><p><CalendarDays size={15} />{weekLabel()} · Hora de Colombia</p></div>{!loading && !error && <span>{done} de {missions.length} completadas</span>}</div>
+      <p className="weekly-note">Se renuevan cada lunes. Usa el botón de compartir de la publicación y tu avance se registra automáticamente.</p>
+      {loading ? <p className="weekly-status" role="status"><Loader2 size={20} className="spin" /> Cargando tus misiones…</p> : error ? <div className="weekly-status" role="alert"><p>{error}</p><button onClick={() => setRetry(value => value + 1)}>Reintentar</button></div> : missions.length ? <div>{missions.map(mission => <MissionCard key={mission.id} mission={mission} />)}</div> : <p className="weekly-status">Pronto habrá nuevas publicaciones para compartir. Vuelve en unos días.</p>}
+    </section>
+    {!loading && !error && <section className="weekly-badges" aria-labelledby="weekly-badges-title">
+      <div className="weekly-section-heading"><div><h3 id="weekly-badges-title">Tu colección de insignias</h3><p>Cada emblema cuenta una parte de tu camino.</p></div><span>{badges.filter(badge => earnedBadges.includes(badge.id)).length} / {badges.length}</span></div>
+      <div className="weekly-badge-grid">{badges.map(badge => {
+        const unlocked = earnedBadges.includes(badge.id);
+        return <article key={badge.id}><BadgeEmblem icon={badge.icon} name={badge.name} locked={!unlocked} /><h4>{badge.name}</h4><p>{badge.description}</p><small>{unlocked ? <><CheckCircle2 size={12} /> Desbloqueada</> : 'Por desbloquear'}</small></article>;
+      })}</div>
+    </section>}
+  </div>;
 }

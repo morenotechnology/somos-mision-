@@ -1,0 +1,14 @@
+.badge-emblem { position: relative; display: inline-block; width: 80px; height: 90px; flex-shrink: 0; }
+.badge-emblem > svg { display: block; width: 100%; height: 100%; }
+.badge-ribbon { fill: #c09a34; }
+.badge-body { fill: #0c1940; }
+.badge-rim { fill: none; stroke: #f4cc53; stroke-width: 1.5; }
+.badge-mark { stroke: #f4cc53; stroke-width: 2.3; }
+.badge-pin { fill: #f4cc53; }
+.badge-emblem.is-locked .badge-ribbon { fill: #afb7c4; }
+.badge-emblem.is-locked .badge-body { fill: #e6e9ee; }
+.badge-emblem.is-locked .badge-rim, .badge-emblem.is-locked .badge-mark { stroke: #69758a; }
+.badge-emblem.is-locked .badge-pin { fill: #69758a; }
+.badge-lock { position: absolute; right: 0; bottom: 4px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #f7f8fa; color: #526079; }
+.badge-lock svg { width: 16px; height: 16px; }
+.profile-badge-pro > .badge-emblem { width: 72px; height: 81px; margin: 0 auto 8px; }

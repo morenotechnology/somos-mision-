@@ -8,7 +8,7 @@ const pageTitles = {
   '/noticias':  'Noticias de la red',
   '/publicar': 'Publicar',
   '/ranking':   'Ranking Nacional',
-  '/missions':  'Misiones y avance',
+  '/missions':  'Misiones semanales',
   '/profile':   'Mi perfil',
   '/admin':     'Panel Superadmin',
 };

@@ -21,7 +21,9 @@ import {
 } from 'lucide-react';
 import { api } from '../api';
 import { formatNumber } from '../utils/helpers';
-import { fetchSocialPreview, getSocialPlatform, isDirectVideoUrl, isPlaceholderImage } from '../utils/socialPreview';
+import { fetchSocialPreview, getSocialPlatform, getSocialVideoEmbed, isDirectVideoUrl, isPlaceholderImage } from '../utils/socialPreview';
+import SocialVideoFallback from '../components/content/SocialVideoFallback';
+import './social-feed.css';
 import BrandLogo from '../components/common/BrandLogo';
 import { LucideIcon } from '../components/common/LucideIcon';
 import SocialCoverFallback from '../components/content/SocialCoverFallback';
@@ -736,12 +738,12 @@ function FinalCTA({ onRegister }) {
 }
 
 /* ─── Footer ──────────────────────────────────────────────────────────── */
-function Footer() {
+function Footer({ hideMark = false }) {
   return (
     <footer className="ln-footer">
       <div className="ln-container ln-footer-inner">
         <div className="ln-footer-brand">
-          <span className="ln-footer-mark"><BrandLogo decorative /></span>
+          {!hideMark && <span className="ln-footer-mark"><BrandLogo decorative /></span>}
           <span>Misiones Nacionales</span>
         </div>
         <p>Red Nacional — {new Date().getFullYear()}</p>
@@ -768,9 +770,10 @@ function PreviewPost({ item, index, onLogin, onRegister, locked = false }) {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [failedImages, setFailedImages] = useState([]);
   const platform = getSocialPlatform(item.sourcePlatform || item.sourceUrl);
+  const embeddedVideo = [remotePreview?.sourceUrl, item.sourceUrl, item.facebookUrl, item.instagramUrl].map(url => getSocialVideoEmbed(url, item.format === 'video')).find(Boolean);
 
   useEffect(() => {
-    if (!item.sourceUrl || (!isPlaceholderImage(item.imageUrl) && String(item.format || '').toLowerCase() !== 'video')) return undefined;
+    if (!item.sourceUrl || (!isPlaceholderImage(item.imageUrl) && String(item.format || '').toLowerCase() !== 'video' && !getSocialVideoEmbed(item.sourceUrl))) return undefined;
     let active = true;
     setPreviewLoading(true);
     fetchSocialPreview(item.sourceUrl)
@@ -819,7 +822,7 @@ function PreviewPost({ item, index, onLogin, onRegister, locked = false }) {
 
   return (
     <article className={`ln-preview-post ${locked ? 'is-locked-preview' : ''}`} style={{ '--preview-index': index }}>
-      <div className="ln-preview-post-media">
+      <div className={`ln-preview-post-media ${!video && embeddedVideo && !locked ? 'has-embedded-video' : ''}`}>
         {video ? (
           <video
             className="ln-preview-post-video"
@@ -833,7 +836,10 @@ function PreviewPost({ item, index, onLogin, onRegister, locked = false }) {
             aria-label={`Vista previa de video: ${title}`}
             onError={handleVideoError}
           />
-        ) : image ? (
+        ) : embeddedVideo && !locked ? <SocialVideoFallback embed={embeddedVideo} sourceUrl={item.sourceUrl} image={image} title={title} onImageError={handleImageError} onRetry={() => {
+          setFailedImages([]);
+          fetchSocialPreview(item.sourceUrl, { refresh: true }).then(preview => { if (preview) setRemotePreview(preview); });
+        }} /> : image ? (
           <img src={image} alt={title} onError={handleImageError} loading={index === 0 ? 'eager' : 'lazy'} />
         ) : (
           <SocialCoverFallback item={item} platform={platform} />
@@ -1044,7 +1050,7 @@ export default function Landing({ previewOnly = false }) {
           </>
         )}
       </main>
-      <Footer />
+      <Footer hideMark={previewOnly} />
     </div>
   );
 }

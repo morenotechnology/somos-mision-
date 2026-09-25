@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AtSign, Award, Briefcase, Building, CalendarDays, CheckCircle2, Edit3, Flame, Lock, Mail, MapPin, Phone, Save, ShieldCheck, Share2, Sparkles, Target, UserCheck, Zap } from 'lucide-react';
+import { AtSign, Award, Briefcase, Building, CalendarDays, CheckCircle2, Edit3, Flame, Mail, MapPin, Phone, Save, ShieldCheck, Share2, Sparkles, Target, UserCheck, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAppStore } from '../store/useAppStore';
 import { api } from '../api';
 import { formatNumber, getLevelTitle, xpProgress, xpToNextLevel } from '../utils/helpers';
 import { LucideIcon } from '../components/common/LucideIcon';
+import BadgeEmblem from '../components/common/BadgeEmblem';
 
 const roleLabel = { admin: 'Administrador', pastor: 'Pastor/Directivo', multiplicador: 'Multiplicador' };
 
@@ -363,9 +364,7 @@ export default function Profile() {
                 style={{ '--badge-tone': badge.color }}
                 title={badge.description}
               >
-                <div>
-                  {unlocked ? <LucideIcon name={badge.icon} size={17} /> : <Lock size={14} />}
-                </div>
+                <BadgeEmblem icon={badge.icon} name={badge.name} locked={!unlocked} />
                 <strong>{badge.name}</strong>
                 <span>+{badge.xp} XP</span>
               </motion.article>

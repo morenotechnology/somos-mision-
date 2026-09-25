@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertCircle, ExternalLink, ImagePlus, Link2, Loader2, Send, WandSparkles } from 'lucide-react';
 import { api } from '../../api';
-import { fetchSocialPreview } from '../../utils/socialPreview';
+import { fetchSocialPreview, getSocialVideoEmbed } from '../../utils/socialPreview';
 import { getCanonicalCoordinations } from '../../utils/coordinations';
 import toast from 'react-hot-toast';
 const FALLBACK_IMAGE = '/hero-map.png';
@@ -108,7 +108,7 @@ export default function PublicationComposer({ currentUser, coordinations, editin
         title: current.title || nextPreview.title || '',
         description: current.description || nextPreview.description || '',
         imageUrl: current.imageUrl || nextPreview.imageUrl || '',
-        format: current.format === publisherInitialState.format && nextPreview.videoUrl ? 'video' : current.format,
+        format: current.format === publisherInitialState.format && (nextPreview.videoUrl || getSocialVideoEmbed(primaryUrl) || getSocialVideoEmbed(nextPreview.sourceUrl)) ? 'video' : current.format,
       }));
       toast.success(nextPreview.imageUrl ? 'Vista previa obtenida' : 'Vista previa lista; agrega una imagen si quieres mejorar la portada');
     } catch {

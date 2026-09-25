@@ -1,0 +1,41 @@
+.weekly-page { max-width: 960px; margin: 0 auto; padding: 24px 12px 48px; color: #0c1940; }
+.weekly-heading { padding: 12px 0 32px; }
+.weekly-heading h2 { margin: 0; font-size: clamp(30px, 4vw, 46px); line-height: 1.12; letter-spacing: -.025em; font-weight: 850; }
+.weekly-heading h2 span { color: #1a237e; }
+.weekly-heading p { margin: 18px 0 0; color: #536079; font-size: 15px; line-height: 1.6; }
+.weekly-section, .weekly-badges { margin-top: 16px; }
+.weekly-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.weekly-section-heading h3 { font-size: 20px; margin: 0; font-weight: 800; }
+.weekly-section-heading p { display: flex; align-items: center; gap: 6px; color: #536079; font-size: 12px; margin: 8px 0 0; line-height: 1.5; }
+.weekly-section-heading > span { color: #536079; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.weekly-note { margin: 20px 0 8px; color: #536079; font-size: 13px; line-height: 1.6; max-width: 72ch; }
+.weekly-mission { display: flex; align-items: center; gap: 18px; border-bottom: 1px solid #dce1e9; padding: 26px 0; }
+.weekly-mission-symbol { width: 46px; height: 46px; border-radius: 12px; color: #1a237e; background: #edf0f9; display: grid; place-items: center; flex-shrink: 0; }
+.weekly-mission-body { flex: 1; min-width: 0; }
+.weekly-mission h3 { font-size: 16px; margin: 0; font-weight: 750; }
+.weekly-mission p { color: #536079; margin: 7px 0 12px; font-size: 13px; line-height: 1.5; }
+.weekly-mission-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; font-size: 11px; color: #536079; }
+.weekly-mission-meta span { display: flex; align-items: center; gap: 5px; }
+.weekly-mission-meta span:first-child { color: #735714; font-weight: 750; }
+.weekly-mission.is-done .weekly-mission-meta span:last-child { color: #277647; }
+.weekly-mission-link { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 14px; min-height: 44px; color: #1a237e; font-size: 12px; font-weight: 700; text-decoration: none; background: #edf0f9; border-radius: 8px; }
+.weekly-mission-link:hover { background: #dfe4f4; }
+.weekly-page :is(a, button):focus-visible { outline: 2px solid #1a237e; outline-offset: 3px; }
+.weekly-status { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 28px 0; font-size: 14px; color: #536079; }
+.weekly-status button { background: #1a237e; color: #fff; border: 0; padding: 12px 20px; border-radius: 8px; cursor: pointer; }
+.weekly-badges { margin-top: 48px; }
+.weekly-badge-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px 20px; padding-top: 28px; }
+.weekly-badge-grid article { text-align: center; }
+.weekly-badge-grid h4 { margin: 10px 0 6px; font-size: 13px; font-weight: 750; }
+.weekly-badge-grid p { font-size: 11px; line-height: 1.5; color: #536079; margin: 0 auto; max-width: 23ch; }
+.weekly-badge-grid small { display: inline-flex; gap: 4px; align-items: center; font-size: 10px; margin-top: 10px; color: #536079; }
+@media (max-width: 650px) {
+  .weekly-page { padding: 8px 4px 32px; }
+  .weekly-section-heading { flex-wrap: wrap; gap: 12px; }
+  .weekly-mission { flex-wrap: wrap; gap: 12px; padding: 22px 0; }
+  .weekly-mission-symbol { width: 38px; height: 38px; align-self: flex-start; }
+  .weekly-mission-body { flex-basis: calc(100% - 50px); }
+  .weekly-mission-link { margin-left: 50px; }
+  .weekly-mission h3 { font-size: 15px; }
+  .weekly-badge-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 16px; }
+}

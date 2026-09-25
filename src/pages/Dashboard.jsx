@@ -65,7 +65,7 @@ function HomeExtras() {
 function MultiplicadorDash({ user, weeklyActivity = [], missions = [], topUsers = [], badges = [] }) {
   const navigate = useNavigate();
   const progress = xpProgress(user.xp, user.level);
-  const dailyMissions = missions.filter((mission) => mission.type === 'daily').slice(0, 3);
+  const weeklyMissions = missions.filter((mission) => mission.type === 'weekly').slice(0, 3);
   const visibleBadges = badges.slice(0, 4);
 
   return (
@@ -101,10 +101,10 @@ function MultiplicadorDash({ user, weeklyActivity = [], missions = [], topUsers 
       <div className="dashboard-content-grid">
         <div>
           <div className="dashboard-section-header">
-            <div><p>Acción diaria</p><h3>Misiones de hoy</h3></div>
+            <div><h3>Misiones semanales</h3></div>
             <button onClick={() => navigate('/missions')} className="dashboard-link-button">Ver todas <ArrowRight size={15} /></button>
           </div>
-          <div className="dashboard-list">{dailyMissions.map((mission, index) => <MissionCard key={mission.id} mission={mission} delay={index * 0.08} />)}</div>
+          <div className="dashboard-list">{weeklyMissions.map(mission => <MissionCard key={mission.id} mission={mission} />)}</div>
         </div>
 
         <div>

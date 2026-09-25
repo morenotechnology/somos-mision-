@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, ExternalLink, PencilLine } from 'lucide-react';
 import { coordinationLogos } from './coordinationLogos';
+import BrandLogo from '../common/BrandLogo';
 
 const dateFormat = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -13,7 +14,9 @@ export default function SocialPost({ item, media, controls, actions, alreadyShar
   const longCaption = description.length > 160;
   return <article className="social-post" aria-label={item.title} id={`publicacion-${item.id}`}>
     <header className="social-post-header">
-      <img className="social-post-avatar" src={coordinationLogos[item.coordination] || '/isologo-somos-mision.svg'} alt="" />
+      {coordinationLogos[item.coordination]
+        ? <img className="social-post-avatar" src={coordinationLogos[item.coordination]} alt="" />
+        : <BrandLogo className="social-post-avatar" decorative />}
       <div className="social-post-identity">
         <div><strong>{coordination}</strong>{item.isOfficial !== false && <CheckCircle2 size={16} aria-label="Coordinación oficial" />}</div>
         <p>Misiones Nacionales{!Number.isNaN(date.getTime()) && <> · <time dateTime={date.toISOString()}>{dateFormat.format(date)}</time></>}</p>

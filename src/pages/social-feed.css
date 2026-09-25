@@ -43,6 +43,21 @@
 .social-video-timeline { display: flex; align-items: center; gap: 10px; padding: 0 12px; background: #fff; }
 .social-video-timeline input { flex: 1; width: 0; min-width: 0; height: 28px; accent-color: #1a237e; cursor: pointer; }
 .social-video-timeline span { color: #5b6675; font-size: 11px; font-variant-numeric: tabular-nums; }
+.social-video-recovery { position: relative; width: 100%; background: #10141c; color: #fff; }
+.social-video-recovery-cover { position: relative; min-height: 260px; aspect-ratio: 4 / 3; display: grid; place-items: center; isolation: isolate; }
+.social-video-recovery-cover > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: .65; z-index: -1; }
+.social-video-open { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 14px 22px; background: #fff; color: #17212e; border-radius: 40px; font-weight: 700; box-shadow: 0 3px 18px #0004; }
+.social-video-embedded { position: relative; }
+.social-video-embedded > iframe { display: block; width: 100%; height: min(560px, 75vh); min-height: 320px; border: 0; background: #fff; }
+.social-video-connecting { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px; background: #10141c; color: #fff; padding: 24px; text-align: center; }
+.social-video-connecting a { display: flex; align-items: center; gap: 8px; min-height: 44px; text-decoration: underline; }
+.social-video-recovery-actions { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 16px; padding: 0 14px; background: #17212e; }
+.social-video-recovery-actions > :is(a, button) { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; color: #fff; font-size: 12px; }
+.social-video-recovery-actions > :is(a, button):hover { text-decoration: underline; }
+.social-video-recovery :focus-visible { outline: 2px solid #f5d04a; outline-offset: 3px; }
+.ln-preview-post-media.has-embedded-video .social-video-recovery { position: relative; z-index: 3; }
+.ln-preview-post-media.has-embedded-video .ln-preview-post-shade,
+.ln-preview-post-media.has-embedded-video .ln-preview-post-topline { pointer-events: none; }
 .social-post-details { padding: 0 2px; }
 .social-post-actions { display: flex; align-items: center; gap: 14px; min-height: 56px; }
 .social-post-actions > button, .social-post-share > button { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; min-width: 44px; background: none; border: 0; color: #17212e; font-size: 13px; font-variant-numeric: tabular-nums; }

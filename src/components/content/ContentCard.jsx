@@ -4,10 +4,11 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { CheckCircle2, Copy, ExternalLink, Heart, MessageCircle, PencilLine, Send, Share2, Smartphone, Star, Trash2, Volume2, VolumeX, X, Zap, Pause, Play } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { api } from '../../api';
-import { fetchSocialPreview, getSocialPlatform, isDirectVideoUrl, isPlaceholderImage } from '../../utils/socialPreview';
+import { fetchSocialPreview, getSocialPlatform, getSocialVideoEmbed, isDirectVideoUrl, isPlaceholderImage } from '../../utils/socialPreview';
 import SocialCoverFallback from './SocialCoverFallback';
 import CommentThreads from './CommentThreads';
 import SocialPost from './SocialPost';
+import SocialVideoFallback from './SocialVideoFallback';
 import '../../pages/social-feed.css';
 import { commentDescendants } from '../../utils/commentThreads';
 import toast from 'react-hot-toast';
@@ -302,6 +303,11 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
     remotePreview?.videoUrl,
   ].filter(isDirectVideoUrl);
   const video = videoCandidates.find((candidate) => !failedImages.includes(candidate)) || '';
+  const markedVideo = String(item.format || '').toLowerCase() === 'video';
+  const sourceUrl = item.sourceUrl || item.facebookUrl || item.instagramUrl || '';
+  const embeddedVideo = [remotePreview?.sourceUrl, sourceUrl, item.facebookUrl, item.instagramUrl]
+    .map(url => getSocialVideoEmbed(url, markedVideo)).find(Boolean);
+  const expectsVideo = markedVideo || Boolean(embeddedVideo) || videoCandidates.length > 0;
 
   useEffect(() => {
     let active = true;
@@ -313,33 +319,36 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
   }, [item.id, item.likes, item.commentsCount, item.likedByMe]);
 
   useEffect(() => {
-    const directVideo = [item.videoUrl, item.video_url, item.mediaUrl, item.media_url, item.imageUrl].some(isDirectVideoUrl);
-    if (!item.sourceUrl || directVideo || (!isPlaceholderImage(item.imageUrl) && String(item.format || '').toLowerCase() !== 'video')) return undefined;
+    if (!sourceUrl || video || (!expectsVideo && !isPlaceholderImage(item.imageUrl))) return undefined;
     let active = true;
-    fetchSocialPreview(item.sourceUrl)
+    fetchSocialPreview(sourceUrl)
       .then((preview) => {
         if (active && preview) setRemotePreview(preview);
       });
     return () => { active = false; };
-  }, [item.imageUrl, item.sourceUrl, item.format, item.videoUrl, item.video_url, item.mediaUrl, item.media_url]);
+  }, [item.imageUrl, sourceUrl, video, expectsVideo]);
 
   useEffect(() => {
     const media = videoRef.current;
     if (!media || !video || typeof IntersectionObserver === 'undefined') return undefined;
     media.muted = !audioEnabled;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.intersectionRatio >= 0.58 && !manualPauseRef.current && !document.hidden) {
+    let visible = false;
+    const syncPlayback = () => {
+      if (visible && !manualPauseRef.current && !document.hidden && !prefersReducedMotion) {
         media.muted = !audioEnabled;
         media.play().catch(() => {});
       } else {
         media.pause();
       }
-    }, { threshold: 0.58 });
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting && entry.intersectionRatio >= 0.3;
+      syncPlayback();
+    }, { threshold: [0, 0.3] });
     observer.observe(media);
-    const pauseWhenHidden = () => { if (document.hidden) media.pause(); };
-    document.addEventListener('visibilitychange', pauseWhenHidden);
-    return () => { observer.disconnect(); media.pause(); document.removeEventListener('visibilitychange', pauseWhenHidden); };
-  }, [audioEnabled, video]);
+    document.addEventListener('visibilitychange', syncPlayback);
+    return () => { observer.disconnect(); media.pause(); document.removeEventListener('visibilitychange', syncPlayback); };
+  }, [audioEnabled, video, prefersReducedMotion]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -560,6 +569,12 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
     if (network === 'instagram') return item.instagramUrl || fallbackUrl;
     return item.facebookUrl || item.instagramUrl || item.sourceUrl || fallbackUrl;
   };
+
+  const retryVideo = () => {
+    setFailedImages([]);
+    if (sourceUrl) fetchSocialPreview(sourceUrl, { refresh: true }).then(preview => { if (preview) setRemotePreview(preview); });
+  };
+  const videoRecovery = <SocialVideoFallback embed={embeddedVideo} sourceUrl={sourceUrl || videoCandidates[0]} image={image} title={item.title} onImageError={handleImageError} onRetry={retryVideo} />;
 
   const getNetworkTarget = (network) => {
     if (network === 'instagram') return item.instagramUrl || 'https://www.instagram.com/';
@@ -785,7 +800,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
           }}>{videoPaused ? <Play size={18} /> : <Pause size={18} />}</button>
           <button aria-label={audioEnabled ? 'Silenciar video' : 'Activar sonido del video'} aria-pressed={audioEnabled} onClick={toggleAudio}>{audioEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>
         </div>
-      </> : image ? <img src={image} alt={item.title} loading="lazy" onError={handleImageError} /> : <SocialCoverFallback item={item} platform={socialPlatform} />}
+      </> : expectsVideo ? videoRecovery : image ? <img src={image} alt={item.title} loading="lazy" onError={handleImageError} /> : <SocialCoverFallback item={item} platform={socialPlatform} />}
       controls={video && <div className="social-video-timeline">
         <input type="range" min="0" max={videoDuration || 0} step="0.1" value={Math.min(videoTime, videoDuration || 0)} onChange={seekVideo} disabled={!videoDuration} aria-label="Avanzar o retroceder el video" aria-valuetext={`${formatVideoTime(videoTime)} de ${formatVideoTime(videoDuration)}`} />
         <span>{formatVideoTime(videoTime)} / {formatVideoTime(videoDuration)}</span>
@@ -851,7 +866,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
               <span>{audioEnabled ? 'Sonido' : 'Activar sonido'}</span>
             </button>
           </>
-        ) : image ? (
+        ) : expectsVideo ? videoRecovery : image ? (
           <>
             <img src={image} alt={item.title} onError={handleImageError} loading="lazy" />
             <div className="content-media-overlay" />

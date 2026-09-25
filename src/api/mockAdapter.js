@@ -20,6 +20,7 @@ import {
   weeklyActivity,
 } from '../data/mockData';
 import { ApiError } from './httpClient';
+import { missionWeekStart } from '../utils/missionWeek';
 
 const delay = Number(import.meta.env.VITE_MOCK_LATENCY_MS || 120);
 
@@ -220,22 +221,12 @@ function getMockUserShareRows(user) {
 
 function getMockMissionProgress(mission, user) {
   const shares = getMockUserShareRows(user);
-  const today = new Date().toISOString().slice(0, 10);
-  const weekAgo = Date.now() - (7 * 86400000);
-  const todayShares = shares.filter((item) => String(item.created_at || '').slice(0, 10) === today).length;
-  const weeklyShares = shares.filter((item) => {
+  const start = missionWeekStart().getTime();
+  const progress = shares.filter((item) => {
     const time = new Date(item.created_at || 0).getTime();
-    return Number.isFinite(time) && time >= weekAgo;
+    const publication = state.contentItems.find(post => String(post.id) === String(item.publicacion_id || item.publication_id));
+    return Number.isFinite(time) && time >= start && time < start + 7 * 86400000 && publication?.coordination === mission.coordinationId;
   }).length;
-
-  let progress = 0;
-  if (mission.id === 'm1') progress = todayShares;
-  if (mission.id === 'm2') progress = todayShares;
-  if (mission.id === 'm3') progress = isProfileComplete(user) ? 1 : 0;
-  if (mission.id === 'm4') progress = weeklyShares;
-  if (mission.id === 'm5') progress = Number(user?.streak || 0);
-  if (mission.id === 'm6') progress = shares.some((item) => item.verification_status === 'verified' || item.verification_status === 'opened') ? 1 : 0;
-  if (mission.id === 'm7') progress = Number(user?.xp || 0) >= 1000 ? 1 : 0;
 
   const cappedProgress = Math.min(Math.max(progress, 0), Number(mission.goal || 1));
   const status = cappedProgress >= Number(mission.goal || 1)
@@ -335,7 +326,7 @@ export function createMockApi() {
           schemaMetrics,
           weeklyActivity,
           regionActivity,
-          missions: missions.map((mission) => getMockMissionProgress(mission, user)).filter((mission) => mission.type === 'daily'),
+          missions: missions.map((mission) => getMockMissionProgress(mission, user)).filter((mission) => mission.type === 'weekly'),
           topUsers: [...state.users].sort((a, b) => b.xp - a.xp),
           regionalUsers: [...state.users].filter((item) => item.region === user.region).sort((a, b) => b.xp - a.xp),
           badges: badges.filter((badge) => user.badges?.includes(badge.id)),

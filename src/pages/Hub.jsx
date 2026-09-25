@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Filter, Loader2, Search, SquarePen, X } from 'lucide-react';
 import ContentCard from '../components/content/ContentCard';
 import { api } from '../api';
@@ -10,11 +10,13 @@ import './social-feed.css';
 
 export default function Hub() {
   const currentUser = useAppStore(state => state.currentUser);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState('');
-  const [coordination, setCoordination] = useState('');
+  const coordination = searchParams.get('coordinacion') || '';
+  const setCoordination = (value) => setSearchParams(params => { if (value) params.set('coordinacion', value); else params.delete('coordinacion'); return params; }, { replace: true });
   const [region, setRegion] = useState('');
   const [sort, setSort] = useState('Recientes');
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(Boolean(coordination));
   const [data, setData] = useState({ items: [], coordinations: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

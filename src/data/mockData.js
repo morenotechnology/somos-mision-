@@ -173,15 +173,12 @@ export const badges = [
 ];
 
 // ─── MISSIONS ──────────────────────────────────────────────────────────────
-export const missions = [
-  { id: 'm1', type: 'daily',   title: 'Primera Misión del Día', description: 'Comparte 1 contenido oficial hoy',     xpReward: 50,   goal: 1,  unit: 'contenidos', icon: 'Zap',       status: 'pending', progress: 0 },
-  { id: 'm2', type: 'daily',   title: 'Mensajero Activo',       description: 'Comparte 3 contenidos hoy',            xpReward: 120,  goal: 3,  unit: 'contenidos', icon: 'Megaphone', status: 'pending', progress: 0 },
-  { id: 'm3', type: 'daily',   title: 'Perfil Completo',        description: 'Completa tu información de perfil',    xpReward: 80,   goal: 1,  unit: 'pasos',      icon: 'UserCheck', status: 'pending', progress: 0 },
-  { id: 'm4', type: 'weekly',  title: 'Semana de Impacto',      description: 'Comparte 10 contenidos esta semana',   xpReward: 500,  goal: 10, unit: 'contenidos', icon: 'Trophy',    status: 'pending', progress: 0 },
-  { id: 'm5', type: 'weekly',  title: 'Racha Semanal',          description: 'Mantén racha de 5 días seguidos',      xpReward: 300,  goal: 5,  unit: 'días',       icon: 'Flame',     status: 'pending', progress: 0 },
-  { id: 'm6', type: 'weekly',  title: 'Campaña Temática',       description: 'Participa en la campaña de la semana', xpReward: 400,  goal: 1,  unit: 'campañas',   icon: 'Megaphone', status: 'pending', progress: 0 },
-  { id: 'm7', type: 'special', title: 'Voz del Movimiento',     description: 'Sube al Top 50 del ranking nacional',  xpReward: 1000, goal: 1,  unit: 'logro',      icon: 'Crown',     status: 'pending', progress: 0 },
-];
+export const missions = coordinations.filter(item => ['c1', 'c3', 'c9', 'c12'].includes(item.id)).map(item => ({
+  id: `weekly-${item.id}`, type: 'weekly', title: item.name,
+  description: `Comparte 1 publicación de ${item.name} esta semana.`,
+  coordinationId: item.id, xpReward: 140, goal: 1, unit: 'publicación',
+  icon: item.icon, status: 'pending', progress: 0,
+}));
 
 // ─── USERS — internal app adapter (derived from perfiles for the UI) ───────
 const baseUsers = [

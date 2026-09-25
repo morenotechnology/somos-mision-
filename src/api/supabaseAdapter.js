@@ -2,6 +2,7 @@ import { ApiError } from './httpClient';
 import { hasSupabaseEnv, supabase } from './supabaseClient';
 import { completeCommentAncestry } from '../utils/commentThreads';
 import { cleanProfileContact, profileContact } from '../utils/profileContact';
+import { normalizeMission } from '../utils/missionWeek';
 
 // Contact details are fetched exclusively through owner/admin-authorized RPCs.
 const publicProfileSelect = `
@@ -473,25 +474,6 @@ function filterPublicationsByRegion(items, regionId) {
   });
 }
 
-function normalizeMission(row, completedIds = [], progressMap = new Map()) {
-  const autoProgress = progressMap.get(row.id);
-  const done = completedIds.includes(row.id) || autoProgress?.status === 'completed';
-  const defaultStatus = row.default_status === 'locked' ? 'locked' : 'pending';
-  const progress = autoProgress?.progress ?? (done ? row.goal : 0);
-  return {
-    id: row.id,
-    type: row.type,
-    title: row.title,
-    description: row.description,
-    xpReward: row.xp_reward,
-    goal: row.goal,
-    unit: row.unit,
-    icon: row.icon,
-    status: done ? 'completed' : (autoProgress?.status || defaultStatus),
-    progress,
-  };
-}
-
 function normalizeGlobalMetrics(row) {
   return {
     totalEmbajadores: Number(row?.total_embajadores || 0),
@@ -772,9 +754,9 @@ async function getProfileBundle(client, profileId, authUser = null) {
 
 async function getAutoMissionProgressMap(client) {
   const result = await client.rpc('sync_my_mission_progress');
-  if (result.error) return new Map();
+  const rows = unwrap(result, 'No se pudo actualizar el progreso semanal. Intenta de nuevo.');
 
-  return new Map((result.data || []).map((row) => [
+  return new Map((rows || []).map((row) => [
     row.mission_id,
     {
       progress: Number(row.progress || 0),
@@ -1417,10 +1399,10 @@ export function createSupabaseApi() {
       async list(params = {}) {
         let sessionBundle = await fetchCurrentSessionBundle(client);
         const rows = unwrap(
-          await client.from('missions').select('*').eq('active', true).order('order_index'),
+          await client.rpc('get_weekly_missions'),
           'No se pudieron cargar las misiones'
         );
-        const missionProgress = await getAutoMissionProgressMap(client).catch(() => new Map());
+        const missionProgress = await getAutoMissionProgressMap(client);
         if (missionProgress.size) {
           sessionBundle = await fetchCurrentSessionBundle(client).catch(() => sessionBundle);
         }
