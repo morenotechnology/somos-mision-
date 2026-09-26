@@ -839,7 +839,7 @@ function PreviewPost({ item, index, onLogin, onRegister, locked = false }) {
             aria-label={`Vista previa de video: ${title}`}
             onError={handleVideoError}
           />
-        ) : embeddedVideo && !locked ? <SocialVideoFallback embed={embeddedVideo} sourceUrl={item.sourceUrl} image={image} title={title} onImageError={handleImageError} onRetry={() => {
+        ) : embeddedVideo && !locked ? <SocialVideoFallback autoPlay embed={embeddedVideo} sourceUrl={item.sourceUrl} image={image} title={title} onImageError={handleImageError} onRetry={() => {
           setFailedImages([]);
           fetchPublicationPreview([item.sourceUrl, item.facebookUrl, item.instagramUrl], { refresh: true }).then(preview => { if (preview) setRemotePreview(preview); });
         }} /> : image ? (

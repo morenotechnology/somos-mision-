@@ -10,6 +10,7 @@ import CommentThreads from './CommentThreads';
 import SocialPost from './SocialPost';
 import SocialVideoFallback from './SocialVideoFallback';
 import { archivedPublicationCover } from '../../utils/publicationCoverArchive';
+import { observeVideoAutoplay } from '../../utils/videoAutoplay';
 import '../../pages/social-feed.css';
 import { commentDescendants } from '../../utils/commentThreads';
 import toast from 'react-hot-toast';
@@ -249,7 +250,6 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
   const { shareContent, sharedContent, currentUser } = useAppStore();
   const prefersReducedMotion = useReducedMotion();
   const videoRef = useRef(null);
-  const manualPauseRef = useRef(false);
   const dialogComments = immersive || socialFeed;
   const shareActionRef = useRef(null);
   const commentInputRef = useRef(null);
@@ -330,31 +330,9 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
 
   useEffect(() => {
     const media = videoRef.current;
-    if (!media || !video || typeof IntersectionObserver === 'undefined') return undefined;
-    let visible = false;
-    const syncPlayback = () => {
-      if (visible && !manualPauseRef.current && !document.hidden && !prefersReducedMotion) {
-        media.play().catch(() => {});
-      } else {
-        media.pause();
-      }
-    };
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting && entry.intersectionRatio >= 0.3;
-      syncPlayback();
-    }, { threshold: [0, 0.3] });
-    observer.observe(media);
-    document.addEventListener('visibilitychange', syncPlayback);
-    return () => { observer.disconnect(); media.pause(); document.removeEventListener('visibilitychange', syncPlayback); };
+    if (!media || !video) return undefined;
+    return observeVideoAutoplay(media, { reducedMotion: Boolean(prefersReducedMotion) });
   }, [video, prefersReducedMotion]);
-
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.pause();
-    }
-    manualPauseRef.current = false;
-  }, [video]);
 
   useEffect(() => {
     if (!shareMenuOpen) return undefined;
@@ -572,7 +550,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
     setFailedImages([]);
     if (sourceUrl) fetchPublicationPreview([sourceUrl, item.facebookUrl, item.instagramUrl], { refresh: true }).then(preview => { if (preview) setRemotePreview(preview); });
   };
-  const videoRecovery = <SocialVideoFallback embed={embeddedVideo} sourceUrl={sourceUrl || videoCandidates[0]} image={image} title={item.title} onImageError={handleImageError} onRetry={retryVideo} />;
+  const videoRecovery = <SocialVideoFallback autoPlay embed={embeddedVideo} sourceUrl={sourceUrl || videoCandidates[0]} image={image} title={item.title} onImageError={handleImageError} onRetry={retryVideo} />;
 
   const getNetworkTarget = (network) => {
     if (network === 'instagram') return item.instagramUrl || 'https://www.instagram.com/';
@@ -787,8 +765,6 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
           onDurationChange={event => setVideoDuration(Number(event.currentTarget.duration) || 0)}
           onTimeUpdate={event => setVideoTime(event.currentTarget.currentTime)}
           onVolumeChange={event => setAudioEnabled(!event.currentTarget.muted)}
-          onPlay={() => { manualPauseRef.current = false; }}
-          onPause={() => { manualPauseRef.current = true; }}
           onError={event => { const broken = event.currentTarget.currentSrc || event.currentTarget.src; setFailedImages(current => [...new Set([...current, broken])]); }}
         />
       </> : expectsVideo ? videoRecovery : image ? <img src={image} alt={item.title} loading="lazy" onError={handleImageError} /> : <SocialCoverFallback item={item} platform={socialPlatform} />}

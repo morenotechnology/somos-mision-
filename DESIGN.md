@@ -165,3 +165,7 @@ Los radios campaign-5000-pill, film, band y menu pertenecen solo a esta campaña
 - Do mantener Archivo Black/Work Sans autoalojadas y documentar la firma JPEG/screen como tal, sin fingir alfa.
 - Don't imponer la composición de campaña, sus fuentes o su paleta a otras rutas.
 - Don't convertir capturas, evidencia anterior o un estado local en un pase de revisión, una cifra real fija o prueba de despliegue.
+
+### Adaptación de escritorio del home — 2026-09-25
+
+La petición de hacer el home responsive en ordenador sustituye la columna única de campaña solo a partir de 960px. Cabecera y cuerpo comparten un máximo de 1280px y márgenes de 40px; navegación horizontal visible, título/invitación y acciones a la izquierda, carrusel 16:9 y comunidad a la derecha. Los tamaños de controles y tipografía quedan acotados para no escalar como una captura móvil. El video, textos, assets y datos conectados no cambian. Entre 760 y 959px se conserva una columna de hasta 680px, con acciones lado a lado; en móvil se conserva el orden y la composición aprobada. El fondo de escritorio usa cover en lugar de estirar el arte vertical.

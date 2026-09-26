@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeSocialUrl, normalizePreview } from './socialMedia.js';
+import { facebookVideoPermalink, normalizeSocialUrl, normalizePreview } from './socialMedia.js';
 import { getSocialVideoEmbed, fetchPublicationPreview } from './socialPreview.js';
 import handler, { resolvePreview } from '../../api/social-preview.js';
 import { archivedPublicationCover } from './publicationCoverArchive.js';
@@ -38,6 +38,38 @@ test('server shares cached previews, bounds refreshes, and expires signed media'
   assert.equal(calls, 1); assert.deepEqual(a, b);
   await resolvePreview(url, {fetcher, refresh: true, now: 2000}); assert.equal(calls, 1);
   await resolvePreview(url, {fetcher, now: 1000000}); assert.equal(calls, 2);
+});
+
+test('Facebook video permalinks accept real IDs and reject unrelated/unsafe URLs', () => {
+  assert.equal(facebookVideoPermalink('https://www.facebook.com/watch/?v=1210710887884576'), 'https://www.facebook.com/reel/1210710887884576/');
+  assert.equal(facebookVideoPermalink('https://www.facebook.com/page/videos/choco/1210710887884576/'), 'https://www.facebook.com/reel/1210710887884576/');
+  assert.equal(facebookVideoPermalink('https://web.facebook.com/reel/123/'), 'https://www.facebook.com/reel/123/');
+  for (const url of ['https://evil.example/watch/?v=123','https://www.facebook.com/posts/123','https://www.facebook.com/watch/?v=not-a-video','https://www.instagram.com/reel/123/']) assert.equal(facebookVideoPermalink(url),'');
+});
+
+test('shared Facebook videos resolve their canonical playable file, not just the cover', async () => {
+  const requested = [];
+  const fetcher = async input => {
+    requested.push(new URL(input).searchParams.get('url'));
+    return {ok:true,json:async()=>({status:'success',data:requested.length === 1
+      ? {url:'https://www.facebook.com/watch/?v=7654321',image:{url:'https://cdn.example/cover.jpg'}}
+      : {url:'https://www.facebook.com/reel/7654321/',video:{url:'https://cdn.example/choco.mp4',type:'mp4'}}})};
+  };
+  const result = await resolvePreview('https://www.facebook.com/share/v/autoplayRegression/',{fetcher});
+  assert.deepEqual(requested,['https://www.facebook.com/share/v/autoplayRegression/','https://www.facebook.com/reel/7654321/']);
+  assert.equal(result.videoUrl,'https://cdn.example/choco.mp4');
+  assert.equal(result.imageUrl,'https://cdn.example/cover.jpg');
+});
+
+test('canonical video lookup failure preserves the original cover and embed', async () => {
+  let calls = 0;
+  const fetcher = async()=> {
+    if (++calls === 2) throw new Error('Unavailable');
+    return {ok:true,json:async()=>({status:'success',data:{url:'https://www.facebook.com/watch/?v=654321',image:{url:'https://cdn.example/cover.jpg'}}})};
+  };
+  const result = await resolvePreview('https://www.facebook.com/share/v/autoplayFailure/',{fetcher});
+  assert.equal(result.imageUrl,'https://cdn.example/cover.jpg');
+  assert.equal(result.sourceUrl,'https://www.facebook.com/watch/?v=654321');
 });
 
 test('missing Facebook cover falls back to linked Instagram without losing the video', async () => {

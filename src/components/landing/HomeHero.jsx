@@ -100,7 +100,11 @@ export default function HomeHero({ onRegister, onLogin }) {
 
   return (
     <section className="mission-home-hero" id="hero" aria-labelledby="home-title">
-      <div className="campaign-body">
+      <div className="campaign-body" ref={carouselRef} role="region" aria-roledescription="carrusel" aria-label="Bienvenida a la red"
+        onKeyDown={(event) => {
+          if (event.target.tagName === 'INPUT') return;
+          if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); selectSlide(slide + (event.key === 'ArrowRight' ? 1 : -1)); }
+        }}>
         <div className="campaign-prelude">
           <p>Unidos por el evangelio<br />en las naciones</p>
           <div className="campaign-signature"><img src="/media/campaign-5000/signature.jpg" width="512" height="384" alt="Somos Misión Colombia" /></div>
@@ -110,11 +114,7 @@ export default function HomeHero({ onRegister, onLogin }) {
           <h1 id="home-title">5000 AMIGOS</h1>
           <p className="campaign-invitation">Súmate a la obra. Juntos podemos llevar<br className="campaign-desktop-break" /> el evangelio más lejos.</p>
         </div>
-        <div className="campaign-carousel" ref={carouselRef} role="region" aria-roledescription="carrusel" aria-label="Bienvenida a la red"
-          onKeyDown={(event) => {
-            if (event.target.tagName === 'INPUT') return;
-            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); selectSlide(slide + (event.key === 'ArrowRight' ? 1 : -1)); }
-          }}>
+        <div className="campaign-carousel">
           <div className="campaign-slides"
             onTouchStart={(event) => { touchStart.current = event.target.closest('button, input, a') ? null : { x: event.touches[0].clientX, y: event.touches[0].clientY }; }}
             onTouchEnd={(event) => {
@@ -159,6 +159,7 @@ export default function HomeHero({ onRegister, onLogin }) {
             </div>
           </div>
           {(videoError || playError) && slide === 0 && <p className="mission-film-error" role="status">{videoError ? 'No se pudo cargar el video.' : 'Toca reproducir para volver a intentarlo.'} <a href="/media/somos-mision-bienvenida.mp4" target="_blank" rel="noreferrer">Abrir video</a></p>}
+        </div>
           <div className="campaign-community" aria-live="polite" aria-atomic="true">
             <div className="campaign-count"><Users aria-hidden="true" /><div><strong>{Number.isFinite(count) ? count.toLocaleString('es-CO') : '—'}</strong><span>multiplicadores<br />activos</span></div></div>
             <div className="campaign-live"><Radio aria-hidden="true" /><span>{countError ? 'Cifra' : 'Actualización'}<br /><small><i className={connected ? 'is-live' : ''} />{countError ? 'no disponible' : !community ? 'conectando…' : connected ? 'en vivo' : 'automática'}</small></span></div>
@@ -172,7 +173,6 @@ export default function HomeHero({ onRegister, onLogin }) {
             <p>Noticias<br />Testimonios<br />Avances <span aria-hidden="true">—</span></p>
           </div>
           <p className="campaign-status" role="status" aria-live="polite">Diapositiva {slide + 1} de 3: {slideNames[slide]}</p>
-        </div>
         <p className="campaign-outreach">Más iglesias<br />Más misioneros<br />Más naciones</p>
       </div>
     </section>

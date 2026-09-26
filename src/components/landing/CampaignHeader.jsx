@@ -5,8 +5,16 @@ const communityUrl = 'https://chat.whatsapp.com/G2Al7tjnAao6k1I4swB5mv?s=hd&p=i&
 
 export default function CampaignHeader({ onLogin, onRegister, onLearnMore }) {
   const [open, setOpen] = useState(false);
+  const [desktop, setDesktop] = useState(false);
   const headerRef = useRef(null);
   const buttonRef = useRef(null);
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 960px)');
+    const update = () => { setDesktop(query.matches); setOpen(false); };
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
   useEffect(() => {
     if (!open) return undefined;
     const outside = (event) => { if (!headerRef.current?.contains(event.target)) setOpen(false); };
@@ -23,7 +31,7 @@ export default function CampaignHeader({ onLogin, onRegister, onLearnMore }) {
         <span><strong>Misiones</strong><span>Colombia</span></span>
       </a>
       <button className="campaign-menu-toggle" ref={buttonRef} type="button" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="campaign-menu" aria-label={open ? 'Cerrar menú' : 'Abrir menú'}>{open ? <X /> : <Menu />}</button>
-      <nav id="campaign-menu" className="campaign-menu" aria-label="Navegación principal" hidden={!open}>
+      <nav id="campaign-menu" className="campaign-menu" aria-label="Navegación principal" hidden={!open && !desktop}>
         <button type="button" onClick={() => choose(onLogin)}>Iniciar sesión</button>
         <button type="button" onClick={() => choose(onLearnMore)}>Ver más</button>
         <a href={communityUrl} target="_blank" rel="noreferrer" onClick={() => setOpen(false)}>Comunidad WhatsApp ↗</a>

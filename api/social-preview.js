@@ -1,4 +1,4 @@
-import { normalizePreview, normalizeSocialUrl } from '../src/utils/socialMedia.js';
+import { facebookVideoPermalink, normalizePreview, normalizeSocialUrl } from '../src/utils/socialMedia.js';
 
 const cache = new Map();
 const pending = new Map();
@@ -12,11 +12,24 @@ export async function resolvePreview(url, { refresh = false, fetcher = fetch, no
   if (saved && now - saved.time < (refresh ? 60000 : TTL)) return saved.data;
   if (pending.has(key)) return pending.get(key);
   const request = (async () => {
-    const response = await fetcher(`https://api.microlink.io/?url=${encodeURIComponent(key)}&screenshot=false&video=true&audio=false`, { signal: AbortSignal.timeout(15000) });
-    if (!response.ok) throw new Error('La red social no entregó la vista previa');
-    const payload = await response.json();
-    if (payload.status !== 'success' || !payload.data) throw new Error('Vista previa no disponible');
-    const data = normalizePreview(payload.data, key);
+    const read = async target => {
+      const response = await fetcher(`https://api.microlink.io/?url=${encodeURIComponent(target)}&screenshot=false&video=true&audio=false`, { signal: AbortSignal.timeout(12000) });
+      if (!response.ok) throw new Error('La red social no entregó la vista previa');
+      const payload = await response.json();
+      if (payload.status !== 'success' || !payload.data) throw new Error('Vista previa no disponible');
+      return normalizePreview(payload.data, target);
+    };
+    const target = facebookVideoPermalink(key) || key;
+    let data = await read(target);
+    const canonicalVideo = facebookVideoPermalink(data.sourceUrl);
+    if (!data.videoUrl && canonicalVideo && canonicalVideo !== target) {
+      // Resolve shared links once, then request the actual public video instead
+      // of caching its /watch thumbnail as if it were the complete preview.
+      try {
+        const media = await read(canonicalVideo);
+        data = { ...data, imageUrl: media.imageUrl || data.imageUrl, videoUrl: media.videoUrl || data.videoUrl, videoType: media.videoType || data.videoType, sourceUrl: media.sourceUrl || data.sourceUrl };
+      } catch { /* Keep the real cover and the provider player if unavailable. */ }
+    }
     if (cache.size >= 500) cache.delete(cache.keys().next().value);
     cache.set(key, { time: now, data });
     return data;

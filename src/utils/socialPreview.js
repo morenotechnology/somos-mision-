@@ -25,7 +25,7 @@ export function getSocialVideoEmbed(value = '', isVideo = false) {
     if (!isVideo && !/(?:^|\/)(?:reel|videos|watch|share\/v)(?:\/|$)/i.test(url.pathname) && !url.searchParams.has('v') && host !== 'fb.watch') return null;
     const id = url.pathname.match(/\/reel\/(\d+)/)?.[1] || url.pathname.match(/\/videos\/(?:[^/]+\/)?(\d+)/)?.[1] || url.searchParams.get('v');
     const href = id ? `https://www.facebook.com/watch/?v=${encodeURIComponent(id)}` : url.href;
-    return { platform: 'Facebook', url: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(href)}&show_text=false&width=560&autoplay=true&allowfullscreen=true`, sourceUrl: url.href };
+    return { platform: 'Facebook', url: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(href)}&show_text=false&width=560&autoplay=true&mute=1&allowfullscreen=true`, sourceUrl: url.href };
   }
   if (host === 'instagram.com') {
     const match = url.pathname.match(/^\/(reel|reels|p|tv)\/([\w-]+)\/?/);
@@ -33,7 +33,7 @@ export function getSocialVideoEmbed(value = '', isVideo = false) {
   }
   if (['youtube.com', 'youtu.be'].includes(host)) {
     const id = host === 'youtu.be' ? url.pathname.slice(1) : url.searchParams.get('v') || url.pathname.match(/^\/(?:shorts|embed)\/([\w-]+)/)?.[1];
-    if (/^[\w-]{11}$/.test(id || '')) return { platform: 'YouTube', url: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1&controls=1`, sourceUrl: url.href };
+    if (/^[\w-]{11}$/.test(id || '')) return { platform: 'YouTube', url: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&playsinline=1&controls=1`, sourceUrl: url.href };
   }
   if (host === 'tiktok.com') {
     const id = url.pathname.match(/\/video\/(\d+)/)?.[1];
@@ -61,7 +61,7 @@ export async function fetchSocialPreview(sourceUrl = '', { refresh = false } = {
 
   const request = queued(async () => {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20000);
+    const timeout = setTimeout(() => controller.abort(), 27000);
     try {
       const response = await fetch(`/api/social-preview?url=${encodeURIComponent(cleanUrl)}${refresh ? '&refresh=1' : ''}`, { signal: controller.signal });
       if (!response.ok) throw new Error('No se pudo obtener la vista previa del enlace');

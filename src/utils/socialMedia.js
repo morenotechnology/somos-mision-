@@ -37,3 +37,15 @@ export function normalizePreview(data = {}, originalUrl = '') {
     sourceUrl: sourceUrl && !/^\/(?:$|(?:login|accounts|checkpoint|consent|privacy)(?:\/|$))/i.test(new URL(sourceUrl).pathname) ? sourceUrl : normalizeSocialUrl(originalUrl),
   };
 }
+// Facebook's /watch redirect may expose only a poster. The same public video ID
+// has a reel endpoint that also supplies its playable media metadata.
+export function facebookVideoPermalink(value = '') {
+  const normalized = normalizeSocialUrl(value);
+  if (!normalized) return '';
+  const url = new URL(normalized);
+  if (!['www.facebook.com', 'facebook.com', 'www.fb.com', 'fb.com'].includes(url.hostname)) return '';
+  const id = url.pathname.match(/^\/reel\/(\d+)(?:\/|$)/)?.[1]
+    || url.pathname.match(/\/videos\/(?:[^/]+\/)?(\d+)(?:\/|$)/)?.[1]
+    || (/^\/(?:watch\/?|video\.php)$/.test(url.pathname) && url.searchParams.get('v'));
+  return /^\d+$/.test(id || '') ? `https://www.facebook.com/reel/${id}/` : '';
+}
