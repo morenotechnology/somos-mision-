@@ -56,6 +56,14 @@
 .social-video-recovery-actions > :is(a, button):hover { text-decoration: underline; }
 .social-video-recovery :focus-visible { outline: 2px solid #f5d04a; outline-offset: 3px; }
 .ln-preview-post-media.has-embedded-video .social-video-recovery { position: relative; z-index: 3; }
+/* An interactive preview cannot sit behind the caption/gradient layer. */
+.ln-preview-section .ln-preview-post.has-player { height: auto; min-height: 0; flex: 0 0 auto; }
+.ln-preview-post.has-player .ln-preview-post-media { position: relative; inset: auto; height: auto; z-index: 0; }
+.ln-preview-post.has-player .ln-preview-post-video { position: relative; height: auto; max-height: 520px; object-fit: contain; }
+.ln-preview-post.has-player .ln-preview-post-shade,
+.ln-preview-post.has-player .ln-preview-post-topline { display: none; }
+.ln-preview-post.has-player .ln-preview-post-copy { position: relative; inset: auto; padding: 24px 90px 24px 24px; }
+.ln-preview-post.has-player .ln-preview-post-rail { right: 16px; bottom: 24px; }
 .ln-preview-post-media.has-embedded-video .ln-preview-post-shade,
 .ln-preview-post-media.has-embedded-video .ln-preview-post-topline { pointer-events: none; }
 .social-post-details { padding: 0 2px; }

@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { CheckCircle2, Copy, ExternalLink, Heart, MessageCircle, PencilLine, Send, Share2, Smartphone, Star, Trash2, Volume2, VolumeX, X, Zap, Pause, Play } from 'lucide-react';
+import { CheckCircle2, Copy, ExternalLink, Heart, MessageCircle, PencilLine, Send, Share2, Smartphone, Star, Trash2, Volume2, VolumeX, X, Zap } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { api } from '../../api';
-import { fetchSocialPreview, getSocialPlatform, getSocialVideoEmbed, isDirectVideoUrl, isPlaceholderImage } from '../../utils/socialPreview';
+import { fetchPublicationPreview, getSocialPlatform, getSocialVideoEmbed, isDirectVideoUrl, isPlaceholderImage } from '../../utils/socialPreview';
 import SocialCoverFallback from './SocialCoverFallback';
 import CommentThreads from './CommentThreads';
 import SocialPost from './SocialPost';
 import SocialVideoFallback from './SocialVideoFallback';
+import { archivedPublicationCover } from '../../utils/publicationCoverArchive';
 import '../../pages/social-feed.css';
 import { commentDescendants } from '../../utils/commentThreads';
 import toast from 'react-hot-toast';
@@ -249,7 +250,6 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
   const prefersReducedMotion = useReducedMotion();
   const videoRef = useRef(null);
   const manualPauseRef = useRef(false);
-  const [videoPaused, setVideoPaused] = useState(true);
   const dialogComments = immersive || socialFeed;
   const shareActionRef = useRef(null);
   const commentInputRef = useRef(null);
@@ -292,16 +292,16 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
     item.instagramUrl ? { network: 'instagram', label: 'Instagram', url: item.instagramUrl } : null,
   ].filter(Boolean);
 
-  const imageCandidates = [item.imageUrl, remotePreview?.imageUrl].filter((candidate) => !isPlaceholderImage(candidate) && !isDirectVideoUrl(candidate));
+  const imageCandidates = [remotePreview?.imageUrl, archivedPublicationCover(item.sourceUrl || item.facebookUrl), item.imageUrl].filter((candidate) => !isPlaceholderImage(candidate) && !isDirectVideoUrl(candidate));
   const image = imageCandidates.find((candidate) => !failedImages.includes(candidate)) || '';
   const videoCandidates = [
     item.videoUrl,
     item.video_url,
     item.mediaUrl,
     item.media_url,
-    String(item.format || '').toLowerCase() === 'video' ? item.imageUrl : '',
-    remotePreview?.videoUrl,
+    item.imageUrl,
   ].filter(isDirectVideoUrl);
+  if (remotePreview?.videoUrl) videoCandidates.unshift(remotePreview.videoUrl);
   const video = videoCandidates.find((candidate) => !failedImages.includes(candidate)) || '';
   const markedVideo = String(item.format || '').toLowerCase() === 'video';
   const sourceUrl = item.sourceUrl || item.facebookUrl || item.instagramUrl || '';
@@ -319,23 +319,21 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
   }, [item.id, item.likes, item.commentsCount, item.likedByMe]);
 
   useEffect(() => {
-    if (!sourceUrl || video || (!expectsVideo && !isPlaceholderImage(item.imageUrl))) return undefined;
+    if (!sourceUrl) return undefined;
     let active = true;
-    fetchSocialPreview(sourceUrl)
+    fetchPublicationPreview([sourceUrl, item.facebookUrl, item.instagramUrl])
       .then((preview) => {
         if (active && preview) setRemotePreview(preview);
       });
     return () => { active = false; };
-  }, [item.imageUrl, sourceUrl, video, expectsVideo]);
+  }, [sourceUrl, item.facebookUrl, item.instagramUrl]);
 
   useEffect(() => {
     const media = videoRef.current;
     if (!media || !video || typeof IntersectionObserver === 'undefined') return undefined;
-    media.muted = !audioEnabled;
     let visible = false;
     const syncPlayback = () => {
       if (visible && !manualPauseRef.current && !document.hidden && !prefersReducedMotion) {
-        media.muted = !audioEnabled;
         media.play().catch(() => {});
       } else {
         media.pause();
@@ -348,7 +346,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
     observer.observe(media);
     document.addEventListener('visibilitychange', syncPlayback);
     return () => { observer.disconnect(); media.pause(); document.removeEventListener('visibilitychange', syncPlayback); };
-  }, [audioEnabled, video, prefersReducedMotion]);
+  }, [video, prefersReducedMotion]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -558,8 +556,8 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
     if (brokenImage) {
       setFailedImages((current) => current.includes(brokenImage) ? current : [...current, brokenImage]);
     }
-    if (!item.sourceUrl || remotePreview?.imageUrl) return;
-    fetchSocialPreview(item.sourceUrl).then((preview) => {
+    if (!sourceUrl || remotePreview?.imageUrl === brokenImage) return;
+    fetchPublicationPreview([sourceUrl, item.facebookUrl, item.instagramUrl], { refresh: true }).then((preview) => {
       if (preview?.imageUrl) setRemotePreview(preview);
     });
   };
@@ -572,7 +570,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
 
   const retryVideo = () => {
     setFailedImages([]);
-    if (sourceUrl) fetchSocialPreview(sourceUrl, { refresh: true }).then(preview => { if (preview) setRemotePreview(preview); });
+    if (sourceUrl) fetchPublicationPreview([sourceUrl, item.facebookUrl, item.instagramUrl], { refresh: true }).then(preview => { if (preview) setRemotePreview(preview); });
   };
   const videoRecovery = <SocialVideoFallback embed={embeddedVideo} sourceUrl={sourceUrl || videoCandidates[0]} image={image} title={item.title} onImageError={handleImageError} onRetry={retryVideo} />;
 
@@ -782,29 +780,18 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
       onComments={loadComments}
       originalLinks={originalLinks.length ? originalLinks : item.sourceUrl ? [{ network: 'original', label: socialPlatform.label, url: item.sourceUrl }] : []}
       media={video ? <>
-        <video ref={videoRef} src={video} poster={image || undefined} muted={!audioEnabled} loop playsInline preload="metadata"
+        <video ref={videoRef} src={video} poster={image || undefined} muted={!audioEnabled} controls loop playsInline preload="metadata"
           onLoadStart={() => { setVideoTime(0); setVideoDuration(0); setAudioEnabled(false); }}
           aria-label={`Video: ${item.title}`}
           onLoadedMetadata={event => setVideoDuration(Number(event.currentTarget.duration) || 0)}
           onDurationChange={event => setVideoDuration(Number(event.currentTarget.duration) || 0)}
           onTimeUpdate={event => setVideoTime(event.currentTarget.currentTime)}
-          onPlay={() => setVideoPaused(false)} onPause={() => setVideoPaused(true)}
+          onVolumeChange={event => setAudioEnabled(!event.currentTarget.muted)}
+          onPlay={() => { manualPauseRef.current = false; }}
+          onPause={() => { manualPauseRef.current = true; }}
           onError={event => { const broken = event.currentTarget.currentSrc || event.currentTarget.src; setFailedImages(current => [...new Set([...current, broken])]); }}
         />
-        <div className="social-video-buttons">
-          <button aria-label={videoPaused ? 'Reproducir video' : 'Pausar video'} onClick={() => {
-            const media = videoRef.current;
-            if (!media) return;
-            if (media.paused) { manualPauseRef.current = false; media.play().catch(() => toast.error('Toca el video para reproducirlo.')); }
-            else { manualPauseRef.current = true; media.pause(); }
-          }}>{videoPaused ? <Play size={18} /> : <Pause size={18} />}</button>
-          <button aria-label={audioEnabled ? 'Silenciar video' : 'Activar sonido del video'} aria-pressed={audioEnabled} onClick={toggleAudio}>{audioEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>
-        </div>
       </> : expectsVideo ? videoRecovery : image ? <img src={image} alt={item.title} loading="lazy" onError={handleImageError} /> : <SocialCoverFallback item={item} platform={socialPlatform} />}
-      controls={video && <div className="social-video-timeline">
-        <input type="range" min="0" max={videoDuration || 0} step="0.1" value={Math.min(videoTime, videoDuration || 0)} onChange={seekVideo} disabled={!videoDuration} aria-label="Avanzar o retroceder el video" aria-valuetext={`${formatVideoTime(videoTime)} de ${formatVideoTime(videoDuration)}`} />
-        <span>{formatVideoTime(videoTime)} / {formatVideoTime(videoDuration)}</span>
-      </div>}
       actions={<>
         <button type="button" onClick={handleReaction} className={social.likedByMe ? 'is-liked' : ''} disabled={socialLoading} aria-label={social.likedByMe ? 'Quitar me gusta' : 'Dar me gusta'} aria-pressed={social.likedByMe}><Heart size={26} fill={social.likedByMe ? 'currentColor' : 'none'} /><span>{formatCount(social.likesCount)}</span></button>
         <button type="button" onClick={loadComments} aria-label="Abrir comentarios" aria-expanded={commentsOpen}><MessageCircle size={26} /><span>{formatCount(social.commentsCount)}</span></button>
@@ -842,6 +829,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
               src={video}
               poster={image || undefined}
               muted={!audioEnabled}
+              controls
               loop
               autoPlay
               playsInline
@@ -876,7 +864,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
         )}
 
         <div className="content-chip-row">
-          <span className="content-format-chip">{item.format}</span>
+          <span className="content-format-chip">{expectsVideo ? 'video' : item.format}</span>
           {item.sourceUrl && (
             <span className="content-preview-source-chip">{socialPlatform.label} · Vista previa</span>
           )}

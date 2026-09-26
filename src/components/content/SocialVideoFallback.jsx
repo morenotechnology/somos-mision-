@@ -32,7 +32,8 @@ export default function SocialVideoFallback({ embed, sourceUrl, image, title, on
       {embed ? <button className="social-video-open" onClick={openPlayer} aria-label={`Reproducir video: ${title}`}><Play size={28} fill="currentColor" /><span>Reproducir video</span></button> : <p>No se pudo cargar este video.</p>}
     </div>}
     <div className="social-video-recovery-actions">
-      <button onClick={() => { onRetry(); setAttempt(value => value + 1); if (embed) openPlayer(); }}><RotateCcw size={14} />Reintentar</button>
+      {opened && <button type="button" onClick={() => setOpened(false)}>Cerrar reproductor</button>}
+      <button type="button" onClick={() => { onRetry(); setAttempt(value => value + 1); if (embed) openPlayer(); }}><RotateCcw size={14} />Actualizar video</button>
       {sourceUrl && <a href={sourceUrl} target="_blank" rel="noreferrer">Ver en {embed?.platform || 'el sitio original'}<ExternalLink size={14} /></a>}
     </div>
   </div>;

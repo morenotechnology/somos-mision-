@@ -21,7 +21,8 @@ import {
 } from 'lucide-react';
 import { api } from '../api';
 import { formatNumber } from '../utils/helpers';
-import { fetchSocialPreview, getSocialPlatform, getSocialVideoEmbed, isDirectVideoUrl, isPlaceholderImage } from '../utils/socialPreview';
+import { fetchPublicationPreview, getSocialPlatform, getSocialVideoEmbed, isDirectVideoUrl, isPlaceholderImage } from '../utils/socialPreview';
+import { archivedPublicationCover } from '../utils/publicationCoverArchive';
 import SocialVideoFallback from '../components/content/SocialVideoFallback';
 import './social-feed.css';
 import BrandLogo from '../components/common/BrandLogo';
@@ -774,31 +775,31 @@ function PreviewPost({ item, index, onLogin, onRegister, locked = false }) {
   const embeddedVideo = [remotePreview?.sourceUrl, item.sourceUrl, item.facebookUrl, item.instagramUrl].map(url => getSocialVideoEmbed(url, item.format === 'video')).find(Boolean);
 
   useEffect(() => {
-    if (!item.sourceUrl || (!isPlaceholderImage(item.imageUrl) && String(item.format || '').toLowerCase() !== 'video' && !getSocialVideoEmbed(item.sourceUrl))) return undefined;
+    if (!item.sourceUrl || locked) return undefined;
     let active = true;
     setPreviewLoading(true);
-    fetchSocialPreview(item.sourceUrl)
+    fetchPublicationPreview([item.sourceUrl, item.facebookUrl, item.instagramUrl])
       .then((preview) => {
         if (active && preview) setRemotePreview(preview);
       })
       .finally(() => active && setPreviewLoading(false));
     return () => { active = false; };
-  }, [item.imageUrl, item.sourceUrl, item.format]);
+  }, [item.sourceUrl, item.facebookUrl, item.instagramUrl, locked]);
 
   useEffect(() => {
     setFailedImages([]);
   }, [item.id, item.imageUrl, item.sourceUrl]);
 
-  const imageCandidates = [item.imageUrl, remotePreview?.imageUrl].filter((candidate) => !isPlaceholderImage(candidate) && !isDirectVideoUrl(candidate));
+  const imageCandidates = [remotePreview?.imageUrl, archivedPublicationCover(item.sourceUrl || item.facebookUrl), item.imageUrl].filter((candidate) => !isPlaceholderImage(candidate) && !isDirectVideoUrl(candidate));
   const image = imageCandidates.find((candidate) => !failedImages.includes(candidate)) || '';
   const videoCandidates = [
     item.videoUrl,
     item.video_url,
     item.mediaUrl,
     item.media_url,
-    String(item.format || '').toLowerCase() === 'video' ? item.imageUrl : '',
-    remotePreview?.videoUrl,
+    item.imageUrl,
   ].filter(isDirectVideoUrl);
+  if (remotePreview?.videoUrl) videoCandidates.unshift(remotePreview.videoUrl);
   const video = videoCandidates.find((candidate) => !failedImages.includes(candidate)) || '';
   const title = item.title || remotePreview?.title || 'Una nueva historia de misión';
   const description = item.description || remotePreview?.description || 'Conoce las historias, noticias y acciones que están moviendo la misión en Colombia.';
@@ -807,7 +808,7 @@ function PreviewPost({ item, index, onLogin, onRegister, locked = false }) {
     const brokenImage = event.currentTarget.currentSrc || event.currentTarget.src;
     setFailedImages((current) => current.includes(brokenImage) ? current : [...current, brokenImage]);
     if (!item.sourceUrl || remotePreview?.imageUrl) return;
-    fetchSocialPreview(item.sourceUrl).then((preview) => {
+    fetchPublicationPreview([item.sourceUrl, item.facebookUrl, item.instagramUrl], { refresh: true }).then((preview) => {
       if (preview?.imageUrl) setRemotePreview(preview);
     });
   };
@@ -816,19 +817,20 @@ function PreviewPost({ item, index, onLogin, onRegister, locked = false }) {
     const brokenVideo = event.currentTarget.currentSrc || event.currentTarget.src;
     setFailedImages((current) => current.includes(brokenVideo) ? current : [...current, brokenVideo]);
     if (!item.sourceUrl || remotePreview?.videoUrl) return;
-    fetchSocialPreview(item.sourceUrl).then((preview) => {
+    fetchPublicationPreview([item.sourceUrl, item.facebookUrl, item.instagramUrl], { refresh: true }).then((preview) => {
       if (preview?.videoUrl) setRemotePreview(preview);
     });
   };
 
   return (
-    <article className={`ln-preview-post ${locked ? 'is-locked-preview' : ''}`} style={{ '--preview-index': index }}>
+    <article className={`ln-preview-post ${locked ? 'is-locked-preview' : video || embeddedVideo ? 'has-player' : ''}`} style={{ '--preview-index': index }}>
       <div className={`ln-preview-post-media ${!video && embeddedVideo && !locked ? 'has-embedded-video' : ''}`}>
         {video ? (
           <video
             className="ln-preview-post-video"
             src={video}
             poster={image || undefined}
+            controls={!locked}
             muted
             loop
             autoPlay
@@ -839,7 +841,7 @@ function PreviewPost({ item, index, onLogin, onRegister, locked = false }) {
           />
         ) : embeddedVideo && !locked ? <SocialVideoFallback embed={embeddedVideo} sourceUrl={item.sourceUrl} image={image} title={title} onImageError={handleImageError} onRetry={() => {
           setFailedImages([]);
-          fetchSocialPreview(item.sourceUrl, { refresh: true }).then(preview => { if (preview) setRemotePreview(preview); });
+          fetchPublicationPreview([item.sourceUrl, item.facebookUrl, item.instagramUrl], { refresh: true }).then(preview => { if (preview) setRemotePreview(preview); });
         }} /> : image ? (
           <img src={image} alt={title} onError={handleImageError} loading={index === 0 ? 'eager' : 'lazy'} />
         ) : (
