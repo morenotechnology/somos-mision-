@@ -26,8 +26,8 @@ FINISH: documentar la fuente implementada y su procedencia no equivale a un pase
 ## Alcance e integración
 
 - Autoridad actual: `src/components/landing/HomeHero.jsx`, `home-hero.css`, `CampaignHeader.jsx` y la rama `previewOnly` de `src/pages/Landing.jsx`. `src/App.jsx` sirve esta rama en `/` para visitantes; usuarios autenticados van a `/noticias`.
-- `Landing.jsx` monta CampaignHeader → HomeHero → vista previa de noticias; oculta solo el emblema del footer mediante `hideMark={previewOnly}`. El hero recibe registro y saber más; el acceso a login vive en el menú. El prop `onLogin` todavía pasado al hero no se consume allí.
-- Acciones: «Unirme ahora» → `/register`; «Ver más» → `/saber-mas`; «Iniciar sesión» del menú → `/login`. La cabecera y el tercer panel enlazan al grupo WhatsApp existente definido por `communityUrl`, con nueva pestaña y `rel="noreferrer"`.
+- `Landing.jsx` monta CampaignHeader → HomeHero → vista previa de noticias; oculta solo el emblema del footer mediante `hideMark={previewOnly}`. El hero recibe registro e inicio de sesión.
+- Acciones grandes: «Unirme ahora» → `/register`; «Iniciar sesión» → `/login`. El menú conserva «Ver más» → `/saber-mas` y el acceso a iniciar sesión. La cabecera y el tercer panel enlazan al grupo WhatsApp existente definido por `communityUrl`, con nueva pestaña y `rel="noreferrer"`.
 - La rama no-preview conserva Nav y las secciones informativas. No se extiende esta tipografía, paleta o composición a noticias, comentarios, regiones, sidebar u otras rutas. En `src/index.css`, `html:has(.ln-home-main)` desactiva el scroll snap del home; no es una prohibición global.
 - DESIGN.md y `.impeccable/design.json` reciben únicamente el merge autorizado `campaign-5000-*`. Sus tokens anteriores permanecen: los del home viejo son legado, los del resto de la aplicación no cambian. El drift ajeno preexistente no se repara.
 

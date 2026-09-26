@@ -1030,7 +1030,7 @@ export default function Landing({ previewOnly = false }) {
       <main className={previewOnly ? 'ln-home-main' : 'ln-more-main'}>
         {previewOnly ? (
           <>
-            <HomeHero onRegister={toRegister} onLogin={toLogin} onLearnMore={toLearnMore} />
+            <HomeHero onRegister={toRegister} onLogin={toLogin} />
             <PreviewNewsSection items={previewItems} loading={previewLoading} onLogin={toLogin} onRegister={toRegister} homeOnly />
           </>
         ) : (

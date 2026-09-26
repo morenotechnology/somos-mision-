@@ -7,7 +7,7 @@ const communityUrl = 'https://chat.whatsapp.com/G2Al7tjnAao6k1I4swB5mv?s=hd&p=i&
 const slideNames = ['Video de bienvenida', 'Nuestra red', 'Comunidad WhatsApp'];
 const formatTime = (value) => `${Math.floor(value / 60)}:${String(Math.floor(value % 60)).padStart(2, '0')}`;
 
-export default function HomeHero({ onRegister, onLearnMore }) {
+export default function HomeHero({ onRegister, onLogin }) {
   const videoRef = useRef(null);
   const filmRef = useRef(null);
   const carouselRef = useRef(null);
@@ -165,7 +165,7 @@ export default function HomeHero({ onRegister, onLearnMore }) {
           </div>
           <div className="campaign-actions">
             <button type="button" className="campaign-join" onClick={onRegister}>Unirme ahora <ArrowRight /></button>
-            <button type="button" className="campaign-learn" onClick={onLearnMore}>Ver más</button>
+            <button type="button" className="campaign-learn" onClick={onLogin}>Iniciar sesión</button>
           </div>
           <div className="campaign-slider-footer">
             <div className="campaign-slide-dots">{slideNames.map((name, index) => <button key={name} ref={element => { indicatorRefs.current[index] = element; }} type="button" aria-label={name} aria-pressed={slide === index} onClick={() => selectSlide(index)}><span /></button>)}</div>

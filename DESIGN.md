@@ -134,7 +134,7 @@ El inicio usa local-control para CTA y marco del video; el marco reparte las esq
 
 ### Variante local campaign-5000
 
-Los radios campaign-5000-pill, film, band y menu pertenecen solo a esta campaña. El marco de video tiene borde 2px #c2d6e575; la banda, 2px #6986a024 (1px móvil); Ver más, 2px #93acc59c. Play e indicadores son circulares. Los puntos tienen área clamp(44px, 6cqw, 52px), separada de su círculo visual. No reemplazar los radios heredados de otras superficies.
+Los radios campaign-5000-pill, film, band y menu pertenecen solo a esta campaña. El marco de video tiene borde 2px #c2d6e575; la banda, 2px #6986a024 (1px móvil); Iniciar sesión, 2px #93acc59c. Play e indicadores son circulares. Los puntos tienen área clamp(44px, 6cqw, 52px), separada de su círculo visual. No reemplazar los radios heredados de otras superficies.
 
 ## Components
 
@@ -147,7 +147,7 @@ Los radios campaign-5000-pill, film, band y menu pertenecen solo a esta campaña
 
 - **Cabecera:** `CampaignHeader.jsx`, emblema claro `brand-mark-small.png` derivado del oficial, texto Misiones Colombia y menú en todos los tamaños. Filas mínimas de 48px. Escape cierra y devuelve foco; también cierra al pulsar fuera o elegir. Login → /login, Unirme ahora → /register, Ver más → /saber-mas; WhatsApp conserva el grupo existente.
 - **Video y carrusel:** `HomeHero.jsx` conserva el MP4 auténtico y su fotograma a los 18 s como poster. Preload metadata, sin autoplay ni loop; primer play por gesto con sonido, después respeta mute. Etiqueta central dinámica con/sin sonido. Pausa con pestaña oculta, intersección <.2 y cambio de panel. Fin → segundo panel. Tres puntos, swipe y flechas del teclado; paneles inactivos inert/aria-hidden. Foco dentro del panel saliente pasa al indicador entrante; estado polite. Seek mantiene sus propias flechas; tiempo real, no duración fija.
-- **Acciones y estados:** CTA con degradado del apartado Colors, borde 1px #ffe09e, peso 700; hover brightness(1.07)/translateY(-2px). Ver más usa campaign-5000-secondary y hover #e5efff12. Foco 3px campaign-5000-gold con offset 5px. Track .6s cubic-bezier(.22, 1, .36, 1); transiciones anuladas con movimiento reducido.
+- **Acciones y estados:** CTA con degradado del apartado Colors, borde 1px #ffe09e, peso 700; hover brightness(1.07)/translateY(-2px). Iniciar sesión abre /login y usa campaign-5000-secondary y hover #e5efff12. Foco 3px campaign-5000-gold con offset 5px. Track .6s cubic-bezier(.22, 1, .36, 1); transiciones anuladas con movimiento reducido.
 - **Dato real:** api.community.getStats(), suscripción opcional y refresco 30 s, sin consultas estando oculta. activeMultipliers en es-CO, guion si falta; estados conectando, automática, en vivo solo conectado sin error, o cifra no disponible. No copiar 314 de la referencia.
 - **Integración y evidencia:** solo la rama previewOnly de `Landing.jsx`; otras rutas conservan la base. README de assets conserva prompts y originales. Los 20 tests/build y cinco viewports reportados corresponden al pase anterior al lote correctivo; no se atribuyen automáticamente al nuevo lote. Según el cierre comunicado por el agente principal, la segunda revisión resolvió cabecera/móvil/foco/ARIA y dejó tipografía/firma parciales, sin bloqueo funcional. Por orden explícita del usuario se desplegó: Vercel success, commit `a1895e1be0cd7bac88b3cb0ae3dae844dbac6091`, estado reportado y no comprobado independientemente en este pase documental. No equivale a aprobación visual total ni a un gate de alfa aprobado.
 

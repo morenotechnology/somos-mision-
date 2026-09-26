@@ -22,7 +22,8 @@ test('campaign follows the approved reference, preserves real video and exposes 
     assert.match(html, /<h1 id="home-title">5000 AMIGOS<\/h1>/);
     assert.match(html, /Súmate a la obra\. Juntos podemos llevar/);
     assert.match(html, /Unirme ahora/);
-    assert.match(html, /Ver más/);
+    assert.match(html, /Iniciar sesión/);
+    assert.doesNotMatch(html, /Ver más/);
     assert.match(html, /Reproducir invitación con sonido/);
     assert.match(html, /Ver video en pantalla completa/);
     assert.match(html, /Progreso del video de bienvenida/);
