@@ -24,6 +24,8 @@ dist-ssr
 *.sw?
 .vercel
 .impeccable/review/
+.impeccable/build/
+.impeccable/mocks/
 .env
 .env.*
 .env*.local

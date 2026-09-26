@@ -4,7 +4,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createServer } from 'vite';
 
-test('home starts with one non-looping video and an accessible welcome slide; national posts reuse the header logo', async () => {
+test('campaign follows the approved reference, preserves real video and exposes three accessible slides', async () => {
   const previousMode = process.env.VITE_API_MODE;
   process.env.VITE_API_MODE = 'mock';
   const server = await createServer({ logLevel: 'silent', server: { middlewareMode: true }, appType: 'custom' });
@@ -13,15 +13,20 @@ test('home starts with one non-looping video and an accessible welcome slide; na
     const html = renderToStaticMarkup(createElement(HomeHero));
     assert.equal((html.match(/<video\b/g) || []).length, 1);
     assert.doesNotMatch(html, /<video[^>]*\bloop[=\s>]/);
-    assert.match(html, /aria-label="1 de 2: video de bienvenida" aria-hidden="false"/);
-    assert.match(html, /aria-label="2 de 2: bienvenida a los 5.000 Amigos" aria-hidden="true" inert=""/);
-    assert.match(html, /red-amigos-mobile\.jpg/);
-    const message = 'Ser parte de la red de los 5000 es convertirse en un multiplicador virtual de misiones nacionales';
+    assert.match(html, /aria-label="1 de 3: video de bienvenida" aria-hidden="false"/);
+    assert.match(html, /aria-label="2 de 3: nuestra red" aria-hidden="true" inert=""/);
+    assert.match(html, /aria-label="3 de 3: comunidad WhatsApp" aria-hidden="true" inert=""/);
+    assert.match(html, /campaign-5000\/welcome-film\.jpg/);
+    assert.match(html, /somos-mision-bienvenida\.mp4/);
     assert.equal((html.match(/<h1\b/g) || []).length, 1);
-    const firstSlide = html.split('aria-label="1 de 2: video de bienvenida"')[1].split('aria-label="2 de 2: bienvenida a los 5.000 Amigos"')[0];
-    assert.doesNotMatch(firstSlide, /<h[12]|Unirme a la red|Iniciar sesión|Ser parte de/);
-    for (const heading of html.matchAll(/<h[12][^>]*>(.*?)<\/h[12]>/g)) assert.equal(heading[1].replace(/<[^>]*>/g, ''), message);
-    assert.doesNotMatch(html, /La misión|Hay un lugar para ti|Una invitación para ti|Tu voz también|Una misma misión|mission-film-credit/);
+    assert.match(html, /<h1 id="home-title">5000 AMIGOS<\/h1>/);
+    assert.match(html, /Súmate a la obra\. Juntos podemos llevar/);
+    assert.match(html, /Unirme ahora/);
+    assert.match(html, /Ver más/);
+    assert.match(html, /Reproducir invitación con sonido/);
+    assert.match(html, /Ver video en pantalla completa/);
+    assert.match(html, /Progreso del video de bienvenida/);
+    assert.doesNotMatch(html, /<video[^>]*\bautoPlay|314|259/);
     assert.doesNotMatch(html, /mission-map|colombia-red-dorada|amigos-home|logosinfondo|brand-logo/);
 
     const { default: BrandLogo } = await server.ssrLoadModule('/src/components/common/BrandLogo.jsx');
@@ -33,6 +38,14 @@ test('home starts with one non-looping video and an accessible welcome slide; na
     }));
     assert.ok(nationalPost.includes(`src="${brandSource}"`));
     assert.doesNotMatch(nationalPost, /isologo-somos-mision\.svg/);
+
+    const { default: CampaignHeader } = await server.ssrLoadModule('/src/components/landing/CampaignHeader.jsx');
+    const header = renderToStaticMarkup(createElement(CampaignHeader));
+    assert.match(header, /aria-label="Abrir menú"/);
+    assert.match(header, /id="campaign-menu"[^>]*hidden=""/);
+    assert.match(header, /Iniciar sesión/);
+    assert.match(header, /Comunidad WhatsApp/);
+    assert.equal((header.match(/<img\b/g) || []).length, 1);
   } finally {
     await server.close();
     if (previousMode === undefined) delete process.env.VITE_API_MODE;

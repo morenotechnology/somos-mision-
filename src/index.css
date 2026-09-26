@@ -4088,7 +4088,7 @@ body {
 }
 
 html:has(.ln-home-main) {
-  scroll-snap-type: y mandatory;
+  scroll-snap-type: none;
 }
 
 html:has(.ln-home-main) .ln-preview-post {

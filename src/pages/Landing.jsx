@@ -28,6 +28,7 @@ import BrandLogo from '../components/common/BrandLogo';
 import { LucideIcon } from '../components/common/LucideIcon';
 import SocialCoverFallback from '../components/content/SocialCoverFallback';
 import HomeHero from '../components/landing/HomeHero';
+import CampaignHeader from '../components/landing/CampaignHeader';
 import regionAmazonica from '../assets/regiones/optimized/AMAZONICA_2.png';
 import regionAndina from '../assets/regiones/optimized/ANDINA_1.png';
 import regionCaribe from '../assets/regiones/optimized/CARIBE_1.png';
@@ -1023,7 +1024,9 @@ export default function Landing({ previewOnly = false }) {
 
   return (
     <div className={`ln-page${previewOnly ? ' is-home-page' : ''}`}>
-      <Nav onLogin={toLogin} onRegister={toRegister} onLearnMore={toLearnMore} />
+      {previewOnly
+        ? <CampaignHeader onLogin={toLogin} onRegister={toRegister} onLearnMore={toLearnMore} />
+        : <Nav onLogin={toLogin} onRegister={toRegister} onLearnMore={toLearnMore} />}
       <main className={previewOnly ? 'ln-home-main' : 'ln-more-main'}>
         {previewOnly ? (
           <>

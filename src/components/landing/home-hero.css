@@ -1,102 +1,128 @@
-/* One campaign stage: the invitation, the film and its next slide share a surface. */
-.mission-home-hero { padding: 104px max(24px, calc((100vw - 1400px) / 2)) 24px; background: #f7f7f2; color: #0c1940; }
-.mission-home-hero ::selection { background: #f4cc53; color: #0c1940; }
-.mission-home-hero button, .mission-home-hero a { font: inherit; cursor: pointer; }
-.mission-home-hero :is(button, a, input):focus-visible { outline: 3px solid #f4cc53; outline-offset: 3px; }
-.mission-home-hero button:disabled { opacity: .5; cursor: not-allowed; }
-.mission-welcome-world { overflow: hidden; background: #0c1940; border-radius: 16px; color: #fff; }
-.mission-slider-viewport { width: 100%; overflow: hidden; touch-action: pan-y; }
-.mission-slider-viewport.is-video { aspect-ratio: 16 / 9; max-height: calc(100svh - 180px); }
-.mission-slider-viewport.is-welcome { height: 550px; }
-.mission-slider-track { display: flex; width: 200%; height: 100%; transition: transform .65s cubic-bezier(.16, 1, .3, 1); }
-.mission-slider-panel { position: relative; width: 50%; flex: 0 0 50%; min-width: 0; height: 100%; display: flex; align-items: center; background: #050910; }
-.mission-home-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
-.mission-join { display: inline-flex; justify-content: center; align-items: center; gap: 26px; min-height: 54px; padding: 0 26px; border-radius: 12px; border: 0; background: #f4cc53; color: #0c1940; font-weight: 800 !important; transition: background .2s; }
-.mission-join:hover { background: #ffe18a; }
-.mission-login { border: 0; background: none; color: #d0d9ed; min-height: 44px; padding: 8px 0; font-size: 13px !important; text-decoration: underline; text-underline-offset: 5px; }
-.mission-login:hover { color: #fff; }
-.mission-film { min-width: 0; margin: 0; width: 100%; height: 100%; }
-.mission-film-screen { position: relative; overflow: hidden; width: 100%; height: 100%; background: #050910; }
+@font-face { font-family: 'Campaign Sans'; src: url('/fonts/campaign-5000/work-sans-regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Campaign Sans'; src: url('/fonts/campaign-5000/work-sans-bold.ttf') format('truetype'); font-weight: 600 900; font-display: swap; }
+@font-face { font-family: 'Campaign Display'; src: url('/fonts/campaign-5000/archivo-black.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+
+.ln-page.is-home-page { position: relative; }
+.mission-home-hero { --campaign-gold: #ffcf51; color: #f8fafc; background: #082542 url('/media/campaign-5000/blue-world.jpg') center / 100% 100% no-repeat; font-family: 'Campaign Sans', sans-serif; padding: 0 0 3.8%; }
+.mission-home-hero *, .campaign-header * { box-sizing: border-box; }
+.mission-home-hero :is(button, a), .campaign-header :is(button, a) { font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mission-home-hero :is(button, a, input):focus-visible, .campaign-header :is(button, a):focus-visible { outline: 3px solid #ffcf51; outline-offset: 5px; }
+.mission-home-hero button:disabled { cursor: not-allowed; opacity: .5; }
+.campaign-body { width: 87%; max-width: 818px; margin: auto; padding-top: clamp(92px, 15.5vw, 146px); container-type: inline-size; }
+.campaign-header { position: absolute; top: clamp(16px, 4.3vw, 40px); left: 50%; transform: translateX(-50%); z-index: 50; display: flex; align-items: center; justify-content: space-between; width: 87%; max-width: 818px; color: #fff; font-family: 'Campaign Sans', sans-serif; }
+.campaign-brand { display: flex; align-items: center; gap: clamp(8px, 1.4vw, 14px); color: inherit; text-decoration: none; }
+.campaign-brand > img { display: block; width: clamp(48px, 10.2vw, 96px); height: auto; }
+.campaign-brand > span { display: flex; flex-direction: column; transform: translateY(clamp(-8px, -.85vw, -3px)); }
+.campaign-brand strong { font-size: clamp(23px, 4.6vw, 44px); line-height: 1; letter-spacing: -.04em; }
+.campaign-brand span span { font-size: clamp(11px, 2.5vw, 24px); text-transform: uppercase; letter-spacing: .21em; line-height: 1.3; }
+.campaign-menu-toggle { width: clamp(44px, 6.2vw, 58px); height: clamp(44px, 6.2vw, 58px); border: 0; color: #fff; background: transparent; padding: 0; display: grid; place-items: center; transform: translateY(clamp(-13px, -1.4vw, -5px)); }
+.campaign-menu-toggle > svg { width: 100%; height: 100%; stroke-width: 1.7; }
+.campaign-menu { position: absolute; top: calc(100% + 12px); right: 0; width: min(310px, 100%); padding: 12px; background: #092a48; border: 1px solid #7897b7; border-radius: 16px; box-shadow: 0 18px 48px #00122666; }
+.campaign-menu[hidden] { display: none; }
+.campaign-menu :is(a, button) { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 48px; border: none; padding: 12px 16px; color: #fff; background: transparent; border-radius: 8px; text-decoration: none; font-size: 15px; text-align: left; }
+.campaign-menu :is(a, button):hover { background: #ffffff12; }
+.campaign-menu .campaign-menu-join { background: #ffcf51; color: #082542; font-weight: 700; margin-top: 8px; }
+.campaign-prelude { display: flex; align-items: flex-start; justify-content: space-between; height: 15.2cqw; }
+.campaign-prelude > p { margin: 2.7cqw 0 0; font-size: 2.12cqw; line-height: 1.5; letter-spacing: .42em; text-transform: uppercase; color: #eaf2ff; }
+.campaign-signature { width: 22%; aspect-ratio: 176 / 133; margin-top: -.5cqw; mix-blend-mode: screen; overflow: hidden; }
+.campaign-signature img { display: block; width: 138%; max-width: none; height: 138%; object-fit: fill; transform: translate(-14%, -14%); }
+.campaign-eyebrow { margin: .5cqw 0 .5cqw 1cqw; color: #ffcf51; font-size: 3.8cqw; line-height: 1.3; letter-spacing: .23em; text-transform: uppercase; font-weight: 700; }
+.campaign-heading h1 { font: 400 14.3cqw/.94 'Campaign Display', sans-serif; margin: 0; color: #f8fafc; letter-spacing: -.035em; white-space: nowrap; }
+.campaign-invitation { font-size: 4.25cqw; line-height: 1.25; margin: 1.4cqw 1.4cqw 2.8cqw; color: #cedcf3; letter-spacing: -.025em; }
+.campaign-slides { overflow: hidden; border-radius: 4cqw; border: 2px solid #c2d6e575; background: #062640; aspect-ratio: 16 / 9; touch-action: pan-y; isolation: isolate; }
+.campaign-slide-track { display: flex; width: 300%; height: 100%; transition: transform .6s cubic-bezier(.22, 1, .36, 1); }
+.campaign-slide { flex: 0 0 33.333333%; min-width: 0; height: 100%; position: relative; }
+.mission-film-screen { position: relative; width: 100%; height: 100%; background: #04121d; }
 .mission-film-screen video { display: block; width: 100%; height: 100%; object-fit: contain; }
-.mission-film-play { position: absolute; inset: 0; margin: auto; width: 64px; height: 64px; display: grid; place-items: center; border-radius: 50%; border: 1px solid #ffffff80; background: #0c1940e6; color: white; }
-.mission-film-play:hover { background: #1a237e; }
-.mission-film-controls { position: absolute; inset: auto 0 0; display: flex; align-items: center; gap: 8px; padding: 18px 10px 2px; background: linear-gradient(transparent, #050910eb 45%); }
-.mission-film-controls button { display: flex; align-items: center; justify-content: center; gap: 7px; flex-shrink: 0; min-width: 44px; min-height: 44px; padding: 0 4px; border: 0; background: none; color: #fff; }
-.mission-film-controls button span { font-size: 12px; }
-.mission-film-controls button:hover { color: #f4cc53; }
-.mission-film-controls input { flex: 1; min-width: 24px; height: 44px; margin: 0; appearance: none; background: transparent; cursor: pointer; }
-.mission-film-controls input::-webkit-slider-runnable-track { height: 3px; border-radius: 3px; background: linear-gradient(to right, #f4cc53 var(--film-progress), #8994a9 var(--film-progress)); }
-.mission-film-controls input::-webkit-slider-thumb { appearance: none; width: 10px; height: 10px; border-radius: 50%; background: #f4cc53; margin-top: -3.5px; }
-.mission-film-controls input::-moz-range-track { height: 3px; background: #8994a9; }
-.mission-film-controls input::-moz-range-progress { height: 3px; background: #f4cc53; }
-.mission-film-controls input::-moz-range-thumb { width: 10px; height: 10px; border: 0; border-radius: 50%; background: #f4cc53; }
-.mission-film-time { font-size: 11px; color: #fff; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.mission-welcome-panel { display: flex; }
-.mission-welcome-art { position: relative; width: 100%; align-self: stretch; display: grid; place-items: center; overflow: hidden; }
-.mission-welcome-art > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.mission-welcome-art > div { position: relative; text-align: center; padding: 40px 24px; }
-.mission-welcome-art h1 { margin: 0 auto 30px; max-width: 27ch; color: #fff; font-size: clamp(30px, 3.8vw, 52px); line-height: 1.16; letter-spacing: -.025em; font-weight: 800; text-wrap: balance; }
-.mission-welcome-art h1 span { color: #f4cc53; }
-.mission-welcome-art .mission-home-actions { align-items: center; }
-.mission-slider-navigation { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 0 clamp(24px, 4vw, 60px); padding: 16px 0; border-top: 1px solid #ffffff26; }
-.mission-community-count { display: flex; gap: 12px; align-items: center; }
-.mission-community-count > svg { color: #f4cc53; flex-shrink: 0; }
-.mission-community-count span { font-size: 13px; color: #fff; }
-.mission-community-count strong { color: #f4cc53; font-size: 22px; font-weight: 850; font-variant-numeric: tabular-nums; margin-right: 3px; }
-.mission-community-count small { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #b4c1d9; margin-top: 2px; }
-.mission-community-count i { display: block; width: 5px; height: 5px; background: #b4c1d9; border-radius: 50%; }
-.mission-community-count i.is-live { background: #87d9aa; }
-.mission-slider-buttons { display: flex; align-items: center; flex-shrink: 0; }
-.mission-slider-buttons button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; background: none; color: #fff; border-radius: 8px; }
-.mission-slider-buttons button:hover { background: #ffffff14; }
-.mission-slider-dot span { width: 24px; height: 6px; background: #b4c1d9; border-radius: 50%; transform: scaleX(.25); transition: transform .2s; }
-.mission-slider-dot[aria-pressed="true"] span { transform: scaleX(1); border-radius: 4px; background: #f4cc53; }
-.mission-film-error { padding: 8px 24px 20px; margin: 0; font-size: 13px; }
-.mission-film-error a, .mission-film-error button { border: 0; background: none; color: #f4cc53; text-decoration: underline; }
-.mission-hero-bottom { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 4px 0; }
-.mission-discover, .mission-more { display: inline-flex; align-items: center; gap: 10px; background: none; border: 0; min-height: 44px; color: #3d4960; text-decoration: none; font-size: 12px !important; }
-.mission-discover:hover, .mission-more:hover { text-decoration: underline; text-underline-offset: 5px; }
+.mission-film-screen:fullscreen { border-radius: 0; }
+.mission-film-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 18cqw; height: 18cqw; max-width: 148px; max-height: 148px; display: grid; place-items: center; border: 3px solid #deecf3bb; border-radius: 50%; color: #fff; background: #061c31b8; transition: background .2s, scale .2s; }
+.mission-film-play > svg { width: 45%; height: 45%; margin-left: 5%; }
+.mission-film-play:hover { background: #082d4bea; scale: 1.04; }
+.mission-film-controls { position: absolute; inset: auto 0 0; display: flex; align-items: center; gap: 1.8cqw; padding: 7cqw 2.5cqw 2cqw; background: linear-gradient(transparent, #03101dbf 65%, #030b12e6); }
+.mission-film-controls button { display: grid; place-items: center; flex-shrink: 0; width: 5.2cqw; height: 5.2cqw; min-width: 36px; min-height: 40px; padding: 0; border: 0; color: #fff; background: transparent; }
+.mission-film-controls button svg { width: clamp(20px, 4.4cqw, 36px); height: clamp(20px, 4.4cqw, 36px); }
+.mission-film-controls button:hover { color: #ffcf51; }
+.mission-film-controls input { flex: 1; min-width: 20px; height: 44px; margin: 0; appearance: none; cursor: pointer; background: transparent; }
+.mission-film-controls input::-webkit-slider-runnable-track { height: 1cqw; max-height: 9px; border-radius: 99px; background: linear-gradient(to right, #ffcf51 var(--film-progress), #bdd1e180 var(--film-progress)); }
+.mission-film-controls input::-webkit-slider-thumb { appearance: none; width: clamp(12px, 3.4cqw, 28px); height: clamp(12px, 3.4cqw, 28px); margin-top: max(-9px, -1.2cqw); border-radius: 50%; background: #ffcf51; box-shadow: 0 2px 4px #0003; }
+.mission-film-controls input::-moz-range-track { height: 6px; border-radius: 99px; background: #bdd1e180; }
+.mission-film-controls input::-moz-range-progress { height: 6px; background: #ffcf51; }
+.mission-film-controls input::-moz-range-thumb { width: 18px; height: 18px; border: 0; border-radius: 50%; background: #ffcf51; }
+.mission-film-time { flex-shrink: 0; color: #fff; font-size: clamp(10px, 2.8cqw, 24px); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.campaign-story { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5cqw 7cqw; text-align: center; background: #092c49 url('/media/campaign-5000/blue-world.jpg') center 20% / 100% auto; }
+.campaign-story-label { font-size: clamp(11px, 1.8cqw, 15px); text-transform: uppercase; letter-spacing: .25em; color: #ffcf51; margin: 0 0 3cqw; }
+.campaign-story h2 { margin: 0; font-size: 5.2cqw; line-height: 1.22; color: #fff; font-weight: 700; text-wrap: balance; }
+.campaign-story em { color: #ffcf51; font-style: normal; }
+.campaign-whatsapp > svg { width: 7cqw; height: 7cqw; color: #ffcf51; margin-bottom: 2cqw; }
+.campaign-whatsapp a { display: inline-flex; gap: 10px; align-items: center; justify-content: center; color: #ffdf83; min-height: 44px; margin-top: 3cqw; font-size: clamp(12px, 2.4cqw, 19px); text-underline-offset: 5px; }
+.mission-film-error { margin: 8px 0; color: #fff; font-size: 13px; }
+.mission-film-error a { color: #ffcf51; }
+.campaign-community { display: grid; grid-template-columns: 1fr .9fr; align-items: center; min-height: 18cqw; margin-top: 2.8cqw; border: 2px solid #6986a024; border-radius: 4.8cqw; background: linear-gradient(110deg, #07335365, #bfd4ed09); box-shadow: inset 0 1px 10px #d0e9ff06; }
+.campaign-count { display: flex; align-items: center; gap: 5cqw; justify-content: center; padding: 1.8cqw 2cqw; }
+.campaign-count > svg { color: #ffcf51; width: 8.5cqw; height: 8.5cqw; stroke-width: 1.5; }
+.campaign-count strong { display: block; font-size: 5cqw; font-weight: 700; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; }
+.campaign-count span { display: block; font-size: 3cqw; color: #dfebfa; line-height: 1.2; }
+.campaign-live { display: flex; justify-content: center; align-items: center; gap: 5cqw; padding: 1.8cqw 2cqw; border-left: 2px solid #738eac80; }
+.campaign-live > svg { width: 7cqw; height: 7cqw; stroke-width: 1.8; }
+.campaign-live > span { font-size: 3cqw; line-height: 1.5; color: #dfebfa; }
+.campaign-live small { display: inline-flex; align-items: center; gap: 2cqw; font-size: inherit; white-space: nowrap; }
+.campaign-live i { width: 2.4cqw; height: 2.4cqw; border-radius: 50%; background: #b3c5d9; }
+.campaign-live i.is-live { background: #42e787; box-shadow: 0 0 0 6px #42e7870d; }
+.campaign-actions { display: grid; gap: 2.4cqw; margin-top: 2.8cqw; }
+.campaign-actions button { width: 100%; min-height: 10.5cqw; border-radius: 999px; font-size: 4.5cqw; line-height: 1.2; }
+.campaign-join { display: flex; align-items: center; justify-content: center; gap: 3.6cqw; font-weight: 700; background: linear-gradient(105deg, #fbd369, #ffca49 55%, #fbd369); border: 1px solid #ffe09e; color: #052744; transition: filter .2s, transform .2s; }
+.campaign-join svg { width: 4.4cqw; height: 4.4cqw; stroke-width: 2.3; }
+.campaign-join:hover { filter: brightness(1.07); transform: translateY(-2px); }
+.campaign-learn { color: #fff; background: #bfd4ed06; border: 2px solid #93acc59c; font-size: 3.8cqw !important; transition: background .2s; }
+.campaign-learn:hover { background: #e5efff12; }
+.campaign-slider-footer { position: relative; min-height: 15cqw; display: flex; align-items: center; justify-content: center; }
+.campaign-slide-dots { display: flex; gap: 2cqw; }
+.campaign-slide-dots button { display: grid; place-items: center; width: clamp(44px, 6cqw, 52px); height: clamp(44px, 6cqw, 52px); border: none; padding: 0; border-radius: 50%; background: transparent; }
+.campaign-slide-dots span { width: 2.8cqw; height: 2.8cqw; min-width: 10px; min-height: 10px; border-radius: 50%; background: #b5c8dd66; transition: background .2s, transform .2s; }
+.campaign-slide-dots button[aria-pressed='true'] span { background: #ffcf51; box-shadow: inset 0 0 0 1px #ffeaac; }
+.campaign-slide-dots button:hover span { transform: scale(1.15); }
+.campaign-slider-footer > p { position: absolute; right: 0; text-align: right; margin: 1cqw 0 0; font-size: 2.1cqw; line-height: 1.7; letter-spacing: .23em; text-transform: uppercase; color: #d1e0f4; }
+.campaign-slider-footer > p span { position: absolute; right: -3cqw; }
+.campaign-outreach { color: #496485; font-size: 2.15cqw; letter-spacing: .32em; line-height: 1.65; text-transform: uppercase; margin: 6cqw 0 0; padding-bottom: 1cqw; }
+.campaign-status { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
 .ln-page .ln-nav { display: block; }
 .ln-page .ln-nav-context { display: inline-flex; align-items: center; min-height: 44px; }
-.ln-page.is-home-page .ln-nav { background: #f7f7f2f5; }
-.ln-page.is-home-page .ln-nav-inner { width: min(1400px, calc(100% - 48px)); }
-@media (max-width: 1000px) and (min-width: 761px) {
-  .mission-slider-viewport.is-welcome { height: 480px; }
-  .mission-film-controls button span { display: none; }
-}
 @media (max-width: 760px) {
   .ln-page .ln-nav-inner { min-height: 64px; gap: 8px; width: calc(100% - 32px); }
   .ln-page .ln-nav-actions { gap: 12px; }
   .ln-page .ln-nav-actions .ln-btn-ghost, .ln-page .ln-nav-vip { display: none; }
   .ln-page .ln-nav-context { font-size: 12px; padding: 0; }
   .ln-page .ln-btn-sm { min-height: 44px; padding: 0 14px; font-size: 12px; }
-  .ln-page.is-home-page .ln-nav-inner { width: calc(100% - 28px); }
-  .ln-page.is-home-page .ln-brand { gap: 7px; }
-  .ln-page.is-home-page .ln-brand-mark { width: 40px; height: 36px; padding: 4px; box-shadow: none; }
-  .ln-page.is-home-page .ln-brand-name { display: flex; }
-  .ln-page.is-home-page .ln-brand-name strong { font-size: 11px; }
-  .ln-page.is-home-page .ln-brand-name span { font-size: 9px; }
-  .mission-home-hero { padding: 72px 10px 16px; }
-  .mission-slider-viewport.is-welcome { height: 440px; }
-  .mission-home-actions { align-items: stretch; gap: 4px; }
-  .mission-join { min-height: 50px; }
-  .mission-login { font-size: 12px !important; }
-  .mission-film-controls { gap: 4px; padding-inline: 6px; }
-  .mission-film-controls button span { display: none; }
-  .mission-film-time { font-size: 10px; }
-  .mission-welcome-art { flex: 1; }
-  .mission-welcome-art h1 { font-size: clamp(25px, 7vw, 38px); }
-  .mission-welcome-art .mission-home-actions { align-items: stretch; }
-  .mission-slider-navigation { margin: 0 18px; padding: 12px 0; gap: 4px; }
-  .mission-community-count { gap: 8px; }
-  .mission-community-count > svg { display: none; }
-  .mission-community-count span { font-size: 11px; }
-  .mission-community-count strong { font-size: 20px; }
-  .mission-community-count small { font-size: 9px; }
-  .mission-slider-buttons button:first-child, .mission-slider-buttons button:last-child { display: none; }
-  .mission-hero-bottom { justify-content: center; }
-  .mission-more { display: none; }
-  .mission-discover { font-size: 11px !important; }
+  .mission-film-controls { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px 44px; gap: 0 4px; padding: 16px 6px 0; }
+  .mission-film-controls input { grid-column: 1 / -1; grid-row: 1; width: 100%; height: 24px; }
+  .mission-film-controls button { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
+  .mission-film-time { text-align: right; padding-right: 5px; font-size: 12px; }
+  .mission-film-play { top: 42%; width: 16cqw; height: 16cqw; border-width: 2px; }
+  .campaign-community { border-width: 1px; min-height: 76px; }
+  .campaign-count { gap: 2.5cqw; }
+  .campaign-count strong { font-size: max(22px, 5cqw); }
+  .campaign-count span, .campaign-live > span { font-size: max(11px, 3cqw); }
+  .campaign-live { gap: 2.5cqw; border-left-width: 1px; }
+  .campaign-prelude > p { font-size: max(8px, 2.12cqw); letter-spacing: .28em; }
+  .campaign-outreach { font-size: max(9px, 2.15cqw); }
+  .campaign-invitation { font-size: max(14px, 4.25cqw); }
+  .campaign-slider-footer > p { font-size: max(9px, 2.1cqw); }
+  .campaign-actions button { min-height: 44px; font-size: max(16px, 4.5cqw); }
+  .campaign-learn { font-size: max(14px, 3.8cqw) !important; }
 }
-@media (max-width: 360px) { .ln-page.is-home-page .ln-brand-name { display: none; } }
-@media (prefers-reduced-motion: reduce) { .mission-slider-track, .mission-slider-dot span { transition: none; } }
+@media (max-width: 360px) {
+  .campaign-slider-footer { flex-direction: column; padding-top: 6px; }
+  .campaign-slider-footer > p { position: static; width: 100%; margin: 0; padding-right: 5px; font-size: 9px; line-height: 1.35; }
+  .campaign-slider-footer > p span { display: none; }
+  .campaign-outreach { margin-top: 10cqw; }
+  .campaign-desktop-break { display: none; }
+}
+@media (min-width: 1100px) {
+  .mission-home-hero { padding-bottom: 34px; }
+  .campaign-header { max-width: 1080px; }
+  .campaign-body { padding-top: 155px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mission-home-hero *, .mission-home-hero *::after { transition: none !important; }
+}
