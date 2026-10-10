@@ -1,5 +1,6 @@
 import { isDirectVideoUrl, isFacebookPostUrl, normalizePreview, normalizeSocialUrl, previewMatchesSource } from './socialMedia.js';
 import { archivedPublicationCover } from './publicationCoverArchive.js';
+import { isCroppedSocialImage, isSocialCdnImage, socialCoverUrl } from './socialImages.js';
 export { isDirectVideoUrl, normalizeSocialUrl } from './socialMedia.js';
 const previewCache = new Map();
 let activeRequests = 0;
@@ -69,16 +70,20 @@ export function selectPublicationMedia(item = {}, preview = null, failed = []) {
   const savedImage = [archivedPublicationCover(sourceUrl), item.imageUrl]
     .find(url => !isPlaceholderImage(url) && !isDirectVideoUrl(url) && !failed.includes(url));
   const secondary = previewOriginal !== sourceUrl;
-  if (secondary && savedImage && !getSocialVideoEmbed(sourceUrl)) safePreview = null;
+  if (secondary && savedImage && !isSocialCdnImage(savedImage) && !getSocialVideoEmbed(sourceUrl)) safePreview = null;
   const images = (secondary && safePreview ? [safePreview.imageUrl] : [savedImage, safePreview?.imageUrl])
-    .filter(url => !isPlaceholderImage(url) && !isDirectVideoUrl(url) && !failed.includes(url));
+    .filter(url => !isPlaceholderImage(url) && !isDirectVideoUrl(url) && !isCroppedSocialImage(url) && !failed.includes(url));
   const videos = [safePreview?.videoUrl, item.videoUrl, item.video_url, item.mediaUrl, item.media_url, item.imageUrl]
     .filter(url => (url === safePreview?.videoUrl && url || isDirectVideoUrl(url)) && !failed.includes(url));
   const embed = getSocialVideoEmbed(safePreview?.sourceUrl || sourceUrl, item.format === 'video');
   const width = Number(safePreview?.videoWidth || safePreview?.imageWidth || item.mediaWidth || item.imageWidth);
   const height = Number(safePreview?.videoHeight || safePreview?.imageHeight || item.mediaHeight || item.imageHeight);
   const aspectRatio = width > 0 && height > 0 && Number.isFinite(width / height) ? width / height : 0;
-  return { image: images[0] || '', video: videos[0] || '', embed, sourceUrl, links, aspectRatio, kind: videos.length || embed ? 'video' : 'image' };
+  const kind = videos.length || embed ? 'video' : 'image';
+  const imageSource = secondary && safePreview ? previewOriginal : sourceUrl;
+  const cover = kind === 'image' && (!images[0] || isSocialCdnImage(images[0])) ? socialCoverUrl(imageSource) : '';
+  const image = cover && !failed.includes(cover) ? cover : images[0] || '';
+  return { image, video: videos[0] || '', embed, sourceUrl, links, aspectRatio, kind };
 }
 
 export async function fetchSocialPreview(sourceUrl = '', { refresh = false } = {}) {

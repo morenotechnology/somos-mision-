@@ -1,5 +1,7 @@
 import { facebookVideoPermalink, isFacebookPostUrl, normalizePreview, normalizeSocialUrl } from '../src/utils/socialMedia.js';
 import { resolveFacebookNative } from '../src/utils/facebookNative.js';
+import { resolveFacebookPhoto } from '../src/utils/facebookPhoto.js';
+import { isCroppedSocialImage } from '../src/utils/socialImages.js';
 
 const cache = new Map();
 const pending = new Map();
@@ -13,7 +15,7 @@ export async function resolvePreview(url, { refresh = false, fetcher = fetch, na
   if (saved && now - saved.time < (refresh ? 60000 : TTL)) return saved.data;
   if (pending.has(key)) return pending.get(key);
   const request = (async () => {
-    const native = await resolveFacebookNative(key, nativeFetcher);
+    const native = await resolveFacebookNative(key, nativeFetcher) || await resolveFacebookPhoto(key,nativeFetcher);
     if (native) {
       const data = normalizePreview(native, key);
       if (cache.size >= 500) cache.delete(cache.keys().next().value);
@@ -67,6 +69,7 @@ export async function resolvePreview(url, { refresh = false, fetcher = fetch, na
         data = { ...data, imageUrl: media.imageUrl || data.imageUrl, videoUrl: media.videoUrl || data.videoUrl, videoType: media.videoType || data.videoType, videoWidth: media.videoWidth || data.videoWidth, videoHeight: media.videoHeight || data.videoHeight, sourceUrl: media.sourceUrl || data.sourceUrl, mediaVerified: media.mediaVerified || data.mediaVerified };
       } catch { /* Keep the real cover and the provider player if unavailable. */ }
     }
+    if (!data.videoUrl && isCroppedSocialImage(data.imageUrl)) data = {...data,imageUrl:'',imageWidth:0,imageHeight:0};
     if (cache.size >= 500) cache.delete(cache.keys().next().value);
     if (data.imageUrl || data.videoUrl) cache.set(key, { time: now, data });
     return data;

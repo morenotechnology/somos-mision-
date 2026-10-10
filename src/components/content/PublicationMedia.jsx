@@ -75,7 +75,7 @@ export default function PublicationMedia({ item, eager = false, locked = false, 
     {media.video ? <NativeVideoPlayer key={`${media.video}:${retry}`} src={media.video} poster={media.image} title={item.title}
       near={near} locked={locked} aspectRatio={media.aspectRatio} positionRef={videoPosition}
       onReady={() => { setReadyUrl(media.video); setTimedOutUrl(''); }} onBuffering={setStalled} onError={onError} />
-      : media.image ? <img src={media.image} alt={item.title} loading={eager ? 'eager' : 'lazy'} decoding="async"
+      : media.image ? <img key={`${media.image}:${retry}`} src={near || locked || !media.image.startsWith('/api/social-cover') ? media.image : undefined} alt={item.title} loading={eager ? 'eager' : 'lazy'} decoding="async"
         onLoad={() => { setReadyUrl(media.image); setTimedOutUrl(''); }} onError={onError} /> : null}
     {skeleton && <MediaSkeleton label={media.kind === 'video' ? 'Cargando video…' : 'Cargando publicación…'} />}
     {stalled && ready && !unavailable && <span className="publication-player-buffering" role="status">Cargando…</span>}

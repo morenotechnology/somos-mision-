@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fetchSocialPreview, fetchPublicationPreview, getSocialVideoEmbed, isDirectVideoUrl, selectPublicationMedia } from './socialPreview.js';
+import {archivedPublicationCover} from './publicationCoverArchive.js';
 
 test('Facebook reels and shared videos get a player even when classified as images', () => {
   assert.match(getSocialVideoEmbed('https://www.facebook.com/reel/854838847716923').url, /plugins\/video\.php/);
@@ -28,6 +29,27 @@ test('a photo wrongly saved as video never previews a suggested video or stale d
   assert.equal(result.embed, null);
   assert.equal(result.image, item.imageUrl);
   assert.deepEqual(result.links, [item.facebookUrl]);
+});
+
+test('expired or cropped Facebook CDN thumbnails are replaced by a same-origin original cover',()=>{
+  const source='https://www.facebook.com/share/p/CropRegression/';
+  const cropped='https://scontent.cdninstagram.com/post.jpg?stp=c230.0.691.691a_dst-jpg_e35_s640x640';
+  const item={facebookUrl:source,format:'imagen',imageUrl:cropped};
+  const result=selectPublicationMedia(item);
+  assert.match(result.image,/^\/api\/social-cover/);
+  assert.equal(new URL(result.image,'https://www.somosmisioncolombia.com').searchParams.get('url'),source);
+  assert.equal(selectPublicationMedia(item,null,[result.image]).image,'');
+  const manual=selectPublicationMedia({...item,imageUrl:'https://uploads.example/original.jpg'});
+  assert.equal(manual.image,'https://uploads.example/original.jpg');
+});
+
+test('audited full covers win over old cropped links, including photo URL aliases',()=>{
+  const cover=archivedPublicationCover('https://www.facebook.com/photo.php?fbid=1556432629843731&tracking=1');
+  assert.equal(cover,'/media/publication-covers/facebook-post-27.jpg');
+  assert.equal(archivedPublicationCover('https://www.facebook.com/photo/?fbid=999'),'');
+  assert.equal(archivedPublicationCover('https://evil.example/photo/?fbid=1556432629843731'),'');
+  const image=selectPublicationMedia({facebookUrl:'https://www.facebook.com/share/p/1BR1PYfNBu/',imageUrl:'https://scontent.cdninstagram.com/bad.jpg?stp=c230.0.691.691a'}).image;
+  assert.equal(image,'/media/publication-covers/facebook-post-25.jpg');
 });
 
 test('publication fallbacks never mix a primary photo with a video from another link', async () => {
