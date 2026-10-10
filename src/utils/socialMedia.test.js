@@ -24,8 +24,11 @@ test('canonical URLs handle web Facebook, account-prefixed Instagram and reject 
 test('extensionless verified video sources play; login redirects never replace original posts', () => {
   const original = 'https://www.facebook.com/share/v/example/';
   const preview = normalizePreview({ url: 'https://www.facebook.com/login', video: { url: 'https://cdn.example/playback?token=sample', type: 'mp4' }, image: { url: 'https://cdn.example/cover.jpg' } }, original);
-  assert.equal(preview.videoUrl, 'https://cdn.example/playback?token=sample');
+  assert.equal(preview.videoUrl, '');
+  assert.equal(preview.imageUrl, '');
   assert.equal(preview.sourceUrl, original);
+  const playable = normalizePreview({ url: original, mediaVerified:true, video: { url: 'https://cdn.example/playback?token=sample', type: 'mp4' } }, original);
+  assert.equal(playable.videoUrl, 'https://cdn.example/playback?token=sample');
   assert.equal(normalizePreview({ video: { url: 'https://example.com/post', type: 'html' } }, original).videoUrl, '');
   assert.equal(normalizePreview({ video: { url: 'javascript:alert(1)', type: 'mp4' } }, original).videoUrl, '');
 });
@@ -33,11 +36,36 @@ test('extensionless verified video sources play; login redirects never replace o
 test('server shares cached previews, bounds refreshes, and expires signed media', async () => {
   let calls = 0;
   const fetcher = async () => { calls++; return { ok: true, json: async () => ({ status: 'success', data: { image: { url: `https://cdn.example/cover-${calls}.jpg` } } }) }; };
-  const url = 'https://www.facebook.com/reel/cacheRegression/';
-  const [a, b] = await Promise.all([resolvePreview(url, {fetcher, now: 1000}), resolvePreview(url, {fetcher, now: 1000})]);
+  const url = 'https://www.facebook.com/reel/10000987654/';
+  const nativeFetcher = async () => ({ok:false});
+  const [a, b] = await Promise.all([resolvePreview(url, {fetcher, nativeFetcher, now: 1000}), resolvePreview(url, {fetcher, nativeFetcher, now: 1000})]);
   assert.equal(calls, 1); assert.deepEqual(a, b);
-  await resolvePreview(url, {fetcher, refresh: true, now: 2000}); assert.equal(calls, 1);
-  await resolvePreview(url, {fetcher, now: 1000000}); assert.equal(calls, 2);
+  await resolvePreview(url, {fetcher, nativeFetcher, refresh: true, now: 2000}); assert.equal(calls, 1);
+  await resolvePreview(url, {fetcher, nativeFetcher, now: 1000000}); assert.equal(calls, 2);
+});
+
+test('unrelated post IDs and unverified Facebook media cannot replace the requested publication', () => {
+  const original = 'https://www.facebook.com/reel/123456/';
+  const swapped = normalizePreview({ url:'https://www.facebook.com/reel/987654/',
+    video:{url:'https://cdn.example/other.mp4'},image:{url:'https://cdn.example/other.jpg'} }, original);
+  assert.equal(swapped.videoUrl, '');
+  assert.equal(swapped.imageUrl, '');
+  const efg = Buffer.from(JSON.stringify({xpv_asset_id:987654})).toString('base64');
+  assert.equal(normalizePreview({video:{url:`https://video.xx.fbcdn.net/other.mp4?efg=${encodeURIComponent(efg)}`}}, original).videoUrl, '');
+});
+
+test('Facebook photos request only post metadata, never a page-wide suggested video', async () => {
+  const fetcher = async input => {
+    const request = new URL(input);
+    assert.equal(request.searchParams.get('video'), 'false');
+    assert.equal(request.searchParams.get('data.postImage.selector'), 'meta[property="og:image"]');
+    return {ok:true,json:async()=>({status:'success',data:{url:'https://www.facebook.com/posts/1562744235879237/',
+      postImage:'https://cdn.example/real-photo.jpg',image:{url:'https://cdn.example/suggested-photo.jpg'},
+      video:{url:'https://cdn.example/suggested-video.mp4'}}})};
+  };
+  const result = await resolvePreview('https://www.facebook.com/share/p/photoRegression/', {fetcher});
+  assert.equal(result.imageUrl, 'https://cdn.example/real-photo.jpg');
+  assert.equal(result.videoUrl, '');
 });
 
 test('Facebook video permalinks accept real IDs and reject unrelated/unsafe URLs', () => {
@@ -47,7 +75,7 @@ test('Facebook video permalinks accept real IDs and reject unrelated/unsafe URLs
   for (const url of ['https://evil.example/watch/?v=123','https://www.facebook.com/posts/123','https://www.facebook.com/watch/?v=not-a-video','https://www.instagram.com/reel/123/']) assert.equal(facebookVideoPermalink(url),'');
 });
 
-test('shared Facebook videos resolve their canonical playable file, not just the cover', async () => {
+test('shared Facebook videos resolve their canonical verified file, not just the cover', async () => {
   const requested = [];
   const fetcher = async input => {
     requested.push(new URL(input).searchParams.get('url'));
@@ -55,9 +83,11 @@ test('shared Facebook videos resolve their canonical playable file, not just the
       ? {url:'https://www.facebook.com/watch/?v=7654321',image:{url:'https://cdn.example/cover.jpg'}}
       : {url:'https://www.facebook.com/reel/7654321/',video:{url:'https://cdn.example/choco.mp4',type:'mp4'}}})};
   };
-  const result = await resolvePreview('https://www.facebook.com/share/v/autoplayRegression/',{fetcher});
-  assert.deepEqual(requested,['https://www.facebook.com/share/v/autoplayRegression/','https://www.facebook.com/reel/7654321/']);
-  assert.equal(result.videoUrl,'https://cdn.example/choco.mp4');
+  const nativeFetcher = async input => ({ok:input.includes('7654321'),text:async()=>'<script>"videoData":[{"video_id":"7654321","sd_src":"https://video.xx.fbcdn.net/choco.mp4","original_width":576,"original_height":1024}]</script>'});
+  const result = await resolvePreview('https://www.facebook.com/share/v/autoplayRegression/',{fetcher,nativeFetcher});
+  assert.deepEqual(requested,['https://www.facebook.com/share/v/autoplayRegression/']);
+  assert.equal(result.videoUrl,'https://video.xx.fbcdn.net/choco.mp4');
+  assert.equal(result.videoWidth,576);
   assert.equal(result.imageUrl,'https://cdn.example/cover.jpg');
 });
 
@@ -67,7 +97,7 @@ test('canonical video lookup failure preserves the original cover and embed', as
     if (++calls === 2) throw new Error('Unavailable');
     return {ok:true,json:async()=>({status:'success',data:{url:'https://www.facebook.com/watch/?v=654321',image:{url:'https://cdn.example/cover.jpg'}}})};
   };
-  const result = await resolvePreview('https://www.facebook.com/share/v/autoplayFailure/',{fetcher});
+  const result = await resolvePreview('https://www.facebook.com/share/v/autoplayFailure/',{fetcher,nativeFetcher:async()=>({ok:false})});
   assert.equal(result.imageUrl,'https://cdn.example/cover.jpg');
   assert.equal(result.sourceUrl,'https://www.facebook.com/watch/?v=654321');
 });

@@ -9,6 +9,7 @@ import SocialCoverFallback from './SocialCoverFallback';
 import CommentThreads from './CommentThreads';
 import SocialPost from './SocialPost';
 import SocialVideoFallback from './SocialVideoFallback';
+import PublicationMedia from './PublicationMedia';
 import { archivedPublicationCover } from '../../utils/publicationCoverArchive';
 import { observeVideoAutoplay } from '../../utils/videoAutoplay';
 import '../../pages/social-feed.css';
@@ -319,14 +320,14 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
   }, [item.id, item.likes, item.commentsCount, item.likedByMe]);
 
   useEffect(() => {
-    if (!sourceUrl) return undefined;
+    if (!sourceUrl || socialFeed) return undefined;
     let active = true;
     fetchPublicationPreview([sourceUrl, item.facebookUrl, item.instagramUrl])
       .then((preview) => {
         if (active && preview) setRemotePreview(preview);
       });
     return () => { active = false; };
-  }, [sourceUrl, item.facebookUrl, item.instagramUrl]);
+  }, [sourceUrl, item.facebookUrl, item.instagramUrl, socialFeed]);
 
   useEffect(() => {
     const media = videoRef.current;
@@ -757,17 +758,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
       commentsCount={social.commentsCount}
       onComments={loadComments}
       originalLinks={originalLinks.length ? originalLinks : item.sourceUrl ? [{ network: 'original', label: socialPlatform.label, url: item.sourceUrl }] : []}
-      media={video ? <>
-        <video ref={videoRef} src={video} poster={image || undefined} muted={!audioEnabled} controls loop playsInline preload="metadata"
-          onLoadStart={() => { setVideoTime(0); setVideoDuration(0); setAudioEnabled(false); }}
-          aria-label={`Video: ${item.title}`}
-          onLoadedMetadata={event => setVideoDuration(Number(event.currentTarget.duration) || 0)}
-          onDurationChange={event => setVideoDuration(Number(event.currentTarget.duration) || 0)}
-          onTimeUpdate={event => setVideoTime(event.currentTarget.currentTime)}
-          onVolumeChange={event => setAudioEnabled(!event.currentTarget.muted)}
-          onError={event => { const broken = event.currentTarget.currentSrc || event.currentTarget.src; setFailedImages(current => [...new Set([...current, broken])]); }}
-        />
-      </> : expectsVideo ? videoRecovery : image ? <img src={image} alt={item.title} loading="lazy" onError={handleImageError} /> : <SocialCoverFallback item={item} platform={socialPlatform} />}
+      media={<PublicationMedia key={`${item.id}-${item.facebookUrl}-${item.instagramUrl}-${item.sourceUrl}-${item.imageUrl}`} item={item} />}
       actions={<>
         <button type="button" onClick={handleReaction} className={social.likedByMe ? 'is-liked' : ''} disabled={socialLoading} aria-label={social.likedByMe ? 'Quitar me gusta' : 'Dar me gusta'} aria-pressed={social.likedByMe}><Heart size={26} fill={social.likedByMe ? 'currentColor' : 'none'} /><span>{formatCount(social.likesCount)}</span></button>
         <button type="button" onClick={loadComments} aria-label="Abrir comentarios" aria-expanded={commentsOpen}><MessageCircle size={26} /><span>{formatCount(social.commentsCount)}</span></button>

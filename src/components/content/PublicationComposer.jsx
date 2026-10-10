@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { AlertCircle, ExternalLink, ImagePlus, Link2, Loader2, Send, WandSparkles } from 'lucide-react';
 import { api } from '../../api';
 import { fetchPublicationPreview, getSocialVideoEmbed, isDirectVideoUrl, isPlaceholderImage } from '../../utils/socialPreview';
-import SocialVideoFallback from './SocialVideoFallback';
+import { isFacebookPostUrl } from '../../utils/socialMedia';
+import PublicationMedia from './PublicationMedia';
 import { getCanonicalCoordinations } from '../../utils/coordinations';
 import toast from 'react-hot-toast';
 
@@ -13,6 +14,7 @@ const publisherInitialState = {
   title: '',
   description: '',
   imageUrl: '',
+  videoUrl: '',
   coordinationId: '',
   format: 'imagen',
   featured: false,
@@ -62,7 +64,10 @@ export default function PublicationComposer({ currentUser, coordinations, editin
     facebookUrl: editingItem.facebookUrl || (isFacebookUrl(editingItem.sourceUrl) ? editingItem.sourceUrl : ''),
     instagramUrl: editingItem.instagramUrl || (isInstagramUrl(editingItem.sourceUrl) ? editingItem.sourceUrl : ''),
     title: editingItem.title || '', description: editingItem.description || '', imageUrl: editingItem.imageUrl || '',
-    coordinationId: editingItem.coordination || '', format: editingItem.format || 'imagen', featured: Boolean(editingItem.featured),
+    videoUrl: isDirectVideoUrl(editingItem.imageUrl) ? editingItem.imageUrl : editingItem.videoUrl || '',
+    coordinationId: editingItem.coordination || '',
+    format: editingItem.format === 'video' && isFacebookPostUrl(editingItem.facebookUrl || editingItem.sourceUrl) && !isDirectVideoUrl(editingItem.imageUrl)
+      ? 'imagen' : editingItem.format || 'imagen', featured: Boolean(editingItem.featured),
   } : publisherInitialState);
   const [preview, setPreview] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -74,7 +79,6 @@ export default function PublicationComposer({ currentUser, coordinations, editin
   const primaryUrl = facebookUrl || instagramUrl;
   const platform = detectSocialPlatform(primaryUrl);
   const imagePreview = preview?.imageUrl || (!isPlaceholderImage(form.imageUrl) && !isDirectVideoUrl(form.imageUrl) ? form.imageUrl.trim() : '');
-  const videoEmbed = getSocialVideoEmbed(preview?.sourceUrl || primaryUrl, form.format === 'video');
   const previewTitle = form.title.trim() || preview?.title || 'Nueva publicación oficial';
   const previewDescription = form.description.trim() || preview?.description || 'Pega enlaces de Facebook e Instagram para crear una pieza lista para compartir.';
   const composerCoordinations = getCanonicalCoordinations(coordinations);
@@ -112,7 +116,8 @@ export default function PublicationComposer({ currentUser, coordinations, editin
         title: current.title || nextPreview.title || '',
         description: current.description || nextPreview.description || '',
         imageUrl: nextPreview.imageUrl || current.imageUrl || '',
-        format: nextPreview.videoUrl || getSocialVideoEmbed(primaryUrl) || getSocialVideoEmbed(instagramUrl) || getSocialVideoEmbed(nextPreview.sourceUrl) ? 'video' : current.format,
+        format: nextPreview.videoUrl || getSocialVideoEmbed(nextPreview.sourceUrl || primaryUrl) ? 'video'
+          : isFacebookPostUrl(primaryUrl) && current.format === 'video' ? 'imagen' : current.format,
       }));
       toast.success(nextPreview.imageUrl ? 'Portada del enlace actualizada' : 'La red no entregó una portada; puedes añadirla manualmente');
     } catch {
@@ -139,12 +144,17 @@ export default function PublicationComposer({ currentUser, coordinations, editin
       toast.error('Agrega un título para identificar la publicación');
       return;
     }
+    const originalVideo = form.videoUrl.trim();
+    if (originalVideo && (!/\.(?:mp4|webm)(?:[?#]|$)/i.test(originalVideo) || !/^(?:https:\/\/|\/media\/)/i.test(originalVideo))) {
+      toast.error('Usa un enlace seguro a un archivo de video original (MP4 o WebM).');
+      return;
+    }
 
     setSaving(true);
     try {
       // Always resolve the link on save, even if the editor skipped the preview button.
       const resolved = preview || await fetchPublicationPreview([facebookUrl, instagramUrl]);
-      const detectedVideo = resolved?.videoUrl || getSocialVideoEmbed(resolved?.sourceUrl) || getSocialVideoEmbed(facebookUrl) || getSocialVideoEmbed(instagramUrl);
+      const detectedVideo = originalVideo || resolved?.videoUrl || getSocialVideoEmbed(resolved?.sourceUrl || primaryUrl);
       const socialLinks = [
         facebookUrl ? `Facebook: ${facebookUrl}` : '',
         instagramUrl ? `Instagram: ${instagramUrl}` : '',
@@ -153,13 +163,13 @@ export default function PublicationComposer({ currentUser, coordinations, editin
         title: previewTitle,
         description: previewDescription,
         category: facebookUrl && instagramUrl ? 'Facebook + Instagram' : platform.label,
-        format: detectedVideo ? 'video' : form.format,
+        format: detectedVideo ? 'video' : isFacebookPostUrl(primaryUrl) && form.format === 'video' ? 'imagen' : form.format,
         coordination_id: form.coordinationId || null,
         featured: form.featured,
         xp_reward: editingItem?.xpReward ?? 50,
         copy_text: `${previewTitle}\n\n${socialLinks}`,
-        media_url: resolved?.imageUrl || imagePreview || null,
-        source_url: resolved?.sourceUrl || primaryUrl,
+        media_url: originalVideo || resolved?.imageUrl || imagePreview || null,
+        source_url: primaryUrl,
         source_platform: facebookUrl ? 'facebook' : 'instagram',
         facebook_url: facebookUrl || null,
         instagram_url: instagramUrl || null,
@@ -200,6 +210,8 @@ export default function PublicationComposer({ currentUser, coordinations, editin
                   previewRequest.current++;
                   setPreviewLoading(false);
                   setField('facebookUrl', event.target.value);
+                  setField('imageUrl', '');
+                  setField('videoUrl', '');
                   setPreview(null);
                 }}
                 onBlur={() => {
@@ -218,6 +230,8 @@ export default function PublicationComposer({ currentUser, coordinations, editin
                   previewRequest.current++;
                   setPreviewLoading(false);
                   setField('instagramUrl', event.target.value);
+                  setField('imageUrl', '');
+                  setField('videoUrl', '');
                   setPreview(null);
                 }}
                 onBlur={() => {
@@ -226,6 +240,13 @@ export default function PublicationComposer({ currentUser, coordinations, editin
                 placeholder="https://www.instagram.com/p/..."
                 inputMode="url"
               />
+            </label>
+
+            <label className="publisher-field is-wide">
+              <span><Link2 size={14} /> Archivo de video original (opcional)</span>
+              <input value={form.videoUrl} onChange={event => setField('videoUrl',event.target.value)}
+                placeholder="https://…/video.mp4" inputMode="url" />
+              <small>Si la red bloquea el video, pega el enlace público a su MP4 o WebM para reproducirlo aquí.</small>
             </label>
 
             <div className="publisher-fetch-row is-wide">
@@ -274,7 +295,9 @@ export default function PublicationComposer({ currentUser, coordinations, editin
 
           <aside className="publisher-preview" style={{ '--publisher-platform': platform.tone }}>
             <div className="publisher-preview-media">
-              {preview?.videoUrl ? <video src={preview.videoUrl} poster={imagePreview || undefined} controls playsInline preload="metadata" aria-label="Vista previa del video" /> : videoEmbed ? <SocialVideoFallback key={primaryUrl} embed={videoEmbed} sourceUrl={primaryUrl} image={imagePreview} title={previewTitle} onImageError={event => { event.currentTarget.style.visibility = 'hidden'; }} onRetry={loadPreview} /> : imagePreview ? <img src={imagePreview} alt="Portada de la publicación" onError={event => { event.currentTarget.style.visibility = 'hidden'; }} /> : <p>La portada aparecerá aquí al leer el enlace.</p>}
+              {primaryUrl || imagePreview ? <PublicationMedia key={`${primaryUrl}:${imagePreview}`} eager item={{title:previewTitle,format:form.format,
+                facebookUrl,instagramUrl,imageUrl:imagePreview,videoUrl:form.videoUrl.trim() || preview?.videoUrl,
+                mediaWidth:preview?.videoWidth,mediaHeight:preview?.videoHeight}} /> : <p>La portada aparecerá aquí al leer el enlace.</p>}
               <span>{platform.label}</span>
             </div>
             <div className="publisher-preview-body">
@@ -286,7 +309,7 @@ export default function PublicationComposer({ currentUser, coordinations, editin
             </div>
             <div className="publisher-preview-note">
               <AlertCircle size={14} />
-              Los videos se reproducen aquí. Si la red restringe el archivo, usamos su reproductor integrado.
+              Reproducción en nuestra web, sin el reproductor de Facebook. Si el archivo está restringido, conserva el acceso al original.
             </div>
           </aside>
 

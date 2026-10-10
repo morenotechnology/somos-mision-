@@ -21,13 +21,11 @@ import {
 } from 'lucide-react';
 import { api } from '../api';
 import { formatNumber } from '../utils/helpers';
-import { fetchPublicationPreview, getSocialPlatform, getSocialVideoEmbed, isDirectVideoUrl, isPlaceholderImage } from '../utils/socialPreview';
-import { archivedPublicationCover } from '../utils/publicationCoverArchive';
-import SocialVideoFallback from '../components/content/SocialVideoFallback';
+import { getSocialPlatform, publicationLinks, selectPublicationMedia } from '../utils/socialPreview';
+import PublicationMedia from '../components/content/PublicationMedia';
 import './social-feed.css';
 import BrandLogo from '../components/common/BrandLogo';
 import { LucideIcon } from '../components/common/LucideIcon';
-import SocialCoverFallback from '../components/content/SocialCoverFallback';
 import HomeHero from '../components/landing/HomeHero';
 import CampaignHeader from '../components/landing/CampaignHeader';
 import regionAmazonica from '../assets/regiones/optimized/AMAZONICA_2.png';
@@ -768,91 +766,21 @@ function formatPreviewCount(value) {
 }
 
 function PreviewPost({ item, index, onLogin, onRegister, locked = false }) {
-  const [remotePreview, setRemotePreview] = useState(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [failedImages, setFailedImages] = useState([]);
+  const [hasPlayer, setHasPlayer] = useState(selectPublicationMedia(item).kind === 'video');
   const platform = getSocialPlatform(item.sourcePlatform || item.sourceUrl);
-  const embeddedVideo = [remotePreview?.sourceUrl, item.sourceUrl, item.facebookUrl, item.instagramUrl].map(url => getSocialVideoEmbed(url, item.format === 'video')).find(Boolean);
-
-  useEffect(() => {
-    if (!item.sourceUrl || locked) return undefined;
-    let active = true;
-    setPreviewLoading(true);
-    fetchPublicationPreview([item.sourceUrl, item.facebookUrl, item.instagramUrl])
-      .then((preview) => {
-        if (active && preview) setRemotePreview(preview);
-      })
-      .finally(() => active && setPreviewLoading(false));
-    return () => { active = false; };
-  }, [item.sourceUrl, item.facebookUrl, item.instagramUrl, locked]);
-
-  useEffect(() => {
-    setFailedImages([]);
-  }, [item.id, item.imageUrl, item.sourceUrl]);
-
-  const imageCandidates = [remotePreview?.imageUrl, archivedPublicationCover(item.sourceUrl || item.facebookUrl), item.imageUrl].filter((candidate) => !isPlaceholderImage(candidate) && !isDirectVideoUrl(candidate));
-  const image = imageCandidates.find((candidate) => !failedImages.includes(candidate)) || '';
-  const videoCandidates = [
-    item.videoUrl,
-    item.video_url,
-    item.mediaUrl,
-    item.media_url,
-    item.imageUrl,
-  ].filter(isDirectVideoUrl);
-  if (remotePreview?.videoUrl) videoCandidates.unshift(remotePreview.videoUrl);
-  const video = videoCandidates.find((candidate) => !failedImages.includes(candidate)) || '';
-  const title = item.title || remotePreview?.title || 'Una nueva historia de misión';
-  const description = item.description || remotePreview?.description || 'Conoce las historias, noticias y acciones que están moviendo la misión en Colombia.';
-
-  const handleImageError = (event) => {
-    const brokenImage = event.currentTarget.currentSrc || event.currentTarget.src;
-    setFailedImages((current) => current.includes(brokenImage) ? current : [...current, brokenImage]);
-    if (!item.sourceUrl || remotePreview?.imageUrl) return;
-    fetchPublicationPreview([item.sourceUrl, item.facebookUrl, item.instagramUrl], { refresh: true }).then((preview) => {
-      if (preview?.imageUrl) setRemotePreview(preview);
-    });
-  };
-
-  const handleVideoError = (event) => {
-    const brokenVideo = event.currentTarget.currentSrc || event.currentTarget.src;
-    setFailedImages((current) => current.includes(brokenVideo) ? current : [...current, brokenVideo]);
-    if (!item.sourceUrl || remotePreview?.videoUrl) return;
-    fetchPublicationPreview([item.sourceUrl, item.facebookUrl, item.instagramUrl], { refresh: true }).then((preview) => {
-      if (preview?.videoUrl) setRemotePreview(preview);
-    });
-  };
+  const title = item.title || 'Una nueva historia de misión';
+  const description = item.description || '';
+  const originalUrl = publicationLinks(item)[0];
 
   return (
-    <article className={`ln-preview-post ${locked ? 'is-locked-preview' : video || embeddedVideo ? 'has-player' : ''}`} style={{ '--preview-index': index }}>
-      <div className={`ln-preview-post-media ${!video && embeddedVideo && !locked ? 'has-embedded-video' : ''}`}>
-        {video ? (
-          <video
-            className="ln-preview-post-video"
-            src={video}
-            poster={image || undefined}
-            controls={!locked}
-            muted
-            loop
-            autoPlay
-            playsInline
-            preload="metadata"
-            aria-label={`Vista previa de video: ${title}`}
-            onError={handleVideoError}
-          />
-        ) : embeddedVideo && !locked ? <SocialVideoFallback autoPlay embed={embeddedVideo} sourceUrl={item.sourceUrl} image={image} title={title} onImageError={handleImageError} onRetry={() => {
-          setFailedImages([]);
-          fetchPublicationPreview([item.sourceUrl, item.facebookUrl, item.instagramUrl], { refresh: true }).then(preview => { if (preview) setRemotePreview(preview); });
-        }} /> : image ? (
-          <img src={image} alt={title} onError={handleImageError} loading={index === 0 ? 'eager' : 'lazy'} />
-        ) : (
-          <SocialCoverFallback item={item} platform={platform} />
-        )}
+    <article className={`ln-preview-post ${locked ? 'is-locked-preview' : `has-natural-media${hasPlayer ? ' has-player' : ''}`}`} style={{ '--preview-index': index }}>
+      <div className="ln-preview-post-media">
+        <PublicationMedia key={`${item.id}-${originalUrl}`} item={item} eager={index === 0} locked={locked} onKindChange={kind => setHasPlayer(kind === 'video')} />
         <div className="ln-preview-post-shade" />
         <div className="ln-preview-post-topline">
           <span><span className="ln-preview-live-dot" /> {platform.label} · Vista previa</span>
           <span>{formatPreviewDate(item.createdAt)}</span>
         </div>
-        {previewLoading && <span className="ln-preview-post-loading">Cargando portada…</span>}
       </div>
 
       <div className="ln-preview-post-copy">
@@ -885,8 +813,8 @@ function PreviewPost({ item, index, onLogin, onRegister, locked = false }) {
           <Share2 size={20} />
           <span>Compartir</span>
         </button>
-        {item.sourceUrl && (
-          <a href={item.sourceUrl} target="_blank" rel="noreferrer" aria-label="Abrir publicación original">
+        {originalUrl && (
+          <a href={originalUrl} target="_blank" rel="noreferrer" aria-label="Abrir publicación original">
             <ExternalLink size={18} />
             <span>Original</span>
           </a>

@@ -14,11 +14,15 @@ test('misclassified reels render a player and direct files retain native control
     globalThis.window = { location: { origin: 'https://www.somosmisioncolombia.com' } };
     const base = {id:'test',title:'Video de prueba',format:'imagen',createdAt:'2026-09-25',imageUrl:'https://cdn.example/cover.jpg'};
     const reel = renderToStaticMarkup(createElement(ContentCard,{socialFeed:true,item:{...base,sourceUrl:'https://web.facebook.com/reel/123/'}}));
-    assert.match(reel,/social-video-stage/);
+    assert.match(reel,/publication-media is-video/);
+    assert.match(reel,/Cargando video/);
     assert.doesNotMatch(reel,/Reproducir video:|Cerrar reproductor|Actualizar video|social-video-recovery-actions/);
     const native = renderToStaticMarkup(createElement(ContentCard,{socialFeed:true,item:{...base,imageUrl:'/media/somos-mision-bienvenida.mp4'}}));
     assert.match(native, /<video[^>]*controls=""/);
     assert.doesNotMatch(native, /social-video-buttons/);
+    const photo = renderToStaticMarkup(createElement(ContentCard,{socialFeed:true,item:{...base,format:'video',facebookUrl:'https://www.facebook.com/share/p/photo-only/'}}));
+    assert.match(photo, /<img[^>]*src="https:\/\/cdn.example\/cover.jpg"/);
+    assert.doesNotMatch(photo, /<video|<iframe/);
     const {default: SocialVideoFallback} = await server.ssrLoadModule('/src/components/content/SocialVideoFallback.jsx');
     const editor = renderToStaticMarkup(createElement(SocialVideoFallback, {embed:{platform:'Facebook',url:'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fwatch%2F%3Fv%3D123'},title:'Vista previa'}));
     assert.match(editor,/Reproducir video: Vista previa/);

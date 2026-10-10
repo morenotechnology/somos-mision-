@@ -2080,7 +2080,7 @@ body {
   background: linear-gradient(180deg, rgba(5,7,22,0.04), rgba(5,7,22,0.58));
 }
 
-.publisher-preview-media span {
+.publisher-preview-media > span {
   position: absolute;
   left: 13px;
   bottom: 13px;

@@ -10,5 +10,6 @@ Otros originales públicos recuperados de la misma página de Facebook:
 
 - `cali.jpg`: «Cali será llena del poder de Dios», id 16. https://www.facebook.com/ipucmisionesnacionales/posts/pfbid0i217rDUCjwozyqJjb6FbRJEjWSBz5PCMCpncaW2BRSW2mtMVWLXtzn1mrH933z8Tl
 - `orinoquia.jpg`: «Región Orinoquía», ids 14 y 11 (comparten el mismo enlace). https://www.facebook.com/ipucmisionesnacionales/posts/pfbid025TuUZNG72puhn5WPc6XuyshmtknJUk8sZ5zxPwKE2p4hpUakmt8SbdN3kZydyv6wl
+- `red-5000-octubre.jpg`: «¿Ya eres parte de la Red de los 5.000 Amigos?», id 29. Recuperada sin edición el 09/10/2026 del elemento de imagen de https://www.facebook.com/ipucmisionesnacionales/posts/pfbid0228Pk4UPH5EVJZpkURJhWXwC2M5CkwVxbQRZvHoxhbdfpYyb6k9vikSTxp8PrQkHHl (original compartido: https://web.facebook.com/share/p/18S89KZcun/). JPEG original 1080×1350. La página original muestra imágenes; la clasificación anterior como video era incorrecta. Es un respaldo local estable del original público, no contenido generado.
 
 `publicationCoverArchive.js` relaciona exclusivamente estos enlaces comprobados con sus originales como respaldo frente a enlaces CDN vencidos o metadatos bloqueados. No se eliminaron los registros duplicados.

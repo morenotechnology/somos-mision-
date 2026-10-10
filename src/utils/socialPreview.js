@@ -1,4 +1,4 @@
-import { normalizePreview, normalizeSocialUrl } from './socialMedia.js';
+import { isDirectVideoUrl, isFacebookPostUrl, normalizePreview, normalizeSocialUrl, previewMatchesSource } from './socialMedia.js';
 import { archivedPublicationCover } from './publicationCoverArchive.js';
 export { isDirectVideoUrl, normalizeSocialUrl } from './socialMedia.js';
 const previewCache = new Map();
@@ -22,6 +22,7 @@ export function getSocialVideoEmbed(value = '', isVideo = false) {
   if (!['https:', 'http:'].includes(url.protocol)) return null;
   const host = url.hostname.toLowerCase().replace(/^(www|m|web)\./, '');
   if (['facebook.com', 'fb.com', 'fb.watch'].includes(host)) {
+    if (isFacebookPostUrl(url.href)) return null;
     if (!isVideo && !/(?:^|\/)(?:reel|videos|watch|share\/v)(?:\/|$)/i.test(url.pathname) && !url.searchParams.has('v') && host !== 'fb.watch') return null;
     const id = url.pathname.match(/\/reel\/(\d+)/)?.[1] || url.pathname.match(/\/videos\/(?:[^/]+\/)?(\d+)/)?.[1] || url.searchParams.get('v');
     const href = id ? `https://www.facebook.com/watch/?v=${encodeURIComponent(id)}` : url.href;
@@ -53,6 +54,33 @@ export function getSocialPlatform(value = '') {
   return { id: 'social', label: 'Red social' };
 }
 
+export function publicationLinks(item = {}) {
+  // Editor-entered originals take precedence over an old derived source_url.
+  const originals = [item.facebookUrl, item.instagramUrl].filter(Boolean);
+  return [...new Set((originals.length ? originals : [item.sourceUrl]).map(normalizeSocialUrl).filter(Boolean))];
+}
+
+export function selectPublicationMedia(item = {}, preview = null, failed = []) {
+  const links = publicationLinks(item);
+  const sourceUrl = links[0] || '';
+  const previewOriginal = links.find(url => url === normalizeSocialUrl(preview?.inputUrl))
+    || links.find(url => previewMatchesSource(url, preview?.sourceUrl)) || sourceUrl;
+  let safePreview = preview ? normalizePreview(preview, previewOriginal) : null;
+  const savedImage = [archivedPublicationCover(sourceUrl), item.imageUrl]
+    .find(url => !isPlaceholderImage(url) && !isDirectVideoUrl(url) && !failed.includes(url));
+  const secondary = previewOriginal !== sourceUrl;
+  if (secondary && savedImage && !getSocialVideoEmbed(sourceUrl)) safePreview = null;
+  const images = (secondary && safePreview ? [safePreview.imageUrl] : [savedImage, safePreview?.imageUrl])
+    .filter(url => !isPlaceholderImage(url) && !isDirectVideoUrl(url) && !failed.includes(url));
+  const videos = [safePreview?.videoUrl, item.videoUrl, item.video_url, item.mediaUrl, item.media_url, item.imageUrl]
+    .filter(url => (url === safePreview?.videoUrl && url || isDirectVideoUrl(url)) && !failed.includes(url));
+  const embed = getSocialVideoEmbed(safePreview?.sourceUrl || sourceUrl, item.format === 'video');
+  const width = Number(safePreview?.videoWidth || safePreview?.imageWidth || item.mediaWidth || item.imageWidth);
+  const height = Number(safePreview?.videoHeight || safePreview?.imageHeight || item.mediaHeight || item.imageHeight);
+  const aspectRatio = width > 0 && height > 0 && Number.isFinite(width / height) ? width / height : 0;
+  return { image: images[0] || '', video: videos[0] || '', embed, sourceUrl, links, aspectRatio, kind: videos.length || embed ? 'video' : 'image' };
+}
+
 export async function fetchSocialPreview(sourceUrl = '', { refresh = false } = {}) {
   const cleanUrl = normalizeSocialUrl(sourceUrl);
   if (!cleanUrl) return null;
@@ -61,12 +89,14 @@ export async function fetchSocialPreview(sourceUrl = '', { refresh = false } = {
 
   const request = queued(async () => {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 27000);
+    const timeout = setTimeout(() => controller.abort(), 18000);
     try {
       const response = await fetch(`/api/social-preview?url=${encodeURIComponent(cleanUrl)}${refresh ? '&refresh=1' : ''}`, { signal: controller.signal });
       if (!response.ok) throw new Error('No se pudo obtener la vista previa del enlace');
       const payload = await response.json();
-      return normalizePreview(payload?.data || {}, cleanUrl);
+      const result = normalizePreview(payload?.data || {}, cleanUrl);
+      if (!result.imageUrl && !result.videoUrl) throw new Error('La vista previa no contiene medios de la publicación');
+      return result;
     } finally { clearTimeout(timeout); }
   }).catch(() => { previewCache.delete(cleanUrl); return null; });
 
@@ -80,8 +110,11 @@ export async function fetchPublicationPreview(links, options = {}) {
   for (const url of urls) {
     const preview = await fetchSocialPreview(url, options);
     if (!preview) continue;
-    best = best ? { ...best, imageUrl: best.imageUrl || preview.imageUrl, videoUrl: best.videoUrl || preview.videoUrl, videoType: best.videoUrl ? best.videoType : preview.videoType, sourceUrl: preview.videoUrl || getSocialVideoEmbed(preview.sourceUrl) ? preview.sourceUrl : best.sourceUrl } : preview;
-    if (best.imageUrl && (best.videoUrl || getSocialVideoEmbed(best.sourceUrl))) break;
+    // Keep cover, video and permalink from one source. Never combine two posts.
+    if (preview.videoUrl) { best = preview; break; }
+    if (preview.imageUrl && !getSocialVideoEmbed(url)) { best = preview; break; }
+    if (preview.imageUrl && !best) best = preview;
+    if (!best) best = preview;
   }
   const archivedCover = urls.map(archivedPublicationCover).find(Boolean);
   return best ? { ...best, imageUrl: best.imageUrl || archivedCover || '' } : archivedCover ? { imageUrl: archivedCover, videoUrl: '', sourceUrl: urls[0] } : null;

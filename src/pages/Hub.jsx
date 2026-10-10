@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Filter, Loader2, Search, SquarePen, X } from 'lucide-react';
+import { Filter, Search, SquarePen, X } from 'lucide-react';
+import { FeedSkeleton } from '../components/content/MediaSkeleton';
 import ContentCard from '../components/content/ContentCard';
 import { api } from '../api';
 import { useAppStore } from '../store/useAppStore';
@@ -64,7 +65,7 @@ export default function Hub() {
       {hasFilters && <button className="social-text-button" onClick={reset}>Limpiar filtros</button>}
     </section>}
     <section aria-label="Publicaciones de la red" aria-busy={loading}>
-      {loading ? <div className="social-feed-status" role="status"><Loader2 className="spin" size={24} /><p>Cargando noticias…</p></div> : error ? <div className="social-feed-status" role="alert"><p>{error}</p><button onClick={() => setRetry(value => value + 1)}>Reintentar</button></div> : data.items.length ? <>
+      {loading ? <FeedSkeleton /> : error ? <div className="social-feed-status" role="alert"><p>{error}</p><button onClick={() => setRetry(value => value + 1)}>Reintentar</button></div> : data.items.length ? <>
         {data.items.slice(0, visibleCount).map(item => <ContentCard key={item.id} item={item} socialFeed canEdit={canPublish(currentUser)} />)}
         {visibleCount < data.items.length ? <div ref={moreRef} className="social-feed-more"><button onClick={() => setVisibleCount(count => count + 10)}>Ver más publicaciones</button></div> : <p className="social-feed-end">Ya estás al día con la red.</p>}
       </> : <div className="social-feed-status"><Search size={26} /><h3>{hasFilters ? 'No encontramos coincidencias' : 'Pronto habrá noticias aquí'}</h3><p>{hasFilters ? 'Prueba con otra palabra o coordinación.' : 'Las publicaciones de la red aparecerán aquí.'}</p>{hasFilters && <button onClick={reset}>Ver todas las noticias</button>}</div>}
