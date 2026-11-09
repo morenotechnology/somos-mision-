@@ -746,7 +746,7 @@ function Footer({ hideMark = false }) {
           {!hideMark && <span className="ln-footer-mark"><BrandLogo decorative /></span>}
           <span>Misiones Nacionales</span>
         </div>
-        <p>Red Nacional — {new Date().getFullYear()}<br />Desarrollado por morenotechnology</p>
+        <p>Red Nacional — {new Date().getFullYear()}<br />Desarrollado por <a href="https://morenotechnology.com.co" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', textUnderlineOffset: '3px' }}>morenotechnology</a></p>
       </div>
     </footer>
   );
