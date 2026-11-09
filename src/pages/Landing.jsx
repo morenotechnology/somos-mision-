@@ -746,7 +746,7 @@ function Footer({ hideMark = false }) {
           {!hideMark && <span className="ln-footer-mark"><BrandLogo decorative /></span>}
           <span>Misiones Nacionales</span>
         </div>
-        <p>Red Nacional — {new Date().getFullYear()}</p>
+        <p>Red Nacional — {new Date().getFullYear()}<br />Desarrollado por morenotechnology</p>
       </div>
     </footer>
   );
