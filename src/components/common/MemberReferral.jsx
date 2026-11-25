@@ -19,7 +19,7 @@ export default function MemberReferral() {
   const url = data ? referralLink(window.location.origin, data.code) : '';
   return <section className="profile-panel-pro member-referral" aria-labelledby="referral-title">
     <h2 id="referral-title">Uno trae uno</h2>
-    <p>Invita a alguien a la red. Ganas <strong>{referralXP} XP</strong> cuando se registra con tu enlace y confirma su correo.</p>
+    <p>Ganas <strong>{referralXP} XP</strong> por cada persona que se registre con tu enlace y comparta su primera publicación desde la red.</p>
     {error ? <p role="status">No pudimos cargar tu enlace. <button type="button" onClick={() => { setError(false); setAttempt(v => v + 1); }}>Reintentar</button></p>
       : !url ? <p role="status">Preparando tu enlace…</p> : <>
         <label>Tu enlace de invitación<input readOnly value={url} onFocus={e => e.target.select()} /></label>
@@ -30,7 +30,7 @@ export default function MemberReferral() {
             catch { toast.error('Selecciona y copia el enlace de invitación.'); }
           }}><Copy size={16} /> Copiar enlace</button>
         </div>
-        <p>{data.confirmed} {Number(data.confirmed) === 1 ? 'registro confirmado' : 'registros confirmados'} · {(Number(data.confirmed) * referralXP).toLocaleString('es-CO')} XP por invitaciones</p>
+        <p>{data.confirmed} {Number(data.confirmed) === 1 ? 'invitación premiada' : 'invitaciones premiadas'} · {(Number(data.confirmed) * referralXP).toLocaleString('es-CO')} XP por invitaciones</p>
       </>}
   </section>;
 }

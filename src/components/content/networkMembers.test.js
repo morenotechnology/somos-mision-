@@ -10,6 +10,8 @@ test('a profile photo follows its author into previous comments and replies; ref
     const { createMockApi } = await vite.ssrLoadModule('/src/api/mockAdapter.js');
     const { default: Threads } = await vite.ssrLoadModule('/src/components/content/CommentThreads.jsx');
     const api = createMockApi();
+    await api.auth.login({email:'admin@misiones.org'});
+    await api.publicaciones.create({ title:'Noticia de prueba',description:'Prueba de compartido' });
     const member = (await api.auth.login({email:'carlos@misiones.org'})).user;
     const root = await api.social.agregarComentario('5555','Saludos');
     await api.social.agregarComentario('5555','Una respuesta',root.id);
@@ -22,6 +24,12 @@ test('a profile photo follows its author into previous comments and replies; ref
     const registration = {name:'Prueba',email:'new@example.invalid',referralCode:code};
     await api.auth.register(registration);
     await assert.rejects(api.auth.register(registration));
+    const [publication] = await api.content.list({});
+    await api.content.share(publication.id, { verification_status: 'pending' });
+    assert.equal((await api.auth.login({email:member.email})).user.xp,member.xp);
+    await api.auth.login({email:registration.email});
+    await api.content.share(publication.id, { verification_status: 'opened' });
+    await api.content.share(publication.id, { verification_status: 'verified' });
     const updated = (await api.auth.login({email:member.email})).user;
     assert.equal(updated.xp,member.xp + 400);
     assert.deepEqual(await api.perfiles.referral(),{code,confirmed:1});

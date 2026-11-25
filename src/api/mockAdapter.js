@@ -301,11 +301,7 @@ export function createMockApi() {
         };
         state.users.push(user);
         const inviter = payload.referralCode && state.users.find(item => item.referralCode === payload.referralCode && item.active !== false);
-        if (inviter) {
-          inviter.confirmedReferrals = (inviter.confirmedReferrals || 0) + 1;
-          inviter.xp += referralXP;
-          inviter.level = Math.min(10, Math.floor(inviter.xp / 500) + 1);
-        }
+        if (inviter) user.inviterId = inviter.id;
         if (payload.congregation && !selectedCongregation) {
           state.congregaciones.push({
             id: state.congregaciones.length + 101,
@@ -387,6 +383,15 @@ export function createMockApi() {
           created_at: new Date().toISOString(),
         };
         state.compartidos.unshift(compartido);
+        if (content && user?.inviterId && !user.referralAwarded && ['opened','verified'].includes(compartido.verification_status)) {
+          const inviter = state.users.find(item => item.id === user.inviterId && item.active !== false);
+          if (inviter) {
+            user.referralAwarded = true;
+            inviter.confirmedReferrals = (inviter.confirmedReferrals || 0) + 1;
+            inviter.xp += referralXP;
+            inviter.level = Math.min(10, Math.floor(inviter.xp / 500) + 1);
+          }
+        }
         const sharedContentIds = [...new Set(getMockUserShareRows(user).map((item) => String(item.post_id)))];
         return resolve({
           content,

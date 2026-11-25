@@ -1,6 +1,7 @@
 -- Somos Misión: private referral attribution and member-uploaded profile pictures.
--- Additive; no backfill, existing accounts cannot claim an inviter after signup.
+-- Existing accounts cannot claim an inviter after signup. Keep previous awards.
 begin;
+set local lock_timeout = '5s';
 
 create table if not exists public.network_referral_codes (
   owner_id uuid primary key references public.profiles(id) on delete cascade,
@@ -35,7 +36,6 @@ create or replace function public.network_signup_referral()
 returns trigger language plpgsql security definer set search_path = '' as $$
 declare
   token text;
-  beneficiary uuid;
 begin
   if tg_op = 'INSERT' then
     token := new.raw_user_meta_data->>'referral_code';
@@ -46,17 +46,6 @@ begin
       where c.code = token::uuid and c.owner_id <> new.id
       on conflict (invitee_id) do nothing;
   end if;
-  if new.email_confirmed_at is not null then
-    -- Single atomic claim; retries, changing metadata or confirming twice cannot repay.
-    update public.network_referrals r set awarded_at = now()
-    where r.invitee_id = new.id and r.awarded_at is null and exists
-      (select from public.profiles p where p.id = r.inviter_id and p.cuenta_activa)
-    returning r.inviter_id into beneficiary;
-    if beneficiary is not null then
-      perform public.apply_xp(beneficiary, 400, 'uno_trae_uno', 'referral', new.id::text);
-      perform public.refresh_profile_badges(beneficiary);
-    end if;
-  end if;
   return new;
 end $$;
 revoke all on function public.network_signup_referral() from public, anon, authenticated;
@@ -64,9 +53,44 @@ revoke all on function public.network_signup_referral() from public, anon, authe
 revoke execute on function public.apply_xp(uuid,integer,text,text,text) from public, anon, authenticated;
 create or replace trigger zz_network_referral_at_signup after insert on auth.users
   for each row execute function public.network_signup_referral();
-create or replace trigger zz_network_referral_on_confirmation after update of email_confirmed_at on auth.users
-  for each row when (old.email_confirmed_at is null and new.email_confirmed_at is not null)
-  execute function public.network_signup_referral();
+drop trigger if exists zz_network_referral_on_confirmation on auth.users;
+
+-- A share and its referral award commit or roll back together. The conditional
+-- update serializes simultaneous shares and preserves awards from the old rule.
+create or replace function public.award_first_network_share(member_id uuid)
+returns void language plpgsql security definer set search_path = '' as $$
+declare beneficiary uuid;
+begin
+  update public.network_referrals r set awarded_at = now()
+    where r.invitee_id = member_id and r.awarded_at is null
+      and exists (select from public.profiles p where p.id = r.inviter_id and p.cuenta_activa)
+    returning r.inviter_id into beneficiary;
+  if beneficiary is not null then
+    perform public.apply_xp(beneficiary, 400, 'uno_trae_uno', 'referral', member_id::text);
+    perform public.refresh_profile_badges(beneficiary);
+  end if;
+end $$;
+revoke all on function public.award_first_network_share(uuid) from public, anon, authenticated;
+
+create or replace function public.network_referral_on_share()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  perform public.award_first_network_share(new.user_id);
+  return new;
+end $$;
+revoke all on function public.network_referral_on_share() from public, anon, authenticated;
+create or replace trigger network_first_share after insert or update of verification_status on public.shares
+  for each row when (new.verification_status in ('opened','verified'))
+  execute function public.network_referral_on_share();
+
+-- Catch already attributed, unpaid referrals whose qualifying share predates deployment.
+do $$ declare member_id uuid; begin
+  for member_id in select r.invitee_id from public.network_referrals r
+    where r.awarded_at is null and exists (select from public.shares s
+      where s.user_id = r.invitee_id and s.verification_status in ('opened','verified'))
+    order by r.inviter_id, r.invitee_id
+  loop perform public.award_first_network_share(member_id); end loop;
+end $$;
 
 -- Only a single small raster image per account. The public URL can be used
 -- as an <img> in conversations; listing and overwriting other files is not allowed.

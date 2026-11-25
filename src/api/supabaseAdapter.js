@@ -561,7 +561,7 @@ function normalizeNotification(activity, publicationMap, missionMap) {
     };
   }
 
-  if (activity.accion === 'uno_trae_uno') return { ...base, icon: 'zap', title: 'Uno trae uno', desc: `Una persona que invitaste confirmó su registro. +${base.points} XP.` };
+  if (activity.accion === 'uno_trae_uno') return { ...base, icon: 'zap', title: 'Uno trae uno', desc: `Tu invitación sumó ${base.points} XP.` };
 
   return {
     ...base,
