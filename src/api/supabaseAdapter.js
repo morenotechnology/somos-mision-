@@ -1432,6 +1432,17 @@ export function createSupabaseApi() {
     },
 
     admin: {
+      async followup(kind) {
+        const rows = [];
+        for (let offset = 0; ; offset += 500) {
+          const page = unwrap(await client.rpc('admin_followup_page', { p_kind: kind, p_offset: offset, p_limit: 500 }), 'No se pudo cargar el seguimiento.');
+          rows.push(...page);
+          if (page.length < 500) return rows;
+        }
+      },
+      async whatsapp(member, action) {
+        return unwrap(await client.rpc('admin_whatsapp_contact', { p_member: member, p_action: action }), 'No se pudo actualizar el contacto.');
+      },
       async exportDatabase() {
         const sheets = ['usuarios', 'publicaciones', 'misiones'];
         const entries = await Promise.all(sheets.map(async (sheet) => {

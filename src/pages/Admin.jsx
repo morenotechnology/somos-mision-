@@ -1,11 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, BookOpen, Target, BarChart2, Search, Shield, TrendingUp, Star, CalendarDays, Download, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { api } from '../api';
 import { formatNumber, getLevelTitle } from '../utils/helpers';
 import toast from 'react-hot-toast';
-import { MessageCircle } from 'lucide-react';
+import { Network } from 'lucide-react';
+import { useAppStore } from '../store/useAppStore';
+import { useFollowup } from '../components/admin/useFollowup';
+import { OutreachControl, ReferralReport } from '../components/admin/NetworkFollowup';
 import { directoryGroup, directoryGroups, groupDimensions, invitationUrl } from '../utils/communityDirectory';
 import './admin-export.css';
 
@@ -13,6 +16,7 @@ const adminTabs = [
   { id: 'analytics', label: 'Analítica', icon: BarChart2 },
   { id: 'content', label: 'Contenido', icon: BookOpen },
   { id: 'users', label: 'Usuarios', icon: Users },
+  { id: 'referrals', label: 'Uno trae uno', icon: Network },
   { id: 'missions', label: 'Misiones', icon: Target },
 ];
 
@@ -40,6 +44,7 @@ function normalizeAdminUser(user = {}) {
     ...user,
     id: user.id || user.schemaId || user.email,
     name,
+    invitation: invitationUrl({ ...user, name }),
     email: user.email || 'Sin correo',
     role,
     avatar: user.avatar || name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase(),
@@ -61,6 +66,44 @@ export default function Admin() {
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState('');
   const [payload, setPayload] = useState({ metrics: null, weeklyActivity: [], regionActivity: [], users: [], content: [], missions: [] });
+  const actor = useAppStore(s => s.currentUser?.id);
+  const contacts = useFollowup('contacts', tab === 'users');
+  const referrals = useFollowup('referrals', tab === 'referrals');
+  const directory = useMemo(() => new Map(payload.users.map(u=>[u.id,u])), [payload.users]);
+  const contactMap = useMemo(() => new Map((contacts.rows || []).map(r=>[r.member_id,r])), [contacts.rows]);
+  const [contactFilter, setContactFilter] = useState('');
+  const locks = useRef(new Set());
+  const [busyIds, setBusyIds] = useState(new Set());
+  const contactReady = Boolean(contacts.rows && !contacts.error);
+  async function contactAction(user, action) {
+    if (locks.current.has(user.id) || !contactReady) return;
+    let popup;
+    if (action === 'open' || action === 'resume') {
+      if (!user.invitation) return;
+      // Reserve the tab during the click (mobile popup policy), but do not send
+      // the phone number to WhatsApp until the server grants this admin the chat.
+      popup = window.open('about:blank','_blank');
+      if (!popup) { toast.error('Permite las ventanas emergentes para abrir WhatsApp.'); return; }
+      popup.opener = null;
+    }
+    locks.current.add(user.id); setBusyIds(new Set(locks.current));
+    try {
+      const result = await api.admin.whatsapp(user.id,action);
+      contacts.applyContact(user.id,result.contact);
+      if (popup) {
+        if (result.may_open && !popup.closed) popup.location.replace(user.invitation);
+        else { popup.close(); toast(result.may_open ? 'Chat reservado. Puedes continuarlo desde la ficha.' : 'El contacto ya se había tomado. Revisa su estado.'); }
+      } else toast.success(action === 'sent' ? 'Mensaje marcado como enviado.' : 'Contacto disponible de nuevo.');
+    } catch {
+      popup?.close();
+      toast.error('No se pudo completar la acción. Revisa el estado antes de reintentar.');
+      void contacts.refresh();
+    } finally { locks.current.delete(user.id); setBusyIds(new Set(locks.current)); }
+  }
+  function contactControl(user, detail = false) {
+    return <OutreachControl user={user} row={contactMap.get(user.id)} directory={directory} actor={actor}
+      ready={contactReady} busy={busyIds.has(user.id)} onAction={contactAction} detail={detail} />;
+  }
 
   const exportDatabase = async () => {
     if (exporting) return;
@@ -106,7 +149,13 @@ export default function Admin() {
   }, []);
 
   const groups = useMemo(() => directoryGroups(payload.users, dimension), [payload.users, dimension]);
-  const filteredUsers = payload.users.filter((user) => (!groupFilter || directoryGroup(user, groupFilter.dimension).key === groupFilter.key) && (user.name.toLowerCase().includes(userQuery.toLowerCase()) || user.email.toLowerCase().includes(userQuery.toLowerCase())));
+  const filteredUsers = payload.users.filter((user) => {
+    const row = contactMap.get(user.id);
+    const status = row?.sent_at ? 'sent' : row ? 'open' : user.invitation ? 'pending' : 'noPhone';
+    return (!contactFilter || (contactReady && (contactFilter === 'mine' ? status === 'open' && row?.opened_by === actor : status === contactFilter))) &&
+      (!groupFilter || directoryGroup(user, groupFilter.dimension).key === groupFilter.key) &&
+      (user.name.toLowerCase().includes(userQuery.toLowerCase()) || user.email.toLowerCase().includes(userQuery.toLowerCase()));
+  });
   const roleData = [
     { name: 'Multiplicadores', value: payload.users.filter((user) => user.role === 'multiplicador').length },
     { name: 'Pastores/Directivos', value: payload.users.filter((user) => user.role === 'pastor').length },
@@ -158,7 +207,7 @@ export default function Admin() {
               </div>
               <p className="text-sm text-[#475569] my-2">Selecciona un grupo para ver sus integrantes.</p>
               <ul className="directory-groups">{groups.map(group => <li key={group.key}><button type="button" onClick={() => {
-                setGroupFilter({ ...group, dimension }); setUserQuery(''); setTab('users');
+                setGroupFilter({ ...group, dimension }); setUserQuery(''); setContactFilter(''); setTab('users');
               }}><span>{group.label}</span><strong>{formatNumber(group.count)}</strong></button></li>)}</ul>
               {!groups.length && <p>Aún no hay usuarios registrados.</p>}
             </section>
@@ -199,10 +248,15 @@ export default function Admin() {
         </div>
       )}
 
+      {!loading && !loadError && tab === 'referrals' && <ReferralReport data={referrals} directory={directory} />}
       {!loading && !loadError && tab === 'users' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3 flex-wrap"><p className="text-sm text-[#475569]">{filteredUsers.length} usuarios{groupFilter ? ` · ${groupDimensions[groupFilter.dimension]}: ${groupFilter.label}` : ' registrados'}</p>{groupFilter && <button type="button" className="underline text-sm" onClick={() => setGroupFilter(null)}>Quitar filtro</button>}<span className="text-xs text-[#475569]">Ordenados por fecha de registro</span></div>
           <div className="relative"><Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" /><input className="input-base pl-10" placeholder="Buscar por nombre o correo..." value={userQuery} onChange={(e) => setUserQuery(e.target.value)} /></div>
+          <div className="followup-toolbar"><label>WhatsApp <select className="directory-select" value={contactFilter} onChange={e=>setContactFilter(e.target.value)}>
+            <option value="">Todos</option><option value="pending">Sin gestionar</option><option value="open">Chat abierto</option><option value="mine">Mis chats abiertos</option><option value="sent">Enviado</option><option value="noPhone">Sin WhatsApp válido</option>
+          </select></label><button type="button" className="followup-link" onClick={contacts.refresh}>Actualizar seguimiento</button></div>
+          <p className="text-sm text-[#475569]" role="status">{contacts.error || (!contacts.rows ? 'Cargando seguimiento…' : 'Abrir WhatsApp reserva el contacto a tu nombre. Al volver, marca el mensaje como enviado.')}</p>
           <div className="space-y-2">
             {filteredUsers.map((user) => (
               <div key={user.id} className="card p-4">
@@ -211,7 +265,7 @@ export default function Admin() {
                 <div className="flex-1 min-w-0"><p className="font-semibold text-sm text-[#0F172A] break-words">{user.name}</p><div className="flex items-center gap-2 mt-0.5 flex-wrap"><span className="text-xs text-[#475569] break-all">{user.email}</span><span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${roleBadge[user.role] || roleBadge.multiplicador}`}>{roleLabel[user.role] || user.role}</span></div></div>
                 <div className="flex items-center gap-1.5 text-xs text-[#475569] whitespace-nowrap"><CalendarDays size={14} className="text-[#1A237E]" /><span><span className="hidden sm:inline">Registrado: </span>{user.registeredAtLabel}</span></div>
                 <div className="hidden md:flex items-center gap-3 text-xs"><span className="font-bold text-[#D4AF37]">{user.xp.toLocaleString()} XP</span><span className="text-[#94A3B8]">Nv. {user.level} — {getLevelTitle(user.level)}</span></div>
-                <WhatsAppInvite user={user} />
+                {contactControl(user)}
               </div>
               <details className="mt-3 border-t border-[#E2E8F0] pt-3">
                 <summary className="cursor-pointer text-xs font-semibold text-[#1A237E] py-1">Ver información del usuario</summary>
@@ -228,7 +282,7 @@ export default function Admin() {
                     ['Puntos y nivel', `${user.xp.toLocaleString('es-CO')} XP · Nivel ${user.level}`],
                   ].map(([label, value]) => <div key={label}><dt className="text-xs text-[#475569]">{label}</dt><dd className="mt-1 text-[#0F172A] break-words">{value}</dd></div>)}
                 </dl>
-                <WhatsAppInvite user={user} detail />
+                {contactControl(user,true)}
               </details>
               </div>
             ))}
@@ -253,12 +307,4 @@ export default function Admin() {
       )}
     </div>
   );
-}
-
-function WhatsAppInvite({ user, detail = false }) {
-  const url = invitationUrl(user);
-  if (!url) return <span className="text-xs text-[#475569]">{user.phone ? 'Revisar número de WhatsApp' : 'Sin WhatsApp registrado'}</span>;
-  return <a className="directory-invite" href={url} target="_blank" rel="noopener noreferrer" aria-label={`Invitar a ${user.name} por WhatsApp`}>
-    <MessageCircle size={16} aria-hidden="true" />{detail ? 'Invitar a la comunidad por WhatsApp' : 'WhatsApp'}
-  </a>;
 }

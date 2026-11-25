@@ -7,3 +7,18 @@
 .directory-groups strong { font-variant-numeric: tabular-nums; color: #1a237e; }
 .directory-invite { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: #166244; font-size: .8125rem; font-weight: 650; }
 .directory-invite:hover { text-decoration: underline; }
+.followup-toolbar, .outreach-control { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
+.followup-toolbar { justify-content: space-between; margin-bottom: .85rem; }
+.followup-toolbar input { flex: 1 1 15rem; min-width: 0; }
+.followup-toolbar h3 { font-size: 1.1rem; color: #0f172a; font-weight: 750; }
+.followup-toolbar p, .followup-record small, .outreach-control small { color: #475569; font-size: .8125rem; }
+.followup-link { display: inline-flex; align-items: center; min-height: 44px; gap: .35rem; color: #1a237e; font-weight: 650; font-size: .8125rem; }
+.followup-link:hover { text-decoration: underline; }
+.outreach-control { gap: 0 .8rem; }
+.outreach-control button:disabled { opacity: .6; cursor: wait; }
+.outreach-stamp { font-size: .8rem; color: #16553e; font-weight: 600; }
+.followup-record { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .65rem 1rem; padding: .9rem 0; border-top: 1px solid #e2e8f0; }
+.followup-record strong, .followup-record small { display: block; overflow-wrap: anywhere; }
+.followup-record strong { font-size: .9rem; }
+.followup-paid { color: #16553e; }
+@media (max-width:680px) { .followup-record { grid-template-columns: repeat(2,minmax(0,1fr)); } }

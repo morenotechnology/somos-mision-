@@ -90,6 +90,7 @@ const state = {
   reacciones: clone(reacciones),
   seguidores: clone(seguidores),
   notifications: [],
+  outreach: new Map(),
   users: clone(users),
 };
 
@@ -297,6 +298,7 @@ export function createMockApi() {
           avatar: 'NE',
           avatarColor: '#1A237E',
           joinedAt: new Date().toISOString().slice(0, 10),
+          registeredAt: new Date().toISOString(),
           active: true,
         };
         state.users.push(user);
@@ -383,10 +385,13 @@ export function createMockApi() {
           created_at: new Date().toISOString(),
         };
         state.compartidos.unshift(compartido);
+        if (content && user?.inviterId && ['opened','verified'].includes(compartido.verification_status))
+          user.firstSharedAt ||= compartido.created_at;
         if (content && user?.inviterId && !user.referralAwarded && ['opened','verified'].includes(compartido.verification_status)) {
           const inviter = state.users.find(item => item.id === user.inviterId && item.active !== false);
           if (inviter) {
             user.referralAwarded = true;
+            user.creditedAt = compartido.created_at;
             inviter.confirmedReferrals = (inviter.confirmedReferrals || 0) + 1;
             inviter.xp += referralXP;
             inviter.level = Math.min(10, Math.floor(inviter.xp / 500) + 1);
@@ -413,6 +418,27 @@ export function createMockApi() {
     },
 
     admin: {
+      followup: (kind) => {
+        if (state.currentUser?.role !== 'admin' || state.currentUser.active === false) throw new ApiError('Solo superadmin.',403);
+        return resolve(kind === 'contacts' ? [...state.outreach.values()] : state.users.filter(u => u.inviterId).map(u => ({
+          invitee_id:u.id, inviter_id:u.inviterId, registered_at:u.registeredAt || u.joinedAt, first_shared_at:u.firstSharedAt || null, credited_at:u.creditedAt || null,
+        })));
+      },
+      whatsapp: (member, action) => {
+        const actor = state.currentUser;
+        if (actor?.role !== 'admin' || actor.active === false) throw new ApiError('Solo superadmin.',403);
+        let row = state.outreach.get(member), mayOpen = false;
+        if (action === 'open' && !row) {
+          row = { member_id:member, opened_by:actor.id, opened_at:new Date().toISOString(), sent_at:null };
+          state.outreach.set(member,row); mayOpen = true;
+        } else if (action === 'resume') mayOpen = row?.opened_by === actor.id && !row.sent_at;
+        else if (action === 'sent' || action === 'release') {
+          if (row?.opened_by !== actor.id || (action === 'release' && row.sent_at)) throw new ApiError('No puedes modificar este contacto.',403);
+          if (action === 'release') state.outreach.delete(member);
+          else row.sent_at ||= new Date().toISOString();
+        }
+        return resolve({may_open:mayOpen, contact:state.outreach.get(member) || null});
+      },
       exportDatabase: () => {
         if (state.currentUser?.role !== 'admin') throw new ApiError('Solo el superadmin puede exportar.', 403);
         return resolve({ usuarios: state.users, publicaciones: state.contentItems, misiones: missions });
