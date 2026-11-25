@@ -1,2 +1,9 @@
 .admin-export-summary { margin: 16px 0 20px; max-width: 76ch; color: #475569; font-size: 13px; line-height: 1.55; }
 .admin-export-summary [role="status"]:not(:empty) { margin-top: 8px; color: #1a237e; font-weight: 600; }
+.directory-select { min-height: 44px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; background: #fff; }
+.directory-groups { max-height: 22rem; overflow: auto; }
+.directory-groups button { display: flex; justify-content: space-between; align-items: center; gap: 1rem; width: 100%; min-height: 44px; text-align: left; border-bottom: 1px solid #e2e8f0; padding: 6px 10px; }
+.directory-groups button:hover, .directory-groups button:focus-visible { background: #f5f7fa; color: #1a237e; }
+.directory-groups strong { font-variant-numeric: tabular-nums; color: #1a237e; }
+.directory-invite { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: #166244; font-size: .8125rem; font-weight: 650; }
+.directory-invite:hover { text-decoration: underline; }

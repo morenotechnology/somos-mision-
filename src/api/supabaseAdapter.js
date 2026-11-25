@@ -35,6 +35,8 @@ const commentSelect = `
   profiles:profiles(
     nombre_completo,
     avatar,
+    foto_perfil_url,
+    avatar_url,
     avatar_color,
     xp,
     level,
@@ -396,6 +398,7 @@ function normalizeProfile(row, stats = {}) {
     missionsCompleted: stats.missionsCompleted || 0,
     badges: stats.badgeIds || [],
     avatar: row.avatar || initials(row.nombre_completo),
+    photoUrl: row.foto_perfil_url || row.avatar_url || '',
     avatarColor: row.avatar_color || '#1A237E',
     registeredAt: row.created_at || null,
     joinedAt: row.created_at?.slice(0, 10) || new Date().toISOString().slice(0, 10),
@@ -557,6 +560,8 @@ function normalizeNotification(activity, publicationMap, missionMap) {
       desc: `Recibiste ${base.points} XP y tu progreso ya quedó guardado.`,
     };
   }
+
+  if (activity.accion === 'uno_trae_uno') return { ...base, icon: 'zap', title: 'Uno trae uno', desc: `Una persona que invitaste confirmó su registro. +${base.points} XP.` };
 
   return {
     ...base,
@@ -947,7 +952,7 @@ function normalizeComment(row, reactionMeta = {}) {
     content: row.contenido || row.content || '',
     createdAt: row.created_at,
     authorName: profile.nombre_completo || 'Miembro de la red',
-    authorAvatar: profile.avatar || profile.avatar_url || '',
+    authorAvatar: profile.foto_perfil_url || profile.avatar_url || profile.avatar || '',
     authorColor: profile.avatar_color || '#1A237E',
     level,
     authorLevel: level,
@@ -1119,6 +1124,7 @@ export function createSupabaseApi() {
               emailRedirectTo: getAuthRedirectUrl('/login'),
               data: {
                 nombre_completo: payload.name,
+                referral_code: payload.referralCode || undefined,
                 nombre: payload.name?.split(' ')?.[0] || payload.name,
                 rol: payload.role,
                 pastor_access_key: payload.role === 'pastor' ? payload.accessKey : null,
@@ -1444,6 +1450,20 @@ export function createSupabaseApi() {
     },
 
     perfiles: {
+      async referral() {
+        return unwrap(await client.rpc('my_network_referral'), 'No se pudo cargar tu invitación.');
+      },
+      async uploadPhoto(id, blob) {
+        const { user } = unwrap(await client.auth.getUser(), 'Vuelve a iniciar sesión.');
+        if (user?.id !== id) throw new ApiError('Solo puedes cambiar tu propia foto.', 403);
+        const bucket = client.storage.from('network-avatars');
+        const path = `${id}/avatar.jpg`;
+        unwrap(await bucket.upload(path, blob, { contentType: 'image/jpeg', upsert: true, cacheControl: '60' }), 'No se pudo subir la foto.');
+        const url = new URL(bucket.getPublicUrl(path).data.publicUrl);
+        url.searchParams.set('v', Date.now());
+        unwrap(await client.from('profiles').update({ foto_perfil_url: url.href }).eq('id', id).select('id').single(), 'No se pudo guardar la foto en tu perfil.');
+        return url.href;
+      },
       async list(params = {}) {
         const rows = [];
         const pageSize = 500;

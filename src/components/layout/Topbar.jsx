@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Bell, Menu, LogOut, ChevronDown } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import NotificationPanel from '../common/NotificationPanel';
+import MemberPhoto from '../common/MemberPhoto';
 
 const pageTitles = {
   '/hub':       'Noticias de la red',
@@ -65,7 +66,7 @@ export default function Topbar() {
               className="app-user-avatar"
               style={{ background: currentUser.avatarColor }}
             >
-              {currentUser.avatar}
+              <MemberPhoto src={currentUser.photoUrl} initials={currentUser.avatar} />
             </div>
             <div className="hidden md:block text-left min-w-0">
               <p>

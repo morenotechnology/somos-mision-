@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, BookOpen, Target, BarChart2, Search, Shield, TrendingUp, Star, CalendarDays, Download, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { api } from '../api';
 import { formatNumber, getLevelTitle } from '../utils/helpers';
 import toast from 'react-hot-toast';
+import { MessageCircle } from 'lucide-react';
+import { directoryGroup, directoryGroups, groupDimensions, invitationUrl } from '../utils/communityDirectory';
 import './admin-export.css';
 
 const adminTabs = [
@@ -50,6 +52,8 @@ function normalizeAdminUser(user = {}) {
 }
 
 export default function Admin() {
+  const [dimension, setDimension] = useState('region');
+  const [groupFilter, setGroupFilter] = useState(null);
   const [tab, setTab] = useState('users');
   const [userQuery, setUserQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -101,7 +105,8 @@ export default function Admin() {
     return () => { active = false; };
   }, []);
 
-  const filteredUsers = payload.users.filter((user) => user.name.toLowerCase().includes(userQuery.toLowerCase()) || user.email.toLowerCase().includes(userQuery.toLowerCase()));
+  const groups = useMemo(() => directoryGroups(payload.users, dimension), [payload.users, dimension]);
+  const filteredUsers = payload.users.filter((user) => (!groupFilter || directoryGroup(user, groupFilter.dimension).key === groupFilter.key) && (user.name.toLowerCase().includes(userQuery.toLowerCase()) || user.email.toLowerCase().includes(userQuery.toLowerCase())));
   const roleData = [
     { name: 'Multiplicadores', value: payload.users.filter((user) => user.role === 'multiplicador').length },
     { name: 'Pastores/Directivos', value: payload.users.filter((user) => user.role === 'pastor').length },
@@ -144,6 +149,19 @@ export default function Admin() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
+            <section className="card p-5 md:col-span-2">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="font-bold text-[#0F172A]">Dónde está la red</h3>
+                <label className="text-sm">Agrupar por <select className="directory-select" value={dimension} onChange={e => setDimension(e.target.value)}>
+                  {Object.entries(groupDimensions).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+                </select></label>
+              </div>
+              <p className="text-sm text-[#475569] my-2">Selecciona un grupo para ver sus integrantes.</p>
+              <ul className="directory-groups">{groups.map(group => <li key={group.key}><button type="button" onClick={() => {
+                setGroupFilter({ ...group, dimension }); setUserQuery(''); setTab('users');
+              }}><span>{group.label}</span><strong>{formatNumber(group.count)}</strong></button></li>)}</ul>
+              {!groups.length && <p>Aún no hay usuarios registrados.</p>}
+            </section>
             <div className="card p-5">
               <h3 className="font-bold text-[#0F172A] mb-4">Actividad por región</h3>
               <ResponsiveContainer width="100%" height={200}>
@@ -183,7 +201,7 @@ export default function Admin() {
 
       {!loading && !loadError && tab === 'users' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3 flex-wrap"><p className="text-sm text-[#475569]">{payload.users.length} usuarios registrados</p><span className="text-xs text-[#94A3B8]">Ordenados por fecha de registro</span></div>
+          <div className="flex items-center justify-between gap-3 flex-wrap"><p className="text-sm text-[#475569]">{filteredUsers.length} usuarios{groupFilter ? ` · ${groupDimensions[groupFilter.dimension]}: ${groupFilter.label}` : ' registrados'}</p>{groupFilter && <button type="button" className="underline text-sm" onClick={() => setGroupFilter(null)}>Quitar filtro</button>}<span className="text-xs text-[#475569]">Ordenados por fecha de registro</span></div>
           <div className="relative"><Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" /><input className="input-base pl-10" placeholder="Buscar por nombre o correo..." value={userQuery} onChange={(e) => setUserQuery(e.target.value)} /></div>
           <div className="space-y-2">
             {filteredUsers.map((user) => (
@@ -193,6 +211,7 @@ export default function Admin() {
                 <div className="flex-1 min-w-0"><p className="font-semibold text-sm text-[#0F172A] break-words">{user.name}</p><div className="flex items-center gap-2 mt-0.5 flex-wrap"><span className="text-xs text-[#475569] break-all">{user.email}</span><span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${roleBadge[user.role] || roleBadge.multiplicador}`}>{roleLabel[user.role] || user.role}</span></div></div>
                 <div className="flex items-center gap-1.5 text-xs text-[#475569] whitespace-nowrap"><CalendarDays size={14} className="text-[#1A237E]" /><span><span className="hidden sm:inline">Registrado: </span>{user.registeredAtLabel}</span></div>
                 <div className="hidden md:flex items-center gap-3 text-xs"><span className="font-bold text-[#D4AF37]">{user.xp.toLocaleString()} XP</span><span className="text-[#94A3B8]">Nv. {user.level} — {getLevelTitle(user.level)}</span></div>
+                <WhatsAppInvite user={user} />
               </div>
               <details className="mt-3 border-t border-[#E2E8F0] pt-3">
                 <summary className="cursor-pointer text-xs font-semibold text-[#1A237E] py-1">Ver información del usuario</summary>
@@ -209,6 +228,7 @@ export default function Admin() {
                     ['Puntos y nivel', `${user.xp.toLocaleString('es-CO')} XP · Nivel ${user.level}`],
                   ].map(([label, value]) => <div key={label}><dt className="text-xs text-[#475569]">{label}</dt><dd className="mt-1 text-[#0F172A] break-words">{value}</dd></div>)}
                 </dl>
+                <WhatsAppInvite user={user} detail />
               </details>
               </div>
             ))}
@@ -233,4 +253,12 @@ export default function Admin() {
       )}
     </div>
   );
+}
+
+function WhatsAppInvite({ user, detail = false }) {
+  const url = invitationUrl(user);
+  if (!url) return <span className="text-xs text-[#475569]">{user.phone ? 'Revisar número de WhatsApp' : 'Sin WhatsApp registrado'}</span>;
+  return <a className="directory-invite" href={url} target="_blank" rel="noopener noreferrer" aria-label={`Invitar a ${user.name} por WhatsApp`}>
+    <MessageCircle size={16} aria-hidden="true" />{detail ? 'Invitar a la comunidad por WhatsApp' : 'WhatsApp'}
+  </a>;
 }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Award, ChevronDown, ChevronUp, Heart, Trash2 } from 'lucide-react';
 import { buildCommentThreads, parentCommentId } from '../../utils/commentThreads';
 import './comment-threads.css';
+import MemberPhoto from '../common/MemberPhoto';
 
 const dateFormatter = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short' });
 const countFormatter = new Intl.NumberFormat('es-CO', { notation: 'compact', maximumFractionDigits: 1 });
@@ -25,7 +26,7 @@ export default function CommentThreads({ comments, currentUser, busy, onLike, on
     return (
       <article key={comment.id} className={`social-comment ${isReply ? 'social-comment--reply' : ''}`}>
         <div className="social-comment-avatar" style={{ backgroundColor: comment.authorColor || '#294a79' }}>
-          {/^(https?:\/\/|data:image\/|\/)/i.test(avatar) ? <img src={avatar} alt="" loading="lazy" /> : avatar || name.slice(0, 2).toUpperCase()}
+          <MemberPhoto src={/^(https?:\/\/|data:image\/|\/|blob:)/i.test(avatar) ? avatar : null} initials={avatar && avatar.length <= 4 ? avatar : name.slice(0, 2).toUpperCase()} />
         </div>
         <div className="social-comment-body">
           <div className="social-comment-author"><strong>{name}</strong>{own && <span>Tú</span>}</div>

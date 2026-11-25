@@ -8,6 +8,10 @@ import { api } from '../api';
 import { formatNumber, getLevelTitle, xpProgress, xpToNextLevel } from '../utils/helpers';
 import { LucideIcon } from '../components/common/LucideIcon';
 import BadgeEmblem from '../components/common/BadgeEmblem';
+import MemberPhoto from '../components/common/MemberPhoto';
+import MemberReferral from '../components/common/MemberReferral';
+import { prepareMemberPhoto } from '../utils/memberPhoto';
+import './member-profile.css';
 
 const roleLabel = { admin: 'Administrador', pastor: 'Pastor/Directivo', multiplicador: 'Multiplicador' };
 
@@ -22,6 +26,7 @@ export default function Profile() {
   const [weeklyActivity, setWeeklyActivity] = useState([]);
   const [profileSaving, setProfileSaving] = useState(false);
   const [personalSaving, setPersonalSaving] = useState(false);
+  const [photoSaving, setPhotoSaving] = useState(false);
   const [personalForm, setPersonalForm] = useState({ name: '', phone: '', congregation: '' });
   const [profileForm, setProfileForm] = useState({
     hasChurchRole: '',
@@ -161,7 +166,7 @@ export default function Profile() {
 
         <div className="profile-identity-pro">
           <div className="profile-avatar-row">
-            <div className="profile-avatar-pro" style={{ background: user.avatarColor }}>{user.avatar}</div>
+            <div className="profile-avatar-pro" style={{ background: user.avatarColor }}><MemberPhoto src={user.photoUrl} initials={user.avatar} /></div>
             <button type="button" className="profile-edit-pro" onClick={() => document.getElementById('profile-details')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}><Edit3 size={14} /> Editar perfil</button>
           </div>
 
@@ -212,6 +217,22 @@ export default function Profile() {
           <span>Visibles solo según tu configuración</span>
         </div>
         <form className="profile-personal-form" onSubmit={handlePersonalSave}>
+          <label className="member-photo-upload"><span>Foto de perfil</span>
+            <input type="file" accept="image/jpeg,image/png,image/webp" disabled={photoSaving} aria-describedby="photo-hint" onChange={async e => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (!file) return;
+              setPhotoSaving(true);
+              try {
+                const url = await api.perfiles.uploadPhoto(user.id, await prepareMemberPhoto(file));
+                const latest = useAppStore.getState().currentUser;
+                if (latest?.id === user.id) setCurrentUser({ ...latest, photoUrl: url });
+                toast.success('Foto actualizada');
+              } catch (err) { toast.error(err.message || 'No se pudo guardar tu foto.'); }
+              finally { setPhotoSaving(false); }
+            }} />
+            <small id="photo-hint" role="status">{photoSaving ? 'Subiendo foto…' : 'Aparecerá en tus comentarios y respuestas. JPG, PNG o WebP; hasta 8 MB.'}</small>
+          </label>
           <label><span>Nombre completo</span><input value={personalForm.name} onChange={(event) => setPersonalForm((form) => ({ ...form, name: event.target.value }))} autoComplete="name" /></label>
           <label><span><Mail size={13} /> Correo</span><input value={user.email || ''} readOnly aria-readonly="true" /></label>
           <label><span><Phone size={13} /> Celular / WhatsApp</span><input value={personalForm.phone} onChange={(event) => setPersonalForm((form) => ({ ...form, phone: event.target.value }))} inputMode="tel" autoComplete="tel" placeholder="Tu número de contacto" /></label>
@@ -222,6 +243,7 @@ export default function Profile() {
         </form>
       </motion.section>
 
+      <MemberReferral key={user.id} />
       <motion.section
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}

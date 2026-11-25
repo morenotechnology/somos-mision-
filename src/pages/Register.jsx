@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { referralCode } from '../utils/referral';
 import {
   ArrowLeft,
   ArrowRight,
@@ -173,6 +174,8 @@ function FieldGroup({ label, children }) {
 
 export default function Register() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const invitation = referralCode(params.get('ref'));
   const { loginFromApi } = useAppStore();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -308,6 +311,7 @@ export default function Register() {
       const assignedRegion = getRegionFromDistrict(form.district);
       const result = await api.auth.register({
         ...form,
+        referralCode: invitation,
         region: assignedRegion,
         congregation: finalCongregation,
         congregationId: form.congregationId,
@@ -345,7 +349,7 @@ export default function Register() {
           </div>
 
           <div className="auth-card-header">
-            <p className="auth-eyebrow">Nuevo perfil</p>
+            <p className="auth-eyebrow">{invitation ? 'Uno trae uno · Registro por invitación' : 'Nuevo perfil'}</p>
             <h1>Únete a la red</h1>
             <p>Completa tu información para crear tu cuenta de multiplicador o pastor/directivo.</p>
           </div>

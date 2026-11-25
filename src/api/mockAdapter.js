@@ -21,6 +21,7 @@ import {
 } from '../data/mockData';
 import { ApiError } from './httpClient';
 import { missionWeekStart } from '../utils/missionWeek';
+import { referralXP } from '../utils/referral';
 
 const delay = Number(import.meta.env.VITE_MOCK_LATENCY_MS || 120);
 
@@ -112,7 +113,7 @@ function normalizeMockComment(row) {
     content: row.content || row.contenido || '',
     createdAt: row.createdAt || row.created_at,
     authorName: row.authorName || author?.name || 'Miembro de la red',
-    authorAvatar: row.authorAvatar || author?.avatar || '',
+    authorAvatar: author?.photoUrl || row.authorAvatar || author?.avatar || '',
     authorColor: row.authorColor || author?.avatarColor || '#1A237E',
     level: Number.isFinite(level) && level > 0 ? level : 1,
     authorLevel: Number.isFinite(level) && level > 0 ? level : 1,
@@ -267,6 +268,7 @@ export function createMockApi() {
         return resolve({ user, profile, session: { access_token: `local-mock-${user.role}`, token_type: 'Bearer' } });
       },
       register: async (payload) => {
+        if (state.users.some(user => user.email?.toLowerCase() === payload.email?.trim().toLowerCase())) throw new ApiError('Ya existe una cuenta con ese correo.', 400);
         const role = resolveRegisterRole(payload);
         const selectedCongregation = payload.congregationId
           ? state.congregaciones.find((item) => String(item.id) === String(payload.congregationId))
@@ -276,6 +278,7 @@ export function createMockApi() {
           schemaId: crypto.randomUUID(),
           name: payload.name || payload.nombre_completo || 'Nuevo Multiplicador',
           email: payload.email,
+          phone: payload.phone || '',
           role,
           canPublish: resolveCanPublish({ ...payload, role }),
           region: payload.region || regionFromDistrict(payload.district) || 'r3',
@@ -297,6 +300,12 @@ export function createMockApi() {
           active: true,
         };
         state.users.push(user);
+        const inviter = payload.referralCode && state.users.find(item => item.referralCode === payload.referralCode && item.active !== false);
+        if (inviter) {
+          inviter.confirmedReferrals = (inviter.confirmedReferrals || 0) + 1;
+          inviter.xp += referralXP;
+          inviter.level = Math.min(10, Math.floor(inviter.xp / 500) + 1);
+        }
         if (payload.congregation && !selectedCongregation) {
           state.congregaciones.push({
             id: state.congregaciones.length + 101,
@@ -319,7 +328,7 @@ export function createMockApi() {
 
     dashboard: {
       get: (params) => {
-        const user = getUser(params);
+        const user = state.currentUser || getUser(params);
         return resolve({
           user,
           metrics: globalMetrics,
@@ -406,6 +415,19 @@ export function createMockApi() {
     },
 
     perfiles: {
+      referral: () => {
+        const member = state.currentUser;
+        if (!member) throw new ApiError('Inicia sesión.', 401);
+        member.referralCode ||= crypto.randomUUID();
+        return resolve({ code: member.referralCode, confirmed: member.confirmedReferrals || 0 });
+      },
+      uploadPhoto: (id, blob) => {
+        const member = state.currentUser;
+        if (!member || member.id !== id) throw new ApiError('Solo puedes cambiar tu propia foto.', 403);
+        if (member.photoUrl?.startsWith('blob:')) URL.revokeObjectURL(member.photoUrl);
+        member.photoUrl = URL.createObjectURL(blob);
+        return resolve(member.photoUrl);
+      },
       list: (params = {}) => {
         const rows = [...state.users].sort((a, b) => (
           params.sort === 'registered_desc'

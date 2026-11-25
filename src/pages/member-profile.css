@@ -1,0 +1,10 @@
+.member-photo-upload { grid-column: 1 / -1; }
+.member-photo-upload small, .member-referral p { color: #475569; }
+.member-referral h2 { font-size: 1.35rem; font-weight: 800; color: #0a0f52; }
+.member-referral p { font-size: .875rem; margin: .35rem 0; max-width: 65ch; }
+.member-referral label { display: grid; gap: .3rem; margin: 1rem 0 .5rem; font-weight: 650; font-size: .8125rem; }
+.member-referral input { width: 100%; min-width: 0; padding: .65rem; background: #f5f7fa; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; }
+.member-referral-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin: .65rem 0; }
+.member-referral button, .member-referral a { min-height: 44px; display: inline-flex; align-items: center; gap: .4rem; padding: .5rem .8rem; color: #1a237e; font-size: .875rem; font-weight: 650; }
+.member-referral-actions a { color: white; background: #1a237e; border-radius: 10px; }
+.member-referral button:hover, .member-referral a:hover { text-decoration: underline; }

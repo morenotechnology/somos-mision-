@@ -480,7 +480,7 @@ export default function ContentCard({ item, delay = 0, immersive = false, social
         ...created,
         content: created?.content || cleanText,
         authorName: created?.authorName && created.authorName !== 'Miembro de la red' ? created.authorName : currentUser?.name || 'Miembro de la red',
-        authorAvatar: created?.authorAvatar || currentUser?.avatar,
+        authorAvatar: currentUser?.photoUrl || created?.authorAvatar || currentUser?.avatar,
         authorColor: created?.authorColor || currentUser?.avatarColor,
         level: Number.isFinite(createdLevel) && createdLevel > 0 ? createdLevel : 1,
         authorLevel: Number.isFinite(createdLevel) && createdLevel > 0 ? createdLevel : 1,
